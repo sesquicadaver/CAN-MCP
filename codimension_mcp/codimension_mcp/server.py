@@ -8,6 +8,8 @@ import sys
 
 from mcp.server.fastmcp import FastMCP
 
+from .prompts import register_prompts
+from .resources import register_resources
 from .schemas import WorkspaceState
 from .tools import (
     analyze_file_tool,
@@ -30,6 +32,9 @@ from .tools import (
 
 mcp = FastMCP("codimension")
 _state = WorkspaceState()
+
+register_resources(mcp, lambda: _state)
+register_prompts(mcp)
 
 
 @mcp.tool()

@@ -178,7 +178,9 @@ codimension_core/
 | `get_diagnostics(path)` | `analyzer.analyze_file_diagnostics()` | ✅ 0.4.0 |
 | `find_dead_code(path?)` | `analyzer.analyze_dead_code()` | ✅ 0.5.0 |
 | `explain_symbol(symbol)` | `explain.explain_symbol()` — structured context | ✅ 0.5.0 MVP |
-| `impact_analysis(path\|symbol)` | `callgraph.impact_analysis()` | ✅ MVP |
+| `impact_analysis(path\|symbol)` | `callgraph.impact_analysis()` | ✅ 0.6.0 transitive |
+| **MCP resources** | `codimension://workspace/status`, `graph/import`, `graph/call` | ✅ 0.2.0 |
+| **MCP prompts** | `refactor_symbol`, `review_dead_code` | ✅ 0.2.0 |
 
 ---
 

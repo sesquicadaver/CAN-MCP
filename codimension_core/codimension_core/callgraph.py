@@ -278,45 +278,149 @@ def find_callees(project: Project, symbol: str) -> GraphIR:
     return graph
 
 
+def _matches_callee(callee_id: str, target: str) -> bool:
+    return target in callee_id or callee_id.endswith(f":function:{target}")
+
+
+def _resolve_target_file(project: Project, target: str) -> str | None:
+    if target.startswith("/"):
+        resolved = realpath(target)
+        return resolved if project.is_project_path(resolved) else None
+    for path in project.python_files:
+        if basename(path) == target or path.endswith("/" + target) or path.endswith("\\" + target):
+            return path
+    return None
+
+
+def _collect_transitive_callers(
+    index: _CallGraphIndex,
+    seed_callee_ids: set[str],
+) -> tuple[set[str], list[tuple[str, str, str]]]:
+    """Walk reverse call edges from seed callees; return callers and impact edges."""
+    reverse: dict[str, list[tuple[str, int, str]]] = {}
+    for caller_id, callee_id, line_no, label in index.edges:
+        reverse.setdefault(callee_id, []).append((caller_id, line_no, label))
+
+    impacted: set[str] = set()
+    edges_out: list[tuple[str, str, str]] = []
+    queue = [callee_id for callee_id in seed_callee_ids if callee_id]
+    visited_callees: set[str] = set(queue)
+    while queue:
+        callee_id = queue.pop(0)
+        for caller_id, line_no, label in reverse.get(callee_id, []):
+            edges_out.append((caller_id, callee_id, f"{label}:{line_no}"))
+            if caller_id not in impacted:
+                impacted.add(caller_id)
+            if caller_id not in visited_callees:
+                visited_callees.add(caller_id)
+                queue.append(caller_id)
+    return impacted, edges_out
+
+
+def _add_impact_node(
+    graph: GraphIR,
+    node_id: str,
+    index: _CallGraphIndex,
+    fallback_file: str,
+) -> None:
+    if node_id in index.functions:
+        span = index.functions[node_id]
+        graph.add_node(
+            GraphNode(
+                id=node_id,
+                type="function",
+                name=span.qualname,
+                file=span.file_path,
+                line_start=span.line_start,
+                line_end=span.line_end,
+                extra={"impact": True},
+            )
+        )
+        return
+    if node_id.startswith("file:"):
+        graph.add_node(
+            GraphNode(
+                id=node_id,
+                type="file",
+                name=node_id.split(":", 1)[1],
+                file=fallback_file,
+                line_start=0,
+                line_end=0,
+                extra={"impact": True},
+            )
+        )
+        return
+    graph.add_node(
+        GraphNode(
+            id=node_id,
+            type="impact",
+            name=node_id,
+            file=fallback_file,
+            line_start=0,
+            line_end=0,
+        )
+    )
+
+
 def impact_analysis(project: Project, target: str) -> GraphIR:
-    """Estimate blast radius using reverse call edges and import dependents."""
+    """Estimate blast radius using transitive callers and import dependents."""
     project.require_open()
     from .dependency_graph import build_import_graph
 
     call_index = _build_index(project)
     import_graph = build_import_graph(project)
     graph = GraphIR(meta={"kind": "impact_analysis", "target": target})
-
     impacted: set[str] = set()
-    if target.endswith(".py"):
-        target_file = realpath(target) if target.startswith("/") else None
-        if target_file is None:
-            for path in project.python_files:
-                if basename(path) == target or path.endswith("/" + target):
-                    target_file = path
-                    break
+    fallback_file = target if target.endswith(".py") else ""
+
+    if target.endswith(".py") or "/" in target or "\\" in target:
+        target_file = _resolve_target_file(project, target)
         if target_file:
-            impacted.add(f"file:{basename(target_file)}")
+            fallback_file = target_file
+            file_id = f"file:{basename(target_file)}"
+            impacted.add(file_id)
             for edge in import_graph.edges:
-                if edge.to_id == f"file:{basename(target_file)}":
+                if edge.to_id == file_id:
                     impacted.add(edge.from_id)
-    else:
-        for caller_id, callee_id, line_no, label in call_index.edges:
-            if target in callee_id or callee_id.endswith(f":function:{target}"):
-                impacted.add(caller_id)
+                    graph.add_edge(
+                        GraphEdge(
+                            from_id=edge.from_id,
+                            to_id=file_id,
+                            type="impacted_by_import",
+                            label=edge.label,
+                        )
+                    )
+            seed_ids = {
+                symbol_id
+                for symbol_id, span in call_index.functions.items()
+                if span.file_path == target_file
+            }
+            callers, call_edges = _collect_transitive_callers(call_index, seed_ids)
+            impacted |= callers
+            for caller_id, callee_id, label in call_edges:
                 graph.add_edge(
                     GraphEdge(from_id=caller_id, to_id=callee_id, type="impacted_by_call", label=label)
                 )
-
-    for node_id in sorted(impacted):
-        graph.add_node(
-            GraphNode(
-                id=node_id,
-                type="impact",
-                name=node_id,
-                file=target,
-                line_start=0,
-                line_end=0,
+    else:
+        seed_ids = {
+            callee_id
+            for _caller_id, callee_id, _line_no, _label in call_index.edges
+            if _matches_callee(callee_id, target)
+        }
+        seed_ids |= {
+            symbol_id
+            for symbol_id in call_index.functions
+            if _matches_callee(symbol_id, target)
+        }
+        callers, call_edges = _collect_transitive_callers(call_index, seed_ids)
+        impacted |= callers
+        impacted |= seed_ids
+        for caller_id, callee_id, label in call_edges:
+            graph.add_edge(
+                GraphEdge(from_id=caller_id, to_id=callee_id, type="impacted_by_call", label=label)
             )
-        )
+
+    graph.meta["impacted_count"] = len(impacted)
+    for node_id in sorted(impacted):
+        _add_impact_node(graph, node_id, call_index, fallback_file)
     return graph

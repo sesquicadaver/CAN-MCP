@@ -39,7 +39,9 @@
 | **codimension_core explain** | codimension_core.explain | explain_symbol | unit: tests/test_codimension_core_explain.py |
 | **MCP get_diagnostics** | codimension_mcp | get_diagnostics tool | Smoke: MCP tool call |
 | **MCP find_dead_code** | codimension_mcp | find_dead_code tool | Smoke: MCP tool call |
-| **MCP explain_symbol** | codimension_mcp | explain_symbol tool | Smoke: MCP tool call |
+| **codimension_core impact** | codimension_core.callgraph | impact_analysis transitive | unit: tests/test_codimension_core_impact.py |
+| **MCP resources** | codimension_mcp.resources | codimension:// URIs | unit: tests/test_codimension_mcp.py |
+| **MCP prompts** | codimension_mcp.prompts | refactor_symbol, review_dead_code | Smoke: MCP prompt list |
 | **codimension_mcp scaffold** | codimension_mcp | server.py, tools.py, serializers.py | unit: tests/test_codimension_mcp.py |
 | **Module extraction map** | doc | CODIMENSION-CORE-MAP.md | Review on each extraction PR |
 

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 
+from codimension_mcp.resources import read_call_graph, read_import_graph, read_workspace_status
 from codimension_mcp.schemas import WorkspaceState
 from codimension_mcp.tools import (
     analyze_project,
@@ -67,3 +68,26 @@ def test_mcp_dead_code_and_explain_tools(tmp_path):
     explain = json.loads(explain_symbol_tool(state, "main.py:function:greet"))
     assert explain["meta"]["kind"] == "explain_symbol"
     assert "sections" in explain["meta"]
+
+
+def test_mcp_resources_closed_and_open(tmp_path):
+    project_dir = tmp_path / "proj"
+    project_dir.mkdir()
+    (project_dir / "main.py").write_text("def f():\n    pass\n", encoding="utf-8")
+
+    state = WorkspaceState()
+    closed = json.loads(read_workspace_status(state))
+    assert closed["status"] == "closed"
+
+    open_project(state, str(project_dir))
+    analyze_project(state)
+
+    opened = json.loads(read_workspace_status(state))
+    assert opened["status"] == "open"
+    assert opened["python_files"] == 1
+
+    imports = json.loads(read_import_graph(state))
+    assert imports["meta"]["kind"] == "import_graph"
+
+    calls = json.loads(read_call_graph(state))
+    assert calls["meta"]["kind"] == "call_graph"
