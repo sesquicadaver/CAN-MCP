@@ -8,6 +8,7 @@ import os
 from codimension_core import (
     analyze_file,
     build_import_graph,
+    find_usages,
     get_control_flow,
     get_symbols,
 )
@@ -101,6 +102,12 @@ def impact_analysis_tool(state: WorkspaceState, target: str) -> str:
     """Impact analysis for a path or symbol."""
     project = _require_project(state)
     return dumps_graph(impact_analysis(project, target))
+
+
+def find_usages_tool(state: WorkspaceState, symbol: str) -> str:
+    """Find usages of a symbol via jedi."""
+    project = _require_project(state)
+    return dumps_graph(find_usages(project, symbol))
 
 
 def _require_project(state: WorkspaceState) -> Project:

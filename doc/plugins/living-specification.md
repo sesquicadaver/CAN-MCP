@@ -34,7 +34,8 @@
 | **codimension_core scaffold** | codimension_core | project.py, symbols.py, cache.py, graph_ir.py, dependency_graph.py, cfg.py | unit: tests/test_codimension_core.py |
 | **codimension_core imports** | codimension_core.imports | imports.py | unit: tests/test_codimension_core_imports.py |
 | **codimension_core callgraph** | codimension_core.callgraph | callgraph.py | unit: tests/test_codimension_core.py |
-| **Carantine archive** | Carantine/ | importutils_legacy.py | Видалити після повного від’єднання IDE |
+| **codimension_core deps classification** | codimension_core.imports | collect_import_resolutions_classified | unit: tests/test_codimension_core_deps.py |
+| **codimension_core find_usages** | codimension_core.symbols | find_usages (jedi) | unit: tests/test_codimension_core_usages.py |
 | **codimension_mcp scaffold** | codimension_mcp | server.py, tools.py, serializers.py | unit: tests/test_codimension_mcp.py |
 | **Module extraction map** | doc | CODIMENSION-CORE-MAP.md | Review on each extraction PR |
 

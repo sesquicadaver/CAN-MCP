@@ -3,70 +3,34 @@
 # codimension - graphics python two-way code editor and analyzer
 # Copyright (C) 2010-2020 Sergey Satskiy <sergey.satskiy@gmail.com>
 #
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
+# Legacy archive: Carantine/codimension/diagram/depsdiagram_legacy.py
 
-"""Dependencies diagram"""
+"""Dependencies diagram — IDE wrapper over codimension_core.imports."""
 
-import os.path
+import os
 import sys
 
 from utils.globals import GlobalData
-from utils.importutils import getImportResolutions, getImportsList
+
+from codimension_core.imports import collect_import_resolutions_classified
+from codimension_core.project import Project as CoreProject
 
 
-def __isLocalOrProject(fName, resolvedPath):
-    """True if the module is a project one or is in the nested dirs"""
-    if GlobalData().project.isProjectFile(resolvedPath):
-        return True
-
-    resolvedDir = os.path.dirname(resolvedPath)
-    baseDir = os.path.dirname(fName)
-    return resolvedDir.startswith(baseDir)
-
-
-def __isSystem(resolvedPath):
-    """True if the module belongs to the system or venv path"""
-    # This check must be done after checking for local/project
-    # because a project may insert its paths into sys.path.
-    resolvedDir = os.path.dirname(resolvedPath)
-    for path in sys.path:
-        if path:
-            if resolvedDir.startswith(path):
-                return True
-    return False
+def _core_project_from_ide():
+    """Build headless project context from the loaded IDE project."""
+    project = GlobalData().project
+    if not project.isLoaded():
+        return None
+    project_dir = project.getProjectDir()
+    if not project_dir:
+        return None
+    return CoreProject.open(project_dir.rstrip(os.sep))
 
 
 def collectImportResolutions(content, fileName):
-    """Provides classified import information and errors if so"""
-    depClasses = {"system": [], "project": [], "other": [], "unresolved": [], "totalCount": 0, "errors": []}
-    try:
-        for resolution in getImportResolutions(fileName, getImportsList(content)):
-            if resolution.isResolved():
-                if resolution.builtIn:
-                    depClasses["system"].append(resolution)
-                elif __isLocalOrProject(fileName, resolution.path):
-                    depClasses["project"].append(resolution)
-                elif __isSystem(resolution.path):
-                    depClasses["system"].append(resolution)
-                else:
-                    depClasses["unresolved"].append(resolution)
-            else:
-                depClasses["unresolved"].append(resolution)
+    """Provides classified import information and errors if so."""
+    core_project = _core_project_from_ide()
+    return collect_import_resolutions_classified(content, fileName, core_project, sys.path)
 
-            depClasses["totalCount"] += 1
-    except Exception as exc:
-        depClasses["errors"].append(str(exc))
 
-    return depClasses
+# Re-export for callers that import resolution helpers from this module.

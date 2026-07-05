@@ -3,12 +3,13 @@
 
 from __future__ import annotations
 
+import sys
 from os.path import basename, realpath
 
 import codimension.parsers  # noqa: F401
 from cdmpyparser import getBriefModuleInfoFromFile, getBriefModuleInfoFromMemory
 
-from .graph_ir import GraphIR, GraphNode
+from .graph_ir import GraphEdge, GraphIR, GraphNode
 from .project import Project
 
 
@@ -111,3 +112,96 @@ def analyze_file_direct(path: str) -> GraphIR:
     """Analyze a standalone file without a project context."""
     info = getBriefModuleInfoFromFile(path)
     return _symbols_from_brief_info(realpath(path), info)
+
+
+def _parse_symbol_query(symbol: str) -> tuple[str | None, str]:
+    parts = symbol.split(":")
+    if len(parts) >= 3 and parts[1] in ("function", "class", "global"):
+        return parts[0], ":".join(parts[2:])
+    return None, symbol
+
+
+def _definition_sites(project: Project, file_hint: str | None, name: str) -> list[tuple[str, int, int]]:
+    sites: list[tuple[str, int, int]] = []
+    files = project.python_files
+    if file_hint:
+        files = [path for path in files if path.endswith("/" + file_hint) or path.endswith("\\" + file_hint)]
+    for path in files:
+        info = project.cache.get(path)
+        for fn in getattr(info, "functions", []):
+            if fn.name == name:
+                sites.append((path, fn.line, fn.pos))
+        for cls in getattr(info, "classes", []):
+            if cls.name == name:
+                sites.append((path, cls.line, cls.pos))
+            for method in getattr(cls, "functions", []):
+                qual = f"{cls.name}.{method.name}"
+                if qual == name or method.name == name:
+                    sites.append((path, method.line, method.pos))
+        for glob in getattr(info, "globals", []):
+            if glob.name == name:
+                sites.append((path, glob.line, glob.pos))
+    return sites
+
+
+def find_usages(project: Project, symbol: str) -> GraphIR:
+    """Find references to a symbol using jedi (headless)."""
+    project.require_open()
+    try:
+        import jedi
+        from jedi.api.project import Project as JediProject
+    except ImportError as exc:
+        raise RuntimeError("find_usages requires the jedi package") from exc
+
+    file_hint, name = _parse_symbol_query(symbol)
+    sites = _definition_sites(project, file_hint, name)
+    graph = GraphIR(meta={"kind": "usages", "symbol": symbol})
+    if not sites:
+        return graph
+
+    jedi_project = JediProject(
+        path=project.root,
+        sys_path=list(sys.path),
+        added_sys_path=project.get_import_dirs_absolute(),
+    )
+    seen: set[tuple[str, int, int]] = set()
+    for def_path, line, col in sites:
+        with open(def_path, encoding="utf-8", errors="replace") as handle:
+            source = handle.read()
+        script = jedi.Script(code=source, path=def_path, project=jedi_project)
+        try:
+            references = script.get_references(line=line, column=col)
+        except Exception:
+            continue
+        for ref in references:
+            ref_path = ref.module_path
+            if ref_path is None:
+                continue
+            ref_path = realpath(str(ref_path))
+            if not project.is_project_path(ref_path):
+                continue
+            key = (ref_path, ref.line or 0, ref.column or 0)
+            if key in seen:
+                continue
+            seen.add(key)
+            node_id = f"{basename(ref_path)}:usage:{ref.line}:{ref.column}"
+            graph.add_node(
+                GraphNode(
+                    id=node_id,
+                    type="usage",
+                    name=name,
+                    file=ref_path,
+                    line_start=ref.line or 0,
+                    line_end=ref.line or 0,
+                    extra={"column": ref.column or 0},
+                )
+            )
+            graph.add_edge(
+                GraphEdge(
+                    from_id=_symbol_id(def_path, "function", name),
+                    to_id=node_id,
+                    type="usage",
+                )
+            )
+    return graph
+

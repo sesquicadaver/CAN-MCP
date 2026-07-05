@@ -572,9 +572,10 @@ def classify_resolution(
         return "system"
     if resolution.path and project and project.is_project_path(resolution.path):
         return "project"
-    source_dir = dirname(realpath(source_file))
-    if resolution.path and dirname(realpath(resolution.path)).startswith(source_dir):
-        return "project"
+    if resolution.path and source_file:
+        source_dir = dirname(realpath(source_file))
+        if dirname(realpath(resolution.path)).startswith(source_dir):
+            return "project"
     if resolution.path and sys_path:
         resolved_dir = dirname(realpath(resolution.path))
         for path in sys_path:
@@ -583,3 +584,37 @@ def classify_resolution(
     if resolution.path:
         return "other"
     return "unresolved"
+
+
+def collect_import_resolutions_classified(
+    content: str,
+    file_name: str | None,
+    project: Project | None = None,
+    sys_path: list[str] | None = None,
+) -> dict[str, object]:
+    """Classify import resolutions like codimension.diagram.depsdiagram."""
+    dep_classes: dict[str, object] = {
+        "system": [],
+        "project": [],
+        "other": [],
+        "unresolved": [],
+        "totalCount": 0,
+        "errors": [],
+    }
+    try:
+        imports = get_imports_list(content)
+        context = build_import_context(project, file_name) if project and file_name else ImportContext(
+            file_name=file_name,
+            search_paths=[dirname(realpath(file_name))] if file_name else [],
+        )
+        if project is None and file_name:
+            context.search_paths = [dirname(realpath(file_name))]
+        for resolution in get_import_resolutions(context, file_name, imports):
+            bucket = classify_resolution(resolution, file_name or "", project, sys_path)
+            if bucket == "other":
+                bucket = "unresolved"
+            dep_classes[bucket].append(resolution)
+            dep_classes["totalCount"] = int(dep_classes["totalCount"]) + 1
+    except Exception as exc:
+        dep_classes["errors"].append(str(exc))
+    return dep_classes

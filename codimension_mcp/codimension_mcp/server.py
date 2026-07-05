@@ -14,6 +14,7 @@ from .tools import (
     analyze_project,
     find_callees_tool,
     find_callers_tool,
+    find_usages_tool,
     format_tool_error,
     get_call_graph_tool,
     get_control_flow_tool,
@@ -124,6 +125,16 @@ def find_callees(symbol: str) -> str:
     _state.record_tool("find_callees")
     try:
         return find_callees_tool(_state, symbol)
+    except Exception as exc:  # noqa: BLE001
+        return format_tool_error(exc)
+
+
+@mcp.tool()
+def find_usages(symbol: str) -> str:
+    """Find usages of a symbol in the open project."""
+    _state.record_tool("find_usages")
+    try:
+        return find_usages_tool(_state, symbol)
     except Exception as exc:  # noqa: BLE001
         return format_tool_error(exc)
 

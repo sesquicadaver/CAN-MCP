@@ -174,7 +174,7 @@ codimension_core/
 | `get_control_flow(function_id)` | `cfg.get_control_flow()` | ✅ MVP |
 | `find_callers(symbol)` | `callgraph.find_callers()` | ✅ 0.2.0 |
 | `find_callees(symbol)` | `callgraph.find_callees()` | ✅ 0.2.0 |
-| `find_usages(symbol)` | `symbols.find_usages()` | ⏳ stub |
+| `find_usages(symbol)` | `symbols.find_usages()` | ✅ 0.3.0 |
 | `explain_symbol(symbol)` | LLM prompt + structured context | ⏳ future |
 | `impact_analysis(path\|symbol)` | `callgraph.impact_analysis()` | ✅ MVP |
 
