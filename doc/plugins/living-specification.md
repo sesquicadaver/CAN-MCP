@@ -43,6 +43,7 @@
 | **MCP resources** | codimension_mcp.resources | codimension:// URIs | unit: tests/test_codimension_mcp.py |
 | **MCP diagram WebView** | codimension_mcp.diagrams | render_diagram, codimension://diagram/* | unit: tests/test_codimension_mcp.py |
 | **codimension_core incremental cache** | codimension_core.analysis_cache | content-hash revision, CFG per-file invalidation | unit: tests/test_codimension_core_cache.py |
+| **codimension_core mypy** | codimension_core + parser_types | Protocol types for brief AST | CI: mypy codimension_core |
 | **codimension_core import diagram** | codimension_core.import_diagram | build_import_diagram_model, add_single_file_to_model | unit: tests/test_codimension_core_import_diagram.py |
 | **IDE import diagram wrapper** | codimension.diagram.importsdgm | core model + PyQt scene | Smoke: imports diagram dialog |
 | **VS Code diagram WebView** | codimension-vscode | codimension.showDiagram | Smoke: open `.codimension/diagrams/*.html` |

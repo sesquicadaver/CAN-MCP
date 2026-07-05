@@ -5,9 +5,11 @@ from __future__ import annotations
 
 import sys
 from os.path import basename, realpath
+from typing import cast
 
 from .graph_ir import GraphEdge, GraphIR, GraphNode
-from .imports import build_import_context, classify_resolution, get_import_resolutions
+from .imports import ImportResolution, build_import_context, classify_resolution, get_import_resolutions
+from .parser_types import BriefImport, BriefModuleInfo
 from .project import Project
 
 
@@ -32,9 +34,9 @@ def _build_brief_import_graph(project: Project) -> GraphIR:
         _add_file_node(graph, path)
 
     for path in project.python_files:
-        info = project.cache.get(path)
+        info = cast(BriefModuleInfo, project.cache.get(path))
         source_id = f"file:{basename(path)}"
-        for import_obj in getattr(info, "imports", []):
+        for import_obj in info.imports:
             module_name = _import_module_name(import_obj)
             if not module_name:
                 continue
@@ -73,7 +75,7 @@ def _build_resolved_import_graph(project: Project) -> GraphIR:
         path_by_base[basename(path)] = path
 
     for path in project.python_files:
-        info = project.cache.get(path)
+        info = cast(BriefModuleInfo, project.cache.get(path))
         context = build_import_context(project, path)
         source_id = f"file:{basename(path)}"
         for resolution in get_import_resolutions(context, path, info.imports):
@@ -106,7 +108,7 @@ def _add_file_node(graph: GraphIR, path: str) -> None:
 
 
 def _resolution_target_id(
-    resolution: object,
+    resolution: ImportResolution,
     project: Project,
     path_by_base: dict[str, str],
     graph: GraphIR,
@@ -162,16 +164,16 @@ def _resolution_target_id(
     return node_id
 
 
-def _import_module_name(import_obj: object) -> str:
-    if getattr(import_obj, "what", None):
-        return getattr(import_obj, "name", "") or ""
-    return getattr(import_obj, "name", "") or ""
+def _import_module_name(import_obj: BriefImport) -> str:
+    if import_obj.what:
+        return import_obj.name or ""
+    return import_obj.name or ""
 
 
-def _import_label(import_obj: object) -> str:
-    if getattr(import_obj, "what", None):
+def _import_label(import_obj: BriefImport) -> str:
+    if import_obj.what:
         items = import_obj.what
         if len(items) == 1:
             return items[0].name
         return ", ".join(item.name for item in items)
-    return getattr(import_obj, "name", "") or "import"
+    return import_obj.name or "import"

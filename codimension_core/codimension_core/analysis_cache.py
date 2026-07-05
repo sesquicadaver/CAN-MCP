@@ -6,7 +6,7 @@ from __future__ import annotations
 import hashlib
 from dataclasses import dataclass, field
 from os.path import basename, exists, getmtime, getsize, realpath
-from typing import Any, Callable, TypeVar
+from typing import Any, Callable, TypeVar, cast
 
 from .graph_ir import GraphIR
 
@@ -105,7 +105,7 @@ class ProjectAnalysisCache:
         revision = self.compute_revision(paths)
         if self.call_index is not None and self.project_revision == revision:
             self.call_index_hits += 1
-            return self.call_index
+            return cast(T, self.call_index)
         self.call_index_misses += 1
         self.project_revision = revision
         self.call_index = builder()
@@ -116,7 +116,7 @@ class ProjectAnalysisCache:
         revision = self.compute_revision(paths)
         if self.reverse_index is not None and self.project_revision == revision:
             self.reverse_index_hits += 1
-            return self.reverse_index
+            return cast(T, self.reverse_index)
         self.reverse_index_misses += 1
         self.project_revision = revision
         self.reverse_index = builder()

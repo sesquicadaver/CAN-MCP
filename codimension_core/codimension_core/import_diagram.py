@@ -5,9 +5,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from os.path import basename, dirname, isabs, isfile, realpath
+from typing import cast
 
 from .graph_ir import GraphIR
 from .imports import build_import_context, resolve_imports
+from .parser_types import BriefDocstring, BriefModuleInfo, BriefNamed
 from .project import Project
 
 
@@ -48,7 +50,7 @@ class DgmDocstring:
 
     def __init__(self) -> None:
         self.objName = ""
-        self.docstring = None
+        self.docstring: BriefDocstring | None = None
         self.refFile = ""
 
     def to_graphviz(self) -> str:
@@ -73,9 +75,9 @@ class DgmModule:
         self.objName = ""
         self.kind = -1
         self.title = ""
-        self.classes: list[object] = []
-        self.funcs: list[object] = []
-        self.globs: list[object] = []
+        self.classes: list[BriefNamed] = []
+        self.funcs: list[BriefNamed] = []
+        self.globs: list[BriefNamed] = []
         self.imports: list[object] = []
         self.refFile = ""
         self.docstring = ""
@@ -184,14 +186,14 @@ class ImportDiagramModel:
 
     def to_graphviz(self) -> str:
         result = "digraph ImportsDiagram { "
-        for item in self.docstrings:
-            result += item.to_graphviz() + "\n"
-        for item in self.modules:
-            result += item.to_graphviz() + "\n"
-        for item in self.connections:
-            result += item.to_graphviz() + "\n"
-        for item in self.ranks:
-            result += item.to_graphviz() + "\n"
+        for doc in self.docstrings:
+            result += doc.to_graphviz() + "\n"
+        for mod in self.modules:
+            result += mod.to_graphviz() + "\n"
+        for conn in self.connections:
+            result += conn.to_graphviz() + "\n"
+        for rank in self.ranks:
+            result += rank.to_graphviz() + "\n"
         result += "}"
         return result
 
@@ -283,25 +285,25 @@ def is_local_or_project(project: Project, file_name: str, resolved_path: str | N
     return resolved_dir.startswith(base_dir)
 
 
-def populate_module_box(box: DgmModule, info: object, options: ImportDiagramOptions) -> None:
-    if getattr(info, "docstring", None) is not None:
+def populate_module_box(box: DgmModule, info: BriefModuleInfo, options: ImportDiagramOptions) -> None:
+    if info.docstring is not None:
         box.docstring = info.docstring.text
     if options.include_classes:
-        box.classes.extend(getattr(info, "classes", []))
+        box.classes.extend(info.classes)
     if options.include_funcs:
-        box.funcs.extend(getattr(info, "functions", []))
+        box.funcs.extend(info.functions)
     if options.include_globs:
-        box.globs.extend(getattr(info, "globals", []))
+        box.globs.extend(info.globals)
     if options.include_conn_text:
-        box.imports.extend(getattr(info, "imports", []))
+        box.imports.extend(info.imports)
 
 
 def system_wide_docstring(project: Project, path: str) -> str:
     if not path.endswith(".py") or not isfile(path):
         return ""
     try:
-        info = project.cache.get(realpath(path))
-        if getattr(info, "docstring", None) is not None:
+        info = cast(BriefModuleInfo, project.cache.get(realpath(path)))
+        if info.docstring is not None:
             return info.docstring.text
     except (OSError, FileNotFoundError):
         return ""
@@ -310,12 +312,12 @@ def system_wide_docstring(project: Project, path: str) -> str:
 
 def add_docstring_box(
     model: ImportDiagramModel,
-    info: object,
+    info: BriefModuleInfo,
     file_name: str,
     mod_box_name: str,
     options: ImportDiagramOptions,
 ) -> None:
-    if not options.include_docs or getattr(info, "docstring", None) is None:
+    if not options.include_docs or info.docstring is None:
         return
     doc_box = DgmDocstring()
     doc_box.docstring = info.docstring
@@ -335,7 +337,7 @@ def add_docstring_box(
 def add_single_file_to_model(
     project: Project,
     model: ImportDiagramModel,
-    info: object,
+    info: BriefModuleInfo,
     file_name: str,
     options: ImportDiagramOptions,
     errors: list[str] | None = None,
@@ -343,10 +345,10 @@ def add_single_file_to_model(
     """Add one file module and its import dependencies to the diagram model."""
     if file_name.endswith("__init__.py"):
         empty_init = (
-            not getattr(info, "classes", [])
-            and not getattr(info, "functions", [])
-            and not getattr(info, "globals", [])
-            and not getattr(info, "imports", [])
+            not info.classes
+            and not info.functions
+            and not info.globals
+            and not info.imports
         )
         if empty_init:
             return
@@ -371,7 +373,7 @@ def add_single_file_to_model(
             imp_box.kind = DgmModule.OtherProjectModule
             imp_box.refFile = realpath(resolved_path) if resolved_path else ""
             if resolved_path and resolved_path.endswith(".py") and isfile(resolved_path):
-                other_info = project.cache.get(realpath(resolved_path))
+                other_info = cast(BriefModuleInfo, project.cache.get(realpath(resolved_path)))
                 populate_module_box(imp_box, other_info, options)
         elif resolved_path is None:
             imp_box.kind = DgmModule.UnknownModule
@@ -406,7 +408,7 @@ def build_import_diagram_model(
     model = ImportDiagramModel()
     errors: list[str] = []
     for file_name in target_files:
-        info = project.cache.get(realpath(file_name))
+        info = cast(BriefModuleInfo, project.cache.get(realpath(file_name)))
         add_single_file_to_model(project, model, info, file_name, opts, errors)
     return model
 

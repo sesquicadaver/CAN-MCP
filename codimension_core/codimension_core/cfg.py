@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+from typing import cast
+
 import codimension.parsers  # noqa: F401
 from cdmcfparser import getControlFlowFromFile, getControlFlowFromMemory
 
@@ -67,7 +69,7 @@ def _find_function(suite: list[object], name: str) -> object | None:
 def _line_range(node: object) -> tuple[int, int]:
     body = getattr(node, "body", None)
     if body is not None and hasattr(body, "getLineRange"):
-        return body.getLineRange()
+        return cast(tuple[int, int], body.getLineRange())
     return (0, 0)
 
 

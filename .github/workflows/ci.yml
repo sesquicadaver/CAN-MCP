@@ -27,6 +27,10 @@ jobs:
       - name: Ruff (core + mcp)
         run: ruff check codimension_core codimension_mcp
 
+      - name: Mypy (core)
+        working-directory: codimension_core
+        run: mypy codimension_core
+
       - name: Pytest (core + mcp)
         run: python -m pytest tests/test_codimension_core*.py tests/test_codimension_mcp.py -q
 
