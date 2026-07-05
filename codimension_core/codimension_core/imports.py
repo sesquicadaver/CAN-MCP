@@ -12,8 +12,7 @@ from dataclasses import dataclass, field
 from os.path import basename, dirname, realpath, sep
 from typing import TypedDict, cast
 
-import codimension.parsers  # noqa: F401
-from cdmpyparser import getBriefModuleInfoFromMemory
+from .brief_ast import getBriefModuleInfoFromMemory
 
 from .graph_ir import GraphEdge, GraphIR, GraphNode
 from .parser_types import BriefImport, BriefModuleInfo
@@ -576,6 +575,9 @@ def collect_unresolved_packages(project: Project, progress_callback=None) -> tup
         except Exception:
             pass
     return get_unresolved_package_names(all_errors), len(all_errors)
+
+
+generate_requirements_from_project = collect_unresolved_packages
 
 
 def classify_resolution(

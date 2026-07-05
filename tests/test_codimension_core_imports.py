@@ -5,6 +5,8 @@ from __future__ import annotations
 
 from codimension_core.imports import (
     build_import_context,
+    collect_unresolved_packages,
+    generate_requirements_from_project,
     get_import_resolutions,
     get_unresolved_package_names,
     resolve_imports,
@@ -56,3 +58,14 @@ def test_legacy_resolve_imports_tuple(tmp_path):
     resolved, errors = resolve_imports(context, str(main), info.imports)
     assert not errors
     assert resolved
+
+
+def test_collect_unresolved_packages(tmp_path):
+    project_dir = tmp_path / "proj"
+    project_dir.mkdir()
+    (project_dir / "main.py").write_text("import totally_fake_pkg_xyz\n", encoding="utf-8")
+    project = Project.open(str(project_dir))
+    packages, error_count = collect_unresolved_packages(project)
+    assert "totally_fake_pkg_xyz" in packages
+    assert error_count >= 1
+    assert generate_requirements_from_project(project) == (packages, error_count)

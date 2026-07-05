@@ -49,7 +49,7 @@ codimension_core/
 
 | Codimension файл | Класи / функції | PyQt / GlobalData | Дія |
 | ---------------- | --------------- | ----------------- | --- |
-| `codimension/parsers/brief_ast.py` | `BriefModuleInfo`, `Function`, `Class`, `Import`; `getBriefModuleInfoFromMemory/File` | — | **Reuse** (пізніше vendoring) |
+| `codimension/parsers/brief_ast.py` | thin wrapper → `codimension_core.brief_ast` | — | ✅ 0.15.0 vendored in core |
 | `codimension/parsers/__init__.py` | cdmpyparser/cdmcfparser fallback | — | **Import side-effect** |
 | `codimension/autocomplete/bufferutils.py` | `TextCursorContext`, `getContext`, `_IdentifyScope` | lazy `ui.viewitems` | **Extract** scope без viewitems |
 | `codimension/autocomplete/completelists.py` | `getJediProject`, `getDefinitions`, `getOccurrences` | QDir, GlobalData | **Extract** jedi з injectable project |
@@ -67,7 +67,7 @@ codimension_core/
 
 | Codimension файл | Класи / функції | PyQt / GlobalData | Дія |
 | ---------------- | --------------- | ----------------- | --- |
-| `codimension/utils/importutils.py` | `getImportsList`, `ImportResolution`, `resolveImports`, `getImportResolutions`, `generateRequirementsFromProject` | QApplication.processEvents, GlobalData | **Refactor:** inject paths + cache |
+| `codimension/utils/importutils.py` | thin wrapper → `codimension_core.imports` | QApplication.processEvents, GlobalData | ✅ 0.15.0 generateRequirements → core |
 | `codimension/diagram/depsdiagram.py` | `collectImportResolutions`, `__isLocalOrProject`, `__isSystem` | GlobalData.project | **Extract** classification |
 
 **Не переносити:** GUI частини `importsdgm.py`.

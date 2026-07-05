@@ -31,6 +31,7 @@ from .imports import (
     build_import_context,
     collect_import_resolutions_classified,
     collect_unresolved_packages,
+    generate_requirements_from_project,
     resolve_imports_for_file,
 )
 from .project import Project
@@ -59,6 +60,7 @@ __all__ = [
     "build_import_graph",
     "collect_import_resolutions_classified",
     "collect_unresolved_packages",
+    "generate_requirements_from_project",
     "compute_project_revision",
     "explain_symbol",
     "find_callers",
@@ -82,4 +84,4 @@ __all__ = [
     "resolve_imports_for_file",
 ]
 
-__version__ = "0.14.0"
+__version__ = "0.15.0"

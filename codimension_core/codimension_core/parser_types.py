@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Structural types for cdmpyparser brief AST objects used by codimension_core."""
+"""Structural types for brief AST objects used by codimension_core."""
 
 from __future__ import annotations
 

@@ -5,8 +5,7 @@ from __future__ import annotations
 
 from os.path import exists, getmtime, getsize, realpath
 
-import codimension.parsers  # noqa: F401 — install cdmpyparser fallbacks
-from cdmpyparser import getBriefModuleInfoFromFile
+from .brief_ast import getBriefModuleInfoFromFile
 
 from .analysis_cache import file_content_hash
 

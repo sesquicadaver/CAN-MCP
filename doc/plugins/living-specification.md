@@ -43,7 +43,8 @@
 | **MCP resources** | codimension_mcp.resources | codimension:// URIs | unit: tests/test_codimension_mcp.py |
 | **MCP diagram WebView** | codimension_mcp.diagrams | render_diagram, codimension://diagram/* | unit: tests/test_codimension_mcp.py |
 | **codimension_core incremental cache** | codimension_core.analysis_cache | content-hash revision, CFG per-file invalidation | unit: tests/test_codimension_core_cache.py |
-| **codimension_core mypy** | codimension_core + parser_types | Protocol types for brief AST | CI: mypy codimension_core |
+| **codimension_core brief_ast** | codimension_core.brief_ast | getBriefModuleInfoFromMemory/File | unit: tests/test_codimension_core_brief_ast.py |
+| **codimension_core requirements scan** | collect_unresolved_packages / generate_requirements_from_project | headless pip hint source | unit: tests/test_codimension_core_imports.py |
 | **codimension_core import diagram** | codimension_core.import_diagram | build_import_diagram_model, add_single_file_to_model | unit: tests/test_codimension_core_import_diagram.py |
 | **codimension_core graph layout** | codimension_core.graph_layout | layout_graph_from_dot, plain dot parser | unit: tests/test_codimension_core_graph_layout.py |
 | **IDE plaindotparser wrapper** | codimension.diagram.plaindotparser | re-export from codimension_core.graph_layout | Smoke: import diagram dialog |

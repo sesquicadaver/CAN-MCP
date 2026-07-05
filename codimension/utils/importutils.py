@@ -41,6 +41,9 @@ from codimension_core.imports import (
     get_imports_list as core_get_imports_list,
 )
 from codimension_core.imports import (
+    collect_unresolved_packages as core_collect_unresolved_packages,
+)
+from codimension_core.imports import (
     get_requirements_hint as core_get_requirements_hint,
 )
 from codimension_core.imports import (
@@ -60,6 +63,8 @@ from .config import DEFAULT_ENCODING
 from .fileutils import isPythonFile
 from .globals import GlobalData
 from .run import getProjectPythonPath, getVenvSitePackages
+
+from analysis.core_bridge import core_project_from_ide
 
 # Legacy archive before extraction: Carantine/codimension/utils/importutils_legacy.py
 
@@ -143,14 +148,12 @@ def getRequirementsHint(projectDir, unresolvedPackages):
 
 def generateRequirementsFromProject(filesList, progressCallback=None):
     """Scan project Python files for unresolved imports and collect third-party package names."""
-    all_errors = []
-    python_files = []
-    for item in filesList:
-        if item.endswith(os.sep):
-            continue
-        if isPythonFile(item):
-            python_files.append(item)
+    core = core_project_from_ide()
+    if core is not None:
+        return core_collect_unresolved_packages(core, progressCallback)
 
+    all_errors = []
+    python_files = [item for item in filesList if not item.endswith(os.sep) and isPythonFile(item)]
     total = len(python_files)
     for idx, f_name in enumerate(python_files):
         if progressCallback:
