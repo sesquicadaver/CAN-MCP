@@ -11,7 +11,7 @@ import sys
 from dataclasses import dataclass, field
 from os.path import dirname, exists, isabs, isdir, isfile, islink, join, realpath, sep
 
-from .analysis_cache import ProjectAnalysisCache
+from .analysis_cache import ProjectAnalysisCache, compute_file_derived_signatures, file_content_hash
 from .cache import ModuleInfoCache
 from .errors import ProjectNotOpenError
 
@@ -208,8 +208,21 @@ class Project:
     def invalidate_file(self, path: str) -> None:
         """Drop cache entries after external file change."""
         abs_path = realpath(path) if isabs(path) else realpath(join(self.root, path))
+        old_signatures = self.analysis_cache.file_derived_signatures.get(abs_path)
         self.cache.remove(abs_path)
-        self.analysis_cache.invalidate_file(abs_path)
+        info = self.cache.get(abs_path)
+        with open(abs_path, encoding="utf-8", errors="replace") as handle:
+            source = handle.read()
+        new_signatures = compute_file_derived_signatures(
+            info,
+            source,
+            content_hash=file_content_hash(abs_path),
+        )
+        self.analysis_cache.invalidate_file(
+            abs_path,
+            old_signatures=old_signatures,
+            new_signatures=new_signatures,
+        )
 
     def rescan(self) -> int:
         """Rescan project tree; clear derived caches if file set changed."""

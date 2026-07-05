@@ -42,7 +42,7 @@
 | **codimension_core impact** | codimension_core.callgraph | impact_analysis transitive | unit: tests/test_codimension_core_impact.py |
 | **MCP resources** | codimension_mcp.resources | codimension:// URIs | unit: tests/test_codimension_mcp.py |
 | **MCP diagram WebView** | codimension_mcp.diagrams | render_diagram, codimension://diagram/* | unit: tests/test_codimension_mcp.py |
-| **codimension_core incremental cache** | codimension_core.analysis_cache | content-hash revision, CFG per-file invalidation | unit: tests/test_codimension_core_cache.py |
+| **codimension_core incremental cache** | codimension_core.analysis_cache | selective import/call/reverse invalidation + CFG | unit: tests/test_codimension_core_cache.py |
 | **codimension_core brief_ast** | codimension_core.brief_ast | getBriefModuleInfoFromMemory/File | unit: tests/test_codimension_core_brief_ast.py |
 | **codimension_core requirements scan** | collect_unresolved_packages / generate_requirements_from_project | headless pip hint source | unit: tests/test_codimension_core_imports.py |
 | **codimension_core flow_ast** | codimension_core.flow_ast | getControlFlowFromMemory/File | unit: tests/test_codimension_core_flow_ast.py |

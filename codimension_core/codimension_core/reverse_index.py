@@ -47,6 +47,7 @@ def build_reverse_index(project: Project) -> dict[str, list[SymbolDefinition]]:
     return project.analysis_cache.get_or_build_reverse_index(
         project.python_files,
         lambda: _build_reverse_index_uncached(project),
+        refresh=lambda: project.analysis_cache.refresh_signatures(project.python_files, project.cache),
     )
 
 

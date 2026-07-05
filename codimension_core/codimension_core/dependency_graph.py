@@ -22,7 +22,11 @@ def build_import_graph(project: Project, *, resolved: bool = True) -> GraphIR:
             return _build_resolved_import_graph(project)
         return _build_brief_import_graph(project)
 
-    return project.analysis_cache.get_or_build_import_graph(project.python_files, builder)
+    return project.analysis_cache.get_or_build_import_graph(
+        project.python_files,
+        builder,
+        refresh=lambda: project.analysis_cache.refresh_signatures(project.python_files, project.cache),
+    )
 
 
 def _build_brief_import_graph(project: Project) -> GraphIR:

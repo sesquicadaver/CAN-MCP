@@ -64,7 +64,7 @@ def test_import_graph_cache_miss_on_content_change(tmp_path):
     assert stats["import_graph_misses"] == 2
 
 
-def test_invalidate_file_clears_graph_cache(tmp_path):
+def test_body_change_keeps_call_graph_cache(tmp_path):
     project_dir = tmp_path / "proj"
     project_dir.mkdir()
     main = project_dir / "main.py"
@@ -75,8 +75,48 @@ def test_invalidate_file_clears_graph_cache(tmp_path):
     build_call_graph(project)
     assert project.get_cache_stats()["call_index_cached"] is True
 
+    main.write_text("def f():\n    return 1\n", encoding="utf-8")
     project.invalidate_file(str(main))
     stats = project.get_cache_stats()
+    assert stats["call_index_cached"] is True
+
+
+def test_body_change_keeps_import_graph_cache(tmp_path):
+    project_dir = tmp_path / "proj"
+    project_dir.mkdir()
+    main = project_dir / "main.py"
+    main.write_text("import os\n\ndef f():\n    return 1\n", encoding="utf-8")
+    project = Project.open(str(project_dir))
+    project.analyze_all()
+
+    build_import_graph(project)
+    assert project.get_cache_stats()["import_graph_misses"] == 1
+
+    main.write_text("import os\n\ndef f():\n    return 2\n", encoding="utf-8")
+    project.invalidate_file(str(main))
+    build_import_graph(project)
+    stats = project.get_cache_stats()
+    assert stats["import_graph_hits"] == 1
+    assert stats["import_graph_misses"] == 1
+
+
+def test_import_change_invalidates_import_graph_only(tmp_path):
+    project_dir = tmp_path / "proj"
+    project_dir.mkdir()
+    main = project_dir / "main.py"
+    main.write_text("import os\n", encoding="utf-8")
+    project = Project.open(str(project_dir))
+    project.analyze_all()
+
+    build_import_graph(project)
+    build_call_graph(project)
+    assert project.get_cache_stats()["import_graph_misses"] == 1
+    assert project.get_cache_stats()["call_index_misses"] == 1
+
+    main.write_text("import sys\n", encoding="utf-8")
+    project.invalidate_file(str(main))
+    stats = project.get_cache_stats()
+    assert stats["import_graph_cached"] is False
     assert stats["call_index_cached"] is False
 
 

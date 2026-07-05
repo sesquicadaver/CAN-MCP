@@ -183,7 +183,7 @@ codimension_core/
 | **MCP resources** | `codimension://workspace/status`, `graph/import`, `graph/call` | ✅ 0.2.0 |
 | **MCP prompts** | `refactor_symbol`, `review_dead_code` | ✅ 0.2.0 |
 | **Graph render** | `graph_render.graph_to_html/mermaid` | ✅ 0.7.0 |
-| **Incremental cache** | `analysis_cache`, `Project.get_cache_stats` | ✅ 0.8.0 |
+| **Incremental cache** | `analysis_cache`, `Project.get_cache_stats` | selective import/call/reverse invalidation | ✅ 0.17.0 |
 | **MCP get_cache_stats** | cache stats tool + `codimension://cache/stats` | ✅ 0.4.0 |
 | **codimension_core disasm/astutils** | disasm.py, astutils.py | unit: tests/test_codimension_core_disasm.py |
 | **codimension_core reverse index** | reverse_index.lookup_symbol | unit: tests/test_codimension_core_reverse_index.py |
