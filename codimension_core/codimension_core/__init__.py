@@ -3,6 +3,7 @@
 
 from . import graph_ir
 from .analyzer import analyze_dead_code, analyze_file_diagnostics, get_buffer_errors
+from .analysis_cache import ProjectAnalysisCache, compute_project_revision, file_fingerprint
 from .cache import ModuleInfoCache
 from .callgraph import build_call_graph, find_callees, find_callers, impact_analysis
 from .cfg import get_control_flow
@@ -23,6 +24,7 @@ __all__ = [
     "AnalysisError",
     "ModuleInfoCache",
     "Project",
+    "ProjectAnalysisCache",
     "ProjectNotOpenError",
     "analyze_file",
     "analyze_dead_code",
@@ -32,10 +34,12 @@ __all__ = [
     "build_import_graph",
     "collect_import_resolutions_classified",
     "collect_unresolved_packages",
+    "compute_project_revision",
     "explain_symbol",
     "find_callers",
     "find_callees",
     "find_usages",
+    "file_fingerprint",
     "get_buffer_errors",
     "get_control_flow",
     "get_symbols",
@@ -46,4 +50,4 @@ __all__ = [
     "resolve_imports_for_file",
 ]
 
-__version__ = "0.7.0"
+__version__ = "0.8.0"

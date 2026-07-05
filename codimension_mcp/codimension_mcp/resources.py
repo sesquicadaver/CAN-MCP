@@ -40,6 +40,12 @@ def read_call_graph(state: WorkspaceState) -> str:
     return dumps_graph(build_call_graph(state.project))
 
 
+def read_cache_stats(state: WorkspaceState) -> str:
+    if state.project is None:
+        return dumps_payload({"status": "closed"})
+    return dumps_payload(state.project.get_cache_stats())
+
+
 def register_resources(mcp: FastMCP, get_state: Callable[[], WorkspaceState]) -> None:
     """Register codimension:// resources on the MCP server."""
 
@@ -87,3 +93,12 @@ def register_resources(mcp: FastMCP, get_state: Callable[[], WorkspaceState]) ->
     )
     def diagram_call_resource() -> str:
         return read_diagram_html(get_state(), "call")
+
+    @mcp.resource(
+        "codimension://cache/stats",
+        name="cache_stats",
+        description="Incremental analysis cache statistics.",
+        mime_type="application/json",
+    )
+    def cache_stats_resource() -> str:
+        return read_cache_stats(get_state())

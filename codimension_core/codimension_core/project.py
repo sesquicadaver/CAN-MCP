@@ -11,6 +11,7 @@ import sys
 from dataclasses import dataclass, field
 from os.path import dirname, exists, isabs, isdir, isfile, islink, join, realpath, sep
 
+from .analysis_cache import ProjectAnalysisCache
 from .cache import ModuleInfoCache
 from .errors import ProjectNotOpenError
 
@@ -73,6 +74,7 @@ class Project:
     python_interpreter: str = ""
     python_files: list[str] = field(default_factory=list)
     cache: ModuleInfoCache = field(default_factory=ModuleInfoCache)
+    analysis_cache: ProjectAnalysisCache = field(default_factory=ProjectAnalysisCache)
     _exclude_name_patterns: list[re.Pattern[str]] = field(default_factory=list, repr=False)
 
     @classmethod
@@ -204,8 +206,24 @@ class Project:
         return len(self.python_files)
 
     def invalidate_file(self, path: str) -> None:
-        """Drop cache entry after external file change."""
-        self.cache.remove(path)
+        """Drop cache entries after external file change."""
+        abs_path = realpath(path) if isabs(path) else realpath(join(self.root, path))
+        self.cache.remove(abs_path)
+        self.analysis_cache.invalidate_file(abs_path)
+
+    def rescan(self) -> int:
+        """Rescan project tree; clear derived caches if file set changed."""
+        self.require_open()
+        previous = set(self.python_files)
+        self._rescan()
+        if set(self.python_files) != previous:
+            self.analysis_cache.clear()
+        return len(self.python_files)
+
+    def get_cache_stats(self) -> dict[str, object]:
+        """Return module and derived-graph cache statistics."""
+        self.require_open()
+        return self.analysis_cache.stats(self.cache.stats())
 
     def get_python_executable(self) -> str:
         """Return Python executable for venv detection and site-packages lookup."""

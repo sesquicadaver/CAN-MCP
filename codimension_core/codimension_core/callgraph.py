@@ -219,17 +219,21 @@ def _index_to_graph(index: _CallGraphIndex, symbol_filter: str | None = None) ->
     return graph
 
 
+def _get_call_index(project: Project) -> _CallGraphIndex:
+    return project.analysis_cache.get_or_build_call_index(project.python_files, lambda: _build_index(project))
+
+
 def build_call_graph(project: Project, symbol: str | None = None) -> GraphIR:
     """Build a static call graph for the open project."""
     project.require_open()
-    index = _build_index(project)
+    index = _get_call_index(project)
     return _index_to_graph(index, symbol)
 
 
 def find_callers(project: Project, symbol: str) -> GraphIR:
     """Return call edges where the given symbol is the callee."""
     project.require_open()
-    index = _build_index(project)
+    index = _get_call_index(project)
     graph = GraphIR(meta={"kind": "callers", "symbol": symbol})
     for caller_id, callee_id, line_no, label in index.edges:
         if symbol in callee_id or callee_id.endswith(f":function:{symbol}"):
@@ -255,7 +259,7 @@ def find_callers(project: Project, symbol: str) -> GraphIR:
 def find_callees(project: Project, symbol: str) -> GraphIR:
     """Return call edges where the given symbol is the caller."""
     project.require_open()
-    index = _build_index(project)
+    index = _get_call_index(project)
     graph = GraphIR(meta={"kind": "callees", "symbol": symbol})
     for caller_id, callee_id, line_no, label in index.edges:
         if symbol in caller_id or caller_id.endswith(f":function:{symbol}"):
@@ -367,7 +371,7 @@ def impact_analysis(project: Project, target: str) -> GraphIR:
     project.require_open()
     from .dependency_graph import build_import_graph
 
-    call_index = _build_index(project)
+    call_index = _get_call_index(project)
     import_graph = build_import_graph(project)
     graph = GraphIR(meta={"kind": "impact_analysis", "target": target})
     impacted: set[str] = set()

@@ -14,6 +14,7 @@ from codimension_mcp.tools import (
     explain_symbol_tool,
     find_dead_code_tool,
     get_import_graph_tool,
+    get_cache_stats_tool,
     get_project_tree,
     get_symbols_tool,
     open_project,
@@ -114,3 +115,19 @@ def test_render_diagram_and_html_resource(tmp_path):
     html = read_diagram_html(state, "import")
     assert html.startswith("<!DOCTYPE html>")
     assert "<svg" in html
+
+
+def test_mcp_cache_stats(tmp_path):
+    project_dir = tmp_path / "proj"
+    project_dir.mkdir()
+    (project_dir / "main.py").write_text("x = 1\n", encoding="utf-8")
+
+    state = WorkspaceState()
+    open_project(state, str(project_dir))
+    analyze_project(state)
+    get_import_graph_tool(state)
+    get_import_graph_tool(state)
+
+    stats = json.loads(get_cache_stats_tool(state))
+    assert stats["import_graph_hits"] >= 1
+    assert "module_cache" in stats

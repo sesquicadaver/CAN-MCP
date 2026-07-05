@@ -16,11 +16,16 @@ def get_control_flow(project: Project, function_id: str) -> GraphIR:
     """Return a CFG subgraph for ``file.py:function:name`` id."""
     project.require_open()
     file_path, fn_name = _parse_function_id(function_id, project)
+    cached = project.analysis_cache.get_cfg(function_id, file_path)
+    if cached is not None:
+        return cached
     cflow = getControlFlowFromFile(file_path)
     fn_obj = _find_function(cflow.nsuite, fn_name)
     if fn_obj is None:
         raise ValueError(f"Function not found: {function_id}")
-    return _function_to_graph(fn_obj, file_path, function_id)
+    graph = _function_to_graph(fn_obj, file_path, function_id)
+    project.analysis_cache.store_cfg(function_id, file_path, graph)
+    return graph
 
 
 def get_control_flow_from_source(source: str, function_name: str, file_name: str = "<memory>") -> GraphIR:

@@ -138,6 +138,12 @@ def render_diagram_tool(state: WorkspaceState, kind: str, target: str | None = N
     return render_diagram(state, kind, target)
 
 
+def get_cache_stats_tool(state: WorkspaceState) -> str:
+    """Return module and derived-graph cache statistics."""
+    project = _require_project(state)
+    return dumps_payload(project.get_cache_stats())
+
+
 def _require_project(state: WorkspaceState) -> Project:
     if state.project is None:
         raise ProjectNotOpenError("Call open_project(path) first")

@@ -20,6 +20,7 @@ from .tools import (
     find_dead_code_tool,
     find_usages_tool,
     format_tool_error,
+    get_cache_stats_tool,
     get_call_graph_tool,
     get_control_flow_tool,
     get_diagnostics_tool,
@@ -174,6 +175,16 @@ def explain_symbol(symbol: str) -> str:
     _state.record_tool("explain_symbol")
     try:
         return explain_symbol_tool(_state, symbol)
+    except Exception as exc:  # noqa: BLE001
+        return format_tool_error(exc)
+
+
+@mcp.tool()
+def get_cache_stats() -> str:
+    """Return incremental analysis cache hit/miss statistics."""
+    _state.record_tool("get_cache_stats")
+    try:
+        return get_cache_stats_tool(_state)
     except Exception as exc:  # noqa: BLE001
         return format_tool_error(exc)
 

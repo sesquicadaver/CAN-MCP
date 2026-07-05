@@ -14,9 +14,13 @@ from .project import Project
 def build_import_graph(project: Project, *, resolved: bool = True) -> GraphIR:
     """Build import graph; resolved=True uses ImportResolution."""
     project.require_open()
-    if resolved:
-        return _build_resolved_import_graph(project)
-    return _build_brief_import_graph(project)
+
+    def builder() -> GraphIR:
+        if resolved:
+            return _build_resolved_import_graph(project)
+        return _build_brief_import_graph(project)
+
+    return project.analysis_cache.get_or_build_import_graph(project.python_files, builder)
 
 
 def _build_brief_import_graph(project: Project) -> GraphIR:
