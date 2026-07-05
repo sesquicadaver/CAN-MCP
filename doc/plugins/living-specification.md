@@ -52,6 +52,7 @@
 | **VS Code diagram WebView** | codimension-vscode | codimension.showDiagram | Smoke: open `.codimension/diagrams/*.html` |
 | **MCP import diagram render parity** | codimension_mcp.diagrams | render_diagram import + graphviz payload | unit: tests/test_codimension_mcp.py |
 | **GitHub Actions CI** | .github/workflows/ci.yml | analysis + ide lint + vscode compile | CI on push/PR |
+| **UI artifact cleanup** | scripts/clean-ui-artifacts.sh | doc/www, VisioDiagrams removed | Manual: `./scripts/clean-ui-artifacts.sh` |
 | **IDE core_bridge** | codimension.analysis.core_bridge | core_project_from_ide | Review: thin wrapper PR |
 | **IDE notused wrapper** | codimension.analysis.notused | run_vulture via core | Smoke: dead code dialog |
 | **codimension_mcp scaffold** | codimension_mcp | server.py, tools.py, serializers.py | unit: tests/test_codimension_mcp.py |

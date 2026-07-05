@@ -28,7 +28,7 @@
 
 Головна особливість — автоматична генерація діаграми потоку керування під час набору коду. Ліва частина — текстовий редактор, права — діаграма, що оновлюється при паузі в наборі.
 
-![Screenshot](doc/www/codimension.org/assets/cdm/images/habr/overview.png)
+![Screenshot](doc/images/overview.png)
 
 ## Встановлення
 

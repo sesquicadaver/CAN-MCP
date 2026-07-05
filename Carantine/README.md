@@ -21,6 +21,15 @@
 
 Каталог залишається для майбутніх extraction (flow UI, importsdgm graphics тощо).
 
-## Спільний міст
+## Видалені UI-артефакти (2026-07-05)
+
+З репозиторію CAN-MCP прибрано застарілі джерела, не потрібні для MCP/core:
+
+| Шлях | Причина |
+| ---- | ------- |
+| `doc/www/` | Статичне дзеркало codimension.org (~32 MB) |
+| `doc/VisioDiagrams/` | Visio-макети PyQt IDE (~2.5 MB) |
+
+Скріншот IDE збережено в `doc/images/overview.png`. Локальні build-артефакти: `scripts/clean-ui-artifacts.sh`.
 
 `codimension/analysis/core_bridge.py` — `core_project_from_ide()` для thin wrappers.

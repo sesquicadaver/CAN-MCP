@@ -60,6 +60,17 @@ target/
 # Codimension IDE rope project dir
 .ropeproject
 
+# Test / tooling caches
+.pytest_cache/
+.omx/
+
+# MCP / IDE generated artifacts
+.codimension/
+
+# VS Code extension build outputs
+codimension-vscode/node_modules/
+codimension-vscode/out/
+
 # symbolic link
 src/thirdparty
 gitsync.sh
