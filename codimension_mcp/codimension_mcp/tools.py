@@ -16,9 +16,9 @@ from codimension_core import (
     get_symbols,
     lookup_symbol_definitions,
 )
-from codimension_core.import_diagram import build_import_diagram_model
 from codimension_core.callgraph import build_call_graph, find_callees, find_callers, impact_analysis
 from codimension_core.errors import AnalysisError, NotImplementedYetError, ProjectNotOpenError
+from codimension_core.import_diagram import build_import_diagram_model
 from codimension_core.project import Project
 
 from .diagrams import render_diagram

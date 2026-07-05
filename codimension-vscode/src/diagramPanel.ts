@@ -1,14 +1,15 @@
 import * as vscode from "vscode";
 
 const DIAGRAM_DIR = ".codimension/diagrams";
-
-function workspaceRoot(): vscode.Uri | undefined {
-  return vscode.workspace.workspaceFolders?.[0]?.uri;
-}
+let activePanel: vscode.WebviewPanel | undefined;
 
 function basename(fsPath: string): string {
   const parts = fsPath.split(/[/\\]/);
   return parts[parts.length - 1] || fsPath;
+}
+
+function autoOpenEnabled(): boolean {
+  return vscode.workspace.getConfiguration("codimension").get<boolean>("autoOpenDiagrams", true);
 }
 
 async function listDiagramHtmlFiles(root: vscode.Uri): Promise<vscode.Uri[]> {
@@ -43,18 +44,64 @@ async function pickDiagramFile(root: vscode.Uri): Promise<vscode.Uri | undefined
   return picked?.uri;
 }
 
+function resolveTargetUri(htmlPath: string | undefined, root: vscode.Uri): vscode.Uri | undefined {
+  if (htmlPath) {
+    return vscode.Uri.file(htmlPath);
+  }
+  return undefined;
+}
+
+async function readHtml(uri: vscode.Uri): Promise<string | undefined> {
+  try {
+    const raw = await vscode.workspace.fs.readFile(uri);
+    return new TextDecoder("utf-8").decode(raw);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    vscode.window.showErrorMessage(`Cannot read diagram file: ${message}`);
+    return undefined;
+  }
+}
+
+function renderPanel(targetUri: vscode.Uri, root: vscode.Uri, html: string): void {
+  const title = `Codimension: ${basename(targetUri.fsPath)}`;
+  if (activePanel) {
+    activePanel.title = title;
+    activePanel.webview.html = html;
+    activePanel.reveal(vscode.ViewColumn.One);
+    return;
+  }
+
+  activePanel = vscode.window.createWebviewPanel(
+    "codimensionDiagram",
+    title,
+    vscode.ViewColumn.One,
+    {
+      enableScripts: true,
+      retainContextWhenHidden: true,
+      localResourceRoots: [vscode.Uri.joinPath(root, ".codimension")],
+    },
+  );
+  activePanel.webview.html = html;
+  activePanel.webview.onDidReceiveMessage((message: { command?: string; href?: string }) => {
+    if (message.command === "openExternal" && message.href) {
+      void vscode.env.openExternal(vscode.Uri.parse(message.href));
+    }
+  });
+  activePanel.onDidDispose(() => {
+    activePanel = undefined;
+  });
+}
+
 export async function showDiagramPanel(htmlPath?: string): Promise<void> {
-  const root = workspaceRoot();
-  if (!root) {
+  const folders = vscode.workspace.workspaceFolders;
+  if (!folders?.length) {
     vscode.window.showWarningMessage("Open a workspace folder to view Codimension diagrams.");
     return;
   }
 
-  let targetUri: vscode.Uri | undefined;
-  if (htmlPath) {
-    targetUri = vscode.Uri.file(htmlPath);
-  } else {
-    targetUri = await pickDiagramFile(root);
+  let targetUri = resolveTargetUri(htmlPath, folders[0].uri);
+  if (!targetUri) {
+    targetUri = await pickDiagramFile(folders[0].uri);
   }
 
   if (!targetUri) {
@@ -64,31 +111,39 @@ export async function showDiagramPanel(htmlPath?: string): Promise<void> {
     return;
   }
 
-  let html: string;
-  try {
-    const raw = await vscode.workspace.fs.readFile(targetUri);
-    html = new TextDecoder("utf-8").decode(raw);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    vscode.window.showErrorMessage(`Cannot read diagram file: ${message}`);
+  const root =
+    folders.find((folder) => targetUri!.fsPath.startsWith(folder.uri.fsPath))?.uri ?? folders[0].uri;
+  const html = await readHtml(targetUri);
+  if (!html) {
     return;
   }
+  renderPanel(targetUri, root, html);
+}
 
-  const panel = vscode.window.createWebviewPanel(
-    "codimensionDiagram",
-    `Codimension: ${basename(targetUri.fsPath)}`,
-    vscode.ViewColumn.One,
-    {
-      enableScripts: true,
-      retainContextWhenHidden: true,
-      localResourceRoots: [vscode.Uri.joinPath(root, ".codimension")],
-    },
-  );
+function registerFolderWatcher(context: vscode.ExtensionContext, root: vscode.Uri): void {
+  const pattern = new vscode.RelativePattern(root, `${DIAGRAM_DIR}/*.html`);
+  const watcher = vscode.workspace.createFileSystemWatcher(pattern);
 
-  panel.webview.html = html;
-  panel.webview.onDidReceiveMessage((message: { command?: string; href?: string }) => {
-    if (message.command === "openExternal" && message.href) {
-      void vscode.env.openExternal(vscode.Uri.parse(message.href));
+  watcher.onDidCreate((uri) => {
+    if (!autoOpenEnabled()) {
+      return;
     }
+    void showDiagramPanel(uri.fsPath);
   });
+
+  context.subscriptions.push(watcher);
+}
+
+export function watchDiagramOutput(context: vscode.ExtensionContext): void {
+  for (const folder of vscode.workspace.workspaceFolders ?? []) {
+    registerFolderWatcher(context, folder.uri);
+  }
+
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeWorkspaceFolders((event) => {
+      for (const folder of event.added) {
+        registerFolderWatcher(context, folder.uri);
+      }
+    }),
+  );
 }

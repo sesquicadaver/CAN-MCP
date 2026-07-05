@@ -6,6 +6,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from os.path import basename, dirname, isabs, isfile, realpath
 
+from .graph_ir import GraphIR
 from .imports import build_import_context, resolve_imports
 from .project import Project
 
@@ -341,7 +342,13 @@ def add_single_file_to_model(
 ) -> None:
     """Add one file module and its import dependencies to the diagram model."""
     if file_name.endswith("__init__.py"):
-        if not getattr(info, "classes", []) and not getattr(info, "functions", []) and not getattr(info, "globals", []) and not getattr(info, "imports", []):
+        empty_init = (
+            not getattr(info, "classes", [])
+            and not getattr(info, "functions", [])
+            and not getattr(info, "globals", [])
+            and not getattr(info, "imports", [])
+        )
+        if empty_init:
             return
 
     mod_box = DgmModule()

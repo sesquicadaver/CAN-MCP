@@ -2,10 +2,11 @@
 
 VS Code / Cursor companion extension scaffold for [Codimension MCP](../codimension_mcp/README.md).
 
-## Scope (0.2.0)
+## Scope (0.4.0)
 
 - Command palette entry pointing to MCP setup docs
 - **Codimension: Show Diagram (HTML WebView)** — opens `.codimension/diagrams/*.html` from `render_diagram`
+- **Auto-open** when diagram HTML is created (setting `codimension.autoOpenDiagrams`, default on)
 
 ## Build
 

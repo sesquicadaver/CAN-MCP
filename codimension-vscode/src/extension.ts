@@ -1,7 +1,9 @@
 import * as vscode from "vscode";
-import { showDiagramPanel } from "./diagramPanel";
+import { showDiagramPanel, watchDiagramOutput } from "./diagramPanel";
 
 export function activate(context: vscode.ExtensionContext): void {
+  watchDiagramOutput(context);
+
   context.subscriptions.push(
     vscode.commands.registerCommand("codimension.openMcpDocs", () => {
       vscode.window.showInformationMessage(

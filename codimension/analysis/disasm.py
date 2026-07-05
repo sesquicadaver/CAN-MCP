@@ -5,7 +5,7 @@
 
 """Disassembling files and buffers — IDE wrapper over codimension_core.disasm."""
 
-from codimension_core import disasm as _core_disasm
+import codimension_core.disasm as _core_disasm
 
 OPT_NO_OPTIMIZATION = _core_disasm.OPT_NO_OPTIMIZATION
 OPT_OPTIMIZE_ASSERT = _core_disasm.OPT_OPTIMIZE_ASSERT
