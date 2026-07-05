@@ -11,29 +11,58 @@ from typing import Any, Callable, TypeVar
 from .graph_ir import GraphIR
 
 T = TypeVar("T")
+_HASH_BYTES = 65536
 
 
 @dataclass(frozen=True)
 class FileFingerprint:
-    """Lightweight change detector for a file on disk."""
+    """Change detector for a file on disk (mtime/size fast path + content hash)."""
 
     mtime: float
     size: int
+    content_hash: str
+
+
+def file_content_hash(path: str) -> str:
+    """Return a stable short hash of file contents."""
+    path = realpath(path)
+    digest = hashlib.sha256()
+    with open(path, "rb") as handle:
+        while True:
+            chunk = handle.read(_HASH_BYTES)
+            if not chunk:
+                break
+            digest.update(chunk)
+    return digest.hexdigest()[:16]
 
 
 def file_fingerprint(path: str) -> FileFingerprint:
+    """Build a fingerprint including content hash."""
     path = realpath(path)
-    return FileFingerprint(mtime=getmtime(path), size=getsize(path))
+    return FileFingerprint(
+        mtime=getmtime(path),
+        size=getsize(path),
+        content_hash=file_content_hash(path),
+    )
 
 
-def compute_project_revision(paths: list[str]) -> str:
-    """Hash of all project file fingerprints."""
+def compute_project_revision(paths: list[str], file_hashes: dict[str, FileFingerprint] | None = None) -> str:
+    """Hash of project file content fingerprints."""
+    cached = file_hashes if file_hashes is not None else {}
     parts: list[str] = []
     for path in sorted(realpath(item) for item in paths):
         if not exists(path):
+            cached.pop(path, None)
             continue
-        fp = file_fingerprint(path)
-        parts.append(f"{path}:{fp.mtime}:{fp.size}")
+        mtime = getmtime(path)
+        size = getsize(path)
+        stored = cached.get(path)
+        if stored is not None and stored.mtime == mtime and stored.size == size:
+            parts.append(f"{path}:{stored.content_hash}")
+            continue
+        fingerprint = file_fingerprint(path)
+        cached[path] = fingerprint
+        parts.append(f"{path}:{fingerprint.content_hash}")
     digest = hashlib.sha256("\n".join(parts).encode("utf-8")).hexdigest()
     return digest[:16]
 
@@ -43,6 +72,7 @@ class ProjectAnalysisCache:
     """Caches derived graphs keyed by project or file revision."""
 
     project_revision: str | None = None
+    file_fingerprints: dict[str, FileFingerprint] = field(default_factory=dict)
     import_graph: GraphIR | None = None
     call_index: Any | None = None
     cfg_by_function: dict[str, tuple[FileFingerprint, GraphIR]] = field(default_factory=dict)
@@ -57,7 +87,7 @@ class ProjectAnalysisCache:
     cfg_misses: int = 0
 
     def compute_revision(self, paths: list[str]) -> str:
-        return compute_project_revision(paths)
+        return compute_project_revision(paths, self.file_fingerprints)
 
     def get_or_build_import_graph(self, paths: list[str], builder: Callable[[], GraphIR]) -> GraphIR:
         revision = self.compute_revision(paths)
@@ -100,7 +130,13 @@ class ProjectAnalysisCache:
         if not exists(file_path):
             del self.cfg_by_function[function_id]
             return None
-        if file_fingerprint(file_path) == stored_fp:
+        file_path = realpath(file_path)
+        mtime = getmtime(file_path)
+        size = getsize(file_path)
+        if stored_fp.mtime == mtime and stored_fp.size == size:
+            self.cfg_hits += 1
+            return graph
+        if stored_fp.content_hash == file_content_hash(file_path):
             self.cfg_hits += 1
             return graph
         del self.cfg_by_function[function_id]
@@ -117,7 +153,9 @@ class ProjectAnalysisCache:
         self.reverse_index = None
 
     def invalidate_file(self, path: str) -> None:
+        """Drop derived graph caches and CFG entries for one file."""
         path = realpath(path)
+        self.file_fingerprints.pop(path, None)
         self.invalidate_graphs()
         file_name = basename(path)
         prefix = f"{file_name}:function:"
@@ -127,11 +165,13 @@ class ProjectAnalysisCache:
 
     def clear(self) -> None:
         self.invalidate_graphs()
+        self.file_fingerprints.clear()
         self.cfg_by_function.clear()
 
     def stats(self, module_cache_stats: dict[str, int]) -> dict[str, Any]:
         return {
             "project_revision": self.project_revision,
+            "file_fingerprint_entries": len(self.file_fingerprints),
             "import_graph_cached": self.import_graph is not None,
             "call_index_cached": self.call_index is not None,
             "reverse_index_cached": self.reverse_index is not None,

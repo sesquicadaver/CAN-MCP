@@ -2,7 +2,7 @@
 """Headless code analysis core for Codimension."""
 
 from . import graph_ir
-from .analysis_cache import ProjectAnalysisCache, compute_project_revision, file_fingerprint
+from .analysis_cache import ProjectAnalysisCache, compute_project_revision, file_content_hash, file_fingerprint
 from .analyzer import analyze_dead_code, analyze_file_diagnostics, get_buffer_errors
 from .astutils import parse_source_to_ast
 from .cache import ModuleInfoCache
@@ -63,6 +63,7 @@ __all__ = [
     "find_callers",
     "find_callees",
     "find_usages",
+    "file_content_hash",
     "file_fingerprint",
     "get_buffer_disassembled",
     "get_file_disassembled",
@@ -78,4 +79,4 @@ __all__ = [
     "resolve_imports_for_file",
 ]
 
-__version__ = "0.11.0"
+__version__ = "0.12.0"

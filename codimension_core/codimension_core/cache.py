@@ -8,37 +8,39 @@ from os.path import exists, getmtime, getsize, realpath
 import codimension.parsers  # noqa: F401 — install cdmpyparser fallbacks
 from cdmpyparser import getBriefModuleInfoFromFile
 
+from .analysis_cache import file_content_hash
+
 
 class ModuleInfoCache:
-    """mtime-based cache for brief module info objects."""
+    """Content-hash cache for brief module info objects."""
 
     def __init__(self) -> None:
-        self._cache: dict[str, tuple[float, int, object]] = {}
+        self._cache: dict[str, tuple[float, int, str, object]] = {}
         self.hits: int = 0
         self.misses: int = 0
 
     def get(self, path: str) -> object:
         """Return cached brief module info for an absolute or relative path."""
         path = realpath(path)
+        if not exists(path):
+            self._cache.pop(path, None)
+            raise FileNotFoundError(f"Cannot open {path}")
+
+        last_mod_time = getmtime(path)
+        last_size = getsize(path)
         if path in self._cache:
-            mod_time, size, info = self._cache[path]
-            if not exists(path):
-                del self._cache[path]
-                raise FileNotFoundError(f"Cannot open {path}")
-            last_mod_time = getmtime(path)
-            last_size = getsize(path)
-            if last_mod_time <= mod_time and last_size == size:
+            mod_time, size, content_hash, info = self._cache[path]
+            if mod_time == last_mod_time and size == last_size:
                 self.hits += 1
                 return info
-            info = getBriefModuleInfoFromFile(path)
-            self._cache[path] = (last_mod_time, last_size, info)
-            self.misses += 1
-            return info
+            if file_content_hash(path) == content_hash:
+                self._cache[path] = (last_mod_time, last_size, content_hash, info)
+                self.hits += 1
+                return info
 
-        if not exists(path):
-            raise FileNotFoundError(f"Cannot open {path}")
         info = getBriefModuleInfoFromFile(path)
-        self._cache[path] = (getmtime(path), getsize(path), info)
+        content_hash = file_content_hash(path)
+        self._cache[path] = (last_mod_time, last_size, content_hash, info)
         self.misses += 1
         return info
 
