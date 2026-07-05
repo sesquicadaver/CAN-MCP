@@ -24,10 +24,12 @@ from .tools import (
     get_call_graph_tool,
     get_control_flow_tool,
     get_diagnostics_tool,
+    get_import_diagram_tool,
     get_import_graph_tool,
     get_project_tree,
     get_symbols_tool,
     impact_analysis_tool,
+    lookup_symbol_tool,
     open_project,
     render_diagram_tool,
 )
@@ -175,6 +177,26 @@ def explain_symbol(symbol: str) -> str:
     _state.record_tool("explain_symbol")
     try:
         return explain_symbol_tool(_state, symbol)
+    except Exception as exc:  # noqa: BLE001
+        return format_tool_error(exc)
+
+
+@mcp.tool()
+def lookup_symbol(name: str) -> str:
+    """Find symbol definitions by name using the project reverse index."""
+    _state.record_tool("lookup_symbol")
+    try:
+        return lookup_symbol_tool(_state, name)
+    except Exception as exc:  # noqa: BLE001
+        return format_tool_error(exc)
+
+
+@mcp.tool()
+def get_import_diagram() -> str:
+    """Return Graphviz DOT for the project import diagram model."""
+    _state.record_tool("get_import_diagram")
+    try:
+        return get_import_diagram_tool(_state)
     except Exception as exc:  # noqa: BLE001
         return format_tool_error(exc)
 

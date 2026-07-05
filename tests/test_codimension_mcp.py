@@ -13,10 +13,12 @@ from codimension_mcp.tools import (
     analyze_project,
     explain_symbol_tool,
     find_dead_code_tool,
-    get_import_graph_tool,
     get_cache_stats_tool,
+    get_import_diagram_tool,
+    get_import_graph_tool,
     get_project_tree,
     get_symbols_tool,
+    lookup_symbol_tool,
     open_project,
     render_diagram_tool,
 )
@@ -131,3 +133,20 @@ def test_mcp_cache_stats(tmp_path):
     stats = json.loads(get_cache_stats_tool(state))
     assert stats["import_graph_hits"] >= 1
     assert "module_cache" in stats
+
+
+def test_mcp_lookup_symbol_and_import_diagram(tmp_path):
+    project_dir = tmp_path / "proj"
+    project_dir.mkdir()
+    (project_dir / "main.py").write_text("def api():\n    return 1\n", encoding="utf-8")
+
+    state = WorkspaceState()
+    open_project(state, str(project_dir))
+    analyze_project(state)
+
+    lookup = json.loads(lookup_symbol_tool(state, "api"))
+    assert lookup["meta"]["count"] == 1
+
+    diagram = json.loads(get_import_diagram_tool(state))
+    assert diagram["status"] == "ok"
+    assert "digraph ImportsDiagram" in diagram["graphviz"]

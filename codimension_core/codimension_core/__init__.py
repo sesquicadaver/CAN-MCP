@@ -9,14 +9,24 @@ from .callgraph import build_call_graph, find_callees, find_callers, impact_anal
 from .cfg import get_control_flow
 from .dependency_graph import build_import_graph
 from .errors import AnalysisError, ProjectNotOpenError
+from .astutils import parse_source_to_ast
+from .disasm import (
+    OPT_NO_OPTIMIZATION,
+    OPT_OPTIMIZE_ASSERT,
+    OPT_OPTIMIZE_DOCSTRINGS,
+    get_buffer_disassembled,
+    get_file_disassembled,
+)
 from .explain import explain_symbol
 from .graph_render import graph_to_html, graph_to_mermaid
+from .import_diagram import ImportDiagramModel, ImportDiagramOptions, build_import_diagram_model
 from .imports import (
     build_import_context,
     collect_import_resolutions_classified,
     collect_unresolved_packages,
     resolve_imports_for_file,
 )
+from .reverse_index import lookup_symbol as lookup_symbol_definitions
 from .project import Project
 from .symbols import analyze_file, find_usages, get_symbols
 
@@ -26,11 +36,17 @@ __all__ = [
     "Project",
     "ProjectAnalysisCache",
     "ProjectNotOpenError",
+    "ImportDiagramModel",
+    "ImportDiagramOptions",
+    "OPT_NO_OPTIMIZATION",
+    "OPT_OPTIMIZE_ASSERT",
+    "OPT_OPTIMIZE_DOCSTRINGS",
     "analyze_file",
     "analyze_dead_code",
     "analyze_file_diagnostics",
     "build_call_graph",
     "build_import_context",
+    "build_import_diagram_model",
     "build_import_graph",
     "collect_import_resolutions_classified",
     "collect_unresolved_packages",
@@ -40,6 +56,8 @@ __all__ = [
     "find_callees",
     "find_usages",
     "file_fingerprint",
+    "get_buffer_disassembled",
+    "get_file_disassembled",
     "get_buffer_errors",
     "get_control_flow",
     "get_symbols",
@@ -47,7 +65,9 @@ __all__ = [
     "graph_to_html",
     "graph_to_mermaid",
     "impact_analysis",
+    "lookup_symbol_definitions",
+    "parse_source_to_ast",
     "resolve_imports_for_file",
 ]
 
-__version__ = "0.8.0"
+__version__ = "0.9.0"
