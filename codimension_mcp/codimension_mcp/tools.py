@@ -7,6 +7,7 @@ import os
 
 from codimension_core import (
     analyze_file,
+    analyze_file_diagnostics,
     build_import_graph,
     find_usages,
     get_control_flow,
@@ -108,6 +109,12 @@ def find_usages_tool(state: WorkspaceState, symbol: str) -> str:
     """Find usages of a symbol via jedi."""
     project = _require_project(state)
     return dumps_graph(find_usages(project, symbol))
+
+
+def get_diagnostics_tool(state: WorkspaceState, path: str) -> str:
+    """Return pyflakes/radon diagnostics for one file."""
+    project = _require_project(state)
+    return dumps_graph(analyze_file_diagnostics(project, _resolve_path(project, path)))
 
 
 def _require_project(state: WorkspaceState) -> Project:

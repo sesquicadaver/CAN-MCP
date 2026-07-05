@@ -71,6 +71,7 @@ def test_import_graph_internal_edge(tmp_path):
 
     project = Project.open(str(project_dir))
     graph = build_import_graph(project)
+    assert graph.meta.get("resolved") is True
     edges = {(edge.from_id, edge.to_id, edge.type) for edge in graph.edges}
     assert ("file:main.py", "file:helper.py", "imports") in edges
 

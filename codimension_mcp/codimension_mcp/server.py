@@ -18,6 +18,7 @@ from .tools import (
     format_tool_error,
     get_call_graph_tool,
     get_control_flow_tool,
+    get_diagnostics_tool,
     get_import_graph_tool,
     get_project_tree,
     get_symbols_tool,
@@ -125,6 +126,16 @@ def find_callees(symbol: str) -> str:
     _state.record_tool("find_callees")
     try:
         return find_callees_tool(_state, symbol)
+    except Exception as exc:  # noqa: BLE001
+        return format_tool_error(exc)
+
+
+@mcp.tool()
+def get_diagnostics(path: str) -> str:
+    """Return lint and complexity diagnostics for one Python file."""
+    _state.record_tool("get_diagnostics")
+    try:
+        return get_diagnostics_tool(_state, path)
     except Exception as exc:  # noqa: BLE001
         return format_tool_error(exc)
 
