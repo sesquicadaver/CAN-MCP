@@ -19,6 +19,7 @@ from codimension_core.callgraph import build_call_graph, find_callees, find_call
 from codimension_core.errors import AnalysisError, NotImplementedYetError, ProjectNotOpenError
 from codimension_core.project import Project
 
+from .diagrams import render_diagram
 from .schemas import WorkspaceState
 from .serializers import dumps_graph, dumps_payload
 
@@ -130,6 +131,11 @@ def explain_symbol_tool(state: WorkspaceState, symbol: str) -> str:
     """Return structured explanation context for a symbol."""
     project = _require_project(state)
     return dumps_graph(explain_symbol(project, symbol))
+
+
+def render_diagram_tool(state: WorkspaceState, kind: str, target: str | None = None) -> str:
+    """Render Graph IR as HTML/SVG for Cursor WebView."""
+    return render_diagram(state, kind, target)
 
 
 def _require_project(state: WorkspaceState) -> Project:

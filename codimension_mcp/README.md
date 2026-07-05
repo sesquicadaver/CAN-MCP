@@ -16,6 +16,12 @@ pip install -e ./codimension_mcp
 codimension-mcp --workspace /path/to/project
 ```
 
+## Cursor WebView
+
+After `render_diagram("import")`, open the returned `html_path` in Cursor Simple Browser.
+
+MCP resources `codimension://diagram/import` and `codimension://diagram/call` return `text/html` directly.
+
 ## Cursor config
 
 ```json

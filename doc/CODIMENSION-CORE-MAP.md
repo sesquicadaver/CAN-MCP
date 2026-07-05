@@ -181,6 +181,9 @@ codimension_core/
 | `impact_analysis(path\|symbol)` | `callgraph.impact_analysis()` | ✅ 0.6.0 transitive |
 | **MCP resources** | `codimension://workspace/status`, `graph/import`, `graph/call` | ✅ 0.2.0 |
 | **MCP prompts** | `refactor_symbol`, `review_dead_code` | ✅ 0.2.0 |
+| **Graph render** | `graph_render.graph_to_html/mermaid` | ✅ 0.7.0 |
+| **MCP render_diagram** | `.codimension/diagrams/*.html` WebView | ✅ 0.3.0 |
+| `render_diagram(kind, target?)` | `graph_render` + `.codimension/diagrams/` | ✅ 0.3.0 WebView |
 
 ---
 

@@ -9,6 +9,7 @@ from .cfg import get_control_flow
 from .dependency_graph import build_import_graph
 from .errors import AnalysisError, ProjectNotOpenError
 from .explain import explain_symbol
+from .graph_render import graph_to_html, graph_to_mermaid
 from .imports import (
     build_import_context,
     collect_import_resolutions_classified,
@@ -39,8 +40,10 @@ __all__ = [
     "get_control_flow",
     "get_symbols",
     "graph_ir",
+    "graph_to_html",
+    "graph_to_mermaid",
     "impact_analysis",
     "resolve_imports_for_file",
 ]
 
-__version__ = "0.6.0"
+__version__ = "0.7.0"

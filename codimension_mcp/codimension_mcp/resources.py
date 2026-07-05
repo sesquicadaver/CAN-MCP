@@ -8,6 +8,7 @@ from collections.abc import Callable
 from codimension_core import build_call_graph, build_import_graph
 from mcp.server.fastmcp import FastMCP
 
+from .diagrams import read_diagram_html
 from .schemas import WorkspaceState
 from .serializers import dumps_graph, dumps_payload
 
@@ -68,3 +69,21 @@ def register_resources(mcp: FastMCP, get_state: Callable[[], WorkspaceState]) ->
     )
     def call_graph_resource() -> str:
         return read_call_graph(get_state())
+
+    @mcp.resource(
+        "codimension://diagram/import",
+        name="diagram_import",
+        description="HTML/SVG import graph for Cursor WebView.",
+        mime_type="text/html",
+    )
+    def diagram_import_resource() -> str:
+        return read_diagram_html(get_state(), "import")
+
+    @mcp.resource(
+        "codimension://diagram/call",
+        name="diagram_call",
+        description="HTML/SVG call graph for Cursor WebView.",
+        mime_type="text/html",
+    )
+    def diagram_call_resource() -> str:
+        return read_diagram_html(get_state(), "call")

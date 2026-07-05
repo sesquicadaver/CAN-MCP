@@ -41,7 +41,8 @@
 | **MCP find_dead_code** | codimension_mcp | find_dead_code tool | Smoke: MCP tool call |
 | **codimension_core impact** | codimension_core.callgraph | impact_analysis transitive | unit: tests/test_codimension_core_impact.py |
 | **MCP resources** | codimension_mcp.resources | codimension:// URIs | unit: tests/test_codimension_mcp.py |
-| **MCP prompts** | codimension_mcp.prompts | refactor_symbol, review_dead_code | Smoke: MCP prompt list |
+| **MCP diagram WebView** | codimension_mcp.diagrams | render_diagram, codimension://diagram/* | unit: tests/test_codimension_mcp.py |
+| **codimension_core graph render** | codimension_core.graph_render | graph_to_html, graph_to_mermaid | unit: tests/test_codimension_core_graph_render.py |
 | **codimension_mcp scaffold** | codimension_mcp | server.py, tools.py, serializers.py | unit: tests/test_codimension_mcp.py |
 | **Module extraction map** | doc | CODIMENSION-CORE-MAP.md | Review on each extraction PR |
 

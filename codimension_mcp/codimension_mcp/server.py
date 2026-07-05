@@ -28,6 +28,7 @@ from .tools import (
     get_symbols_tool,
     impact_analysis_tool,
     open_project,
+    render_diagram_tool,
 )
 
 mcp = FastMCP("codimension")
@@ -173,6 +174,16 @@ def explain_symbol(symbol: str) -> str:
     _state.record_tool("explain_symbol")
     try:
         return explain_symbol_tool(_state, symbol)
+    except Exception as exc:  # noqa: BLE001
+        return format_tool_error(exc)
+
+
+@mcp.tool()
+def render_diagram(kind: str, target: str | None = None) -> str:
+    """Render import/call/control_flow/impact graph as HTML for Cursor WebView."""
+    _state.record_tool("render_diagram")
+    try:
+        return render_diagram_tool(_state, kind, target)
     except Exception as exc:  # noqa: BLE001
         return format_tool_error(exc)
 

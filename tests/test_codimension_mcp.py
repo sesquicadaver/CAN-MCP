@@ -4,7 +4,9 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
+from codimension_mcp.diagrams import read_diagram_html
 from codimension_mcp.resources import read_call_graph, read_import_graph, read_workspace_status
 from codimension_mcp.schemas import WorkspaceState
 from codimension_mcp.tools import (
@@ -15,6 +17,7 @@ from codimension_mcp.tools import (
     get_project_tree,
     get_symbols_tool,
     open_project,
+    render_diagram_tool,
 )
 
 
@@ -91,3 +94,23 @@ def test_mcp_resources_closed_and_open(tmp_path):
 
     calls = json.loads(read_call_graph(state))
     assert calls["meta"]["kind"] == "call_graph"
+
+
+def test_render_diagram_and_html_resource(tmp_path):
+    project_dir = tmp_path / "proj"
+    project_dir.mkdir()
+    (project_dir / "a.py").write_text("import os\n", encoding="utf-8")
+    (project_dir / "b.py").write_text("import a\n", encoding="utf-8")
+
+    state = WorkspaceState()
+    open_project(state, str(project_dir))
+    analyze_project(state)
+
+    payload = json.loads(render_diagram_tool(state, "import"))
+    assert payload["status"] == "ok"
+    assert payload["html_path"].endswith(".html")
+    assert Path(payload["html_path"]).is_file()
+
+    html = read_diagram_html(state, "import")
+    assert html.startswith("<!DOCTYPE html>")
+    assert "<svg" in html
