@@ -31,6 +31,9 @@
 | **Debugger watchpoints** | codimension.debugger | wputils.py, editwatchpoint.py, server.py, wpointviewer.py | unit: tests/test_watchpoints.py |
 | **Greenlet debugger** | codimension.debugger.client | threadextension_cdm_dbg.py, threadutils_cdm_dbg.py | unit: tests/test_greenlet_trace.py |
 | **Occurrences search redo** | codimension.search | occurrencesprovider.py, searchresultsviewer.py | unit: tests/test_occurrencesprovider.py |
+| **codimension_core scaffold** | codimension_core | project.py, symbols.py, cache.py, graph_ir.py, dependency_graph.py, cfg.py | unit: tests/test_codimension_core.py |
+| **codimension_mcp scaffold** | codimension_mcp | server.py, tools.py, serializers.py | unit: tests/test_codimension_mcp.py |
+| **Module extraction map** | doc | CODIMENSION-CORE-MAP.md | Review on each extraction PR |
 
 ---
 

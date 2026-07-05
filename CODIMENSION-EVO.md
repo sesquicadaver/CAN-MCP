@@ -188,6 +188,9 @@ codimension-vscode
 
 Це найчистіший і найперспективніший варіант.
 
+**Детальна карта модулів:** [doc/CODIMENSION-CORE-MAP.md](doc/CODIMENSION-CORE-MAP.md)  
+**Scaffold (0.1.0):** `codimension_core/`, `codimension_mcp/`
+
 [1]: https://modelcontextprotocol.io/specification/2025-06-18/architecture?utm_source=chatgpt.com "Architecture"
 [2]: https://cursor.com/docs/mcp?utm_source=chatgpt.com "Model Context Protocol (MCP) | Cursor Docs"
 [3]: https://modelcontextprotocol.io/specification/draft/server/tools?utm_source=chatgpt.com "Tools"

@@ -9,10 +9,16 @@ import pytest
 # Ensure project root and codimension package dir are in path (cdmplugins imports plugins, ui, utils)
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CODMENSION_DIR = os.path.join(ROOT, "codimension")
+CORE_DIR = os.path.join(ROOT, "codimension_core")
+MCP_DIR = os.path.join(ROOT, "codimension_mcp")
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 if CODMENSION_DIR not in sys.path:
     sys.path.insert(0, CODMENSION_DIR)
+if CORE_DIR not in sys.path:
+    sys.path.insert(0, CORE_DIR)
+if MCP_DIR not in sys.path:
+    sys.path.insert(0, MCP_DIR)
 
 
 @pytest.fixture(scope="session")
