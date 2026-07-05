@@ -35,8 +35,11 @@
 | **codimension_core imports** | codimension_core.imports | imports.py | unit: tests/test_codimension_core_imports.py |
 | **codimension_core callgraph** | codimension_core.callgraph | callgraph.py | unit: tests/test_codimension_core.py |
 | **codimension_core deps classification** | codimension_core.imports | collect_import_resolutions_classified | unit: tests/test_codimension_core_deps.py |
-| **codimension_core analyzer** | codimension_core.analyzer | get_buffer_errors, analyze_file_diagnostics | unit: tests/test_codimension_core_analyzer.py |
+| **codimension_core analyzer** | codimension_core.analyzer | get_buffer_errors, analyze_file_diagnostics, analyze_dead_code | unit: tests/test_codimension_core_analyzer.py |
+| **codimension_core explain** | codimension_core.explain | explain_symbol | unit: tests/test_codimension_core_explain.py |
 | **MCP get_diagnostics** | codimension_mcp | get_diagnostics tool | Smoke: MCP tool call |
+| **MCP find_dead_code** | codimension_mcp | find_dead_code tool | Smoke: MCP tool call |
+| **MCP explain_symbol** | codimension_mcp | explain_symbol tool | Smoke: MCP tool call |
 | **codimension_mcp scaffold** | codimension_mcp | server.py, tools.py, serializers.py | unit: tests/test_codimension_mcp.py |
 | **Module extraction map** | doc | CODIMENSION-CORE-MAP.md | Review on each extraction PR |
 

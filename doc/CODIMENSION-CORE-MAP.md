@@ -175,7 +175,9 @@ codimension_core/
 | `find_callers(symbol)` | `callgraph.find_callers()` | ✅ 0.2.0 |
 | `find_callees(symbol)` | `callgraph.find_callees()` | ✅ 0.2.0 |
 | `find_usages(symbol)` | `symbols.find_usages()` | ✅ 0.3.0 |
-| `explain_symbol(symbol)` | LLM prompt + structured context | ⏳ future |
+| `get_diagnostics(path)` | `analyzer.analyze_file_diagnostics()` | ✅ 0.4.0 |
+| `find_dead_code(path?)` | `analyzer.analyze_dead_code()` | ✅ 0.5.0 |
+| `explain_symbol(symbol)` | `explain.explain_symbol()` — structured context | ✅ 0.5.0 MVP |
 | `impact_analysis(path\|symbol)` | `callgraph.impact_analysis()` | ✅ MVP |
 
 ---

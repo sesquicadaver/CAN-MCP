@@ -12,8 +12,10 @@ from .schemas import WorkspaceState
 from .tools import (
     analyze_file_tool,
     analyze_project,
+    explain_symbol_tool,
     find_callees_tool,
     find_callers_tool,
+    find_dead_code_tool,
     find_usages_tool,
     format_tool_error,
     get_call_graph_tool,
@@ -146,6 +148,26 @@ def find_usages(symbol: str) -> str:
     _state.record_tool("find_usages")
     try:
         return find_usages_tool(_state, symbol)
+    except Exception as exc:  # noqa: BLE001
+        return format_tool_error(exc)
+
+
+@mcp.tool()
+def find_dead_code(path: str | None = None) -> str:
+    """Run vulture dead-code analysis on the project or one file/directory."""
+    _state.record_tool("find_dead_code")
+    try:
+        return find_dead_code_tool(_state, path)
+    except Exception as exc:  # noqa: BLE001
+        return format_tool_error(exc)
+
+
+@mcp.tool()
+def explain_symbol(symbol: str) -> str:
+    """Return structured explanation context (symbols, usages, callers, CFG) for a symbol."""
+    _state.record_tool("explain_symbol")
+    try:
+        return explain_symbol_tool(_state, symbol)
     except Exception as exc:  # noqa: BLE001
         return format_tool_error(exc)
 

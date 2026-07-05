@@ -8,6 +8,8 @@ import json
 from codimension_mcp.schemas import WorkspaceState
 from codimension_mcp.tools import (
     analyze_project,
+    explain_symbol_tool,
+    find_dead_code_tool,
     get_import_graph_tool,
     get_project_tree,
     get_symbols_tool,
@@ -45,3 +47,23 @@ def test_mcp_tools_return_graph_ir(tmp_path):
 
     imports = json.loads(get_import_graph_tool(state))
     assert imports["edges"]
+
+
+def test_mcp_dead_code_and_explain_tools(tmp_path):
+    project_dir = tmp_path / "proj"
+    project_dir.mkdir()
+    (project_dir / "main.py").write_text(
+        "def greet():\n    return 1\n\ndef orphan():\n    pass\n",
+        encoding="utf-8",
+    )
+
+    state = WorkspaceState()
+    open_project(state, str(project_dir))
+    analyze_project(state)
+
+    dead = json.loads(find_dead_code_tool(state))
+    assert dead["meta"]["kind"] == "dead_code"
+
+    explain = json.loads(explain_symbol_tool(state, "main.py:function:greet"))
+    assert explain["meta"]["kind"] == "explain_symbol"
+    assert "sections" in explain["meta"]

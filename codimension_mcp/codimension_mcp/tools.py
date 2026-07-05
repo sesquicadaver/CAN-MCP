@@ -6,9 +6,11 @@ from __future__ import annotations
 import os
 
 from codimension_core import (
+    analyze_dead_code,
     analyze_file,
     analyze_file_diagnostics,
     build_import_graph,
+    explain_symbol,
     find_usages,
     get_control_flow,
     get_symbols,
@@ -115,6 +117,19 @@ def get_diagnostics_tool(state: WorkspaceState, path: str) -> str:
     """Return pyflakes/radon diagnostics for one file."""
     project = _require_project(state)
     return dumps_graph(analyze_file_diagnostics(project, _resolve_path(project, path)))
+
+
+def find_dead_code_tool(state: WorkspaceState, path: str | None = None) -> str:
+    """Run vulture dead-code analysis on the project or one path."""
+    project = _require_project(state)
+    resolved = _resolve_path(project, path) if path else None
+    return dumps_graph(analyze_dead_code(project, resolved))
+
+
+def explain_symbol_tool(state: WorkspaceState, symbol: str) -> str:
+    """Return structured explanation context for a symbol."""
+    project = _require_project(state)
+    return dumps_graph(explain_symbol(project, symbol))
 
 
 def _require_project(state: WorkspaceState) -> Project:

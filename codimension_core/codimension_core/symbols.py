@@ -114,7 +114,7 @@ def analyze_file_direct(path: str) -> GraphIR:
     return _symbols_from_brief_info(realpath(path), info)
 
 
-def _parse_symbol_query(symbol: str) -> tuple[str | None, str]:
+def parse_symbol_query(symbol: str) -> tuple[str | None, str]:
     parts = symbol.split(":")
     if len(parts) >= 3 and parts[1] in ("function", "class", "global"):
         return parts[0], ":".join(parts[2:])
@@ -153,7 +153,7 @@ def find_usages(project: Project, symbol: str) -> GraphIR:
     except ImportError as exc:
         raise RuntimeError("find_usages requires the jedi package") from exc
 
-    file_hint, name = _parse_symbol_query(symbol)
+    file_hint, name = parse_symbol_query(symbol)
     sites = _definition_sites(project, file_hint, name)
     graph = GraphIR(meta={"kind": "usages", "symbol": symbol})
     if not sites:
@@ -168,6 +168,11 @@ def find_usages(project: Project, symbol: str) -> GraphIR:
     for def_path, line, col in sites:
         with open(def_path, encoding="utf-8", errors="replace") as handle:
             source = handle.read()
+        lines = source.splitlines()
+        if 0 < line <= len(lines):
+            name_col = lines[line - 1].find(name)
+            if name_col >= 0:
+                col = name_col
         script = jedi.Script(code=source, path=def_path, project=jedi_project)
         try:
             references = script.get_references(line=line, column=col)
