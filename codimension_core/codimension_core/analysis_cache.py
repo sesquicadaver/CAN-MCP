@@ -50,6 +50,9 @@ class ProjectAnalysisCache:
     import_graph_misses: int = 0
     call_index_hits: int = 0
     call_index_misses: int = 0
+    reverse_index: Any | None = None
+    reverse_index_hits: int = 0
+    reverse_index_misses: int = 0
     cfg_hits: int = 0
     cfg_misses: int = 0
 
@@ -65,6 +68,7 @@ class ProjectAnalysisCache:
         self.project_revision = revision
         self.import_graph = builder()
         self.call_index = None
+        self.reverse_index = None
         return self.import_graph
 
     def get_or_build_call_index(self, paths: list[str], builder: Callable[[], T]) -> T:
@@ -75,7 +79,18 @@ class ProjectAnalysisCache:
         self.call_index_misses += 1
         self.project_revision = revision
         self.call_index = builder()
+        self.reverse_index = None
         return self.call_index
+
+    def get_or_build_reverse_index(self, paths: list[str], builder: Callable[[], T]) -> T:
+        revision = self.compute_revision(paths)
+        if self.reverse_index is not None and self.project_revision == revision:
+            self.reverse_index_hits += 1
+            return self.reverse_index
+        self.reverse_index_misses += 1
+        self.project_revision = revision
+        self.reverse_index = builder()
+        return self.reverse_index
 
     def get_cfg(self, function_id: str, file_path: str) -> GraphIR | None:
         entry = self.cfg_by_function.get(function_id)
@@ -99,6 +114,7 @@ class ProjectAnalysisCache:
         self.project_revision = None
         self.import_graph = None
         self.call_index = None
+        self.reverse_index = None
 
     def invalidate_file(self, path: str) -> None:
         path = realpath(path)
@@ -118,11 +134,14 @@ class ProjectAnalysisCache:
             "project_revision": self.project_revision,
             "import_graph_cached": self.import_graph is not None,
             "call_index_cached": self.call_index is not None,
+            "reverse_index_cached": self.reverse_index is not None,
             "cfg_entries": len(self.cfg_by_function),
             "import_graph_hits": self.import_graph_hits,
             "import_graph_misses": self.import_graph_misses,
             "call_index_hits": self.call_index_hits,
             "call_index_misses": self.call_index_misses,
+            "reverse_index_hits": self.reverse_index_hits,
+            "reverse_index_misses": self.reverse_index_misses,
             "cfg_hits": self.cfg_hits,
             "cfg_misses": self.cfg_misses,
             "module_cache": module_cache_stats,

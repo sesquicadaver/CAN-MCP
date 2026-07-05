@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from codimension_core.import_diagram import build_import_diagram_model
+from codimension_core.import_diagram import ImportDiagramOptions, build_import_diagram_model
 from codimension_core.project import Project
 
 
@@ -18,3 +18,21 @@ def test_build_import_diagram_model(tmp_path):
     model = build_import_diagram_model(project)
     assert model.modules
     assert "digraph ImportsDiagram" in model.to_graphviz()
+
+
+def test_import_diagram_includes_classes_and_docstrings(tmp_path):
+    project_dir = tmp_path / "proj"
+    project_dir.mkdir()
+    (project_dir / "mod.py").write_text(
+        '"""Module doc."""\n\nclass Foo:\n    pass\n\ndef bar():\n    pass\n',
+        encoding="utf-8",
+    )
+    project = Project.open(str(project_dir))
+    project.analyze_all()
+
+    options = ImportDiagramOptions(include_classes=True, include_funcs=True, include_docs=True)
+    model = build_import_diagram_model(project, options=options)
+    dot = model.to_graphviz()
+    assert "Foo" in dot
+    assert "bar" in dot
+    assert model.docstrings

@@ -42,7 +42,10 @@
 | **codimension_core impact** | codimension_core.callgraph | impact_analysis transitive | unit: tests/test_codimension_core_impact.py |
 | **MCP resources** | codimension_mcp.resources | codimension:// URIs | unit: tests/test_codimension_mcp.py |
 | **MCP diagram WebView** | codimension_mcp.diagrams | render_diagram, codimension://diagram/* | unit: tests/test_codimension_mcp.py |
-| **codimension_core incremental cache** | codimension_core.analysis_cache | ProjectAnalysisCache, CFG cache | unit: tests/test_codimension_core_cache.py |
+| **codimension_core incremental cache** | codimension_core.analysis_cache | ProjectAnalysisCache, CFG cache, reverse_index cache | unit: tests/test_codimension_core_cache.py |
+| **codimension_core import diagram** | codimension_core.import_diagram | build_import_diagram_model, add_single_file_to_model | unit: tests/test_codimension_core_import_diagram.py |
+| **IDE import diagram wrapper** | codimension.diagram.importsdgm | core model + PyQt scene | Smoke: imports diagram dialog |
+| **VS Code diagram WebView** | codimension-vscode | codimension.showDiagram | Smoke: open `.codimension/diagrams/*.html` |
 | **IDE core_bridge** | codimension.analysis.core_bridge | core_project_from_ide | Review: thin wrapper PR |
 | **IDE notused wrapper** | codimension.analysis.notused | run_vulture via core | Smoke: dead code dialog |
 | **codimension_mcp scaffold** | codimension_mcp | server.py, tools.py, serializers.py | unit: tests/test_codimension_mcp.py |

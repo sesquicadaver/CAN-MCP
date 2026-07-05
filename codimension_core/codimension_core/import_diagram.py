@@ -4,10 +4,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from os.path import basename
+from os.path import basename, dirname, isabs, isfile, realpath
 
-from .dependency_graph import build_import_graph
-from .graph_ir import GraphIR
+from .imports import build_import_context, resolve_imports
 from .project import Project
 
 
@@ -26,7 +25,11 @@ class DgmConnection:
 
     def to_graphviz(self) -> str:
         attributes = f'id="{self.objName}", arrowhead=none'
-        label = "\\n".join(self.labels)
+        label = ""
+        for item in self.labels:
+            if label:
+                label += "\\n"
+            label += item
         if label:
             attributes += f', label="{label}", fontname=Arial, fontsize=10'
         return f"{self.source} -> {self.target}[ {attributes} ];"
@@ -77,13 +80,22 @@ class DgmModule:
         self.docstring = ""
 
     def to_graphviz(self) -> str:
-        classes_part = "\\n".join(getattr(item, "name", str(item)) for item in self.classes)
-        funcs_part = "\\n".join(getattr(item, "name", str(item)) for item in self.funcs)
-        globs_part = "\\n".join(getattr(item, "name", str(item)) for item in self.globs)
+        classes_part = ""
+        funcs_part = ""
+        globs_part = ""
+        for klass in self.classes:
+            classes_part += ("\\n" if classes_part else "") + klass.name
+        for func in self.funcs:
+            funcs_part += ("\\n" if funcs_part else "") + func.name
+        for glob in self.globs:
+            globs_part += ("\\n" if globs_part else "") + glob.name
+        spare = "\\n"
         attributes = "shape=box, fontname=Arial, fontsize=10"
         if self.is_project_module():
-            label = f"\\n{self.title}\\n{classes_part}\\n{funcs_part}\\n{globs_part}"
-            return f'{self.objName} [ {attributes}, label="{label}" ];'
+            return (
+                f'{self.objName} [ {attributes}, label="{spare}{self.title}\\n'
+                f"{classes_part}\\n{funcs_part}\\n{globs_part}\" ];"
+            )
         return f'{self.objName} [ {attributes}, label="{self.title}" ];'
 
     toGraphviz = to_graphviz
@@ -91,12 +103,20 @@ class DgmModule:
     def is_project_module(self) -> bool:
         return self.kind in (self.ModuleOfInterest, self.OtherProjectModule)
 
+    isProjectModule = is_project_module
+
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, DgmModule):
             return NotImplemented
         if self.is_project_module() and other.is_project_module():
             return self.refFile == other.refFile
         return self.refFile == other.refFile and self.kind == other.kind and self.title == other.title
+
+    def getTooltip(self) -> str:
+        tooltip = self.refFile or ""
+        if self.docstring:
+            tooltip = f"{tooltip}\n\n{self.docstring}" if tooltip else self.docstring
+        return tooltip
 
 
 class DgmRank:
@@ -124,6 +144,24 @@ class ImportDiagramOptions:
     include_globs: bool = True
     include_docs: bool = False
     include_conn_text: bool = True
+
+    @classmethod
+    def from_legacy(
+        cls,
+        *,
+        include_classes: bool = True,
+        include_funcs: bool = True,
+        include_globs: bool = True,
+        include_docs: bool = False,
+        include_conn_text: bool = True,
+    ) -> ImportDiagramOptions:
+        return cls(
+            include_classes=include_classes,
+            include_funcs=include_funcs,
+            include_globs=include_globs,
+            include_docs=include_docs,
+            include_conn_text=include_conn_text,
+        )
 
 
 class ImportDiagramModel:
@@ -162,16 +200,9 @@ class ImportDiagramModel:
         self._objects_counter += 1
         return f"obj{self._objects_counter}"
 
-    def add_module(self, mod_box: DgmModule) -> str:
-        for index, existing in enumerate(self.modules):
-            if existing == mod_box:
-                if mod_box.kind == DgmModule.ModuleOfInterest and existing.kind != mod_box.kind:
-                    mod_box.objName = existing.objName
-                    self.modules[index] = mod_box
-                return existing.objName
-        mod_box.objName = self._new_name()
-        self.modules.append(mod_box)
-        return mod_box.objName
+    def add_rank(self, rank: DgmRank) -> None:
+        if rank not in self.ranks:
+            self.ranks.append(rank)
 
     def add_connection(self, conn: DgmConnection) -> str:
         for index, existing in enumerate(self.connections):
@@ -182,54 +213,192 @@ class ImportDiagramModel:
         self.connections.append(conn)
         return conn.objName
 
+    def add_docstring_box(self, doc_box: DgmDocstring) -> str:
+        doc_box.objName = self._new_name()
+        self.docstrings.append(doc_box)
+        return doc_box.objName
+
+    def add_module(self, mod_box: DgmModule) -> str:
+        for index, existing in enumerate(self.modules):
+            if existing == mod_box:
+                if mod_box.kind == existing.kind:
+                    return existing.objName
+                if mod_box.kind == DgmModule.ModuleOfInterest:
+                    mod_box.objName = existing.objName
+                    self.modules[index] = mod_box
+                    return mod_box.objName
+                return existing.objName
+        mod_box.objName = self._new_name()
+        self.modules.append(mod_box)
+        return mod_box.objName
+
+    def find_module(self, name: str) -> DgmModule | None:
+        for obj in self.modules:
+            if obj.objName == name:
+                return obj
+        return None
+
+    def find_connection(self, name: str, tail: str = "") -> DgmConnection | None:
+        if not tail:
+            for obj in self.connections:
+                if obj.objName == name:
+                    return obj
+            return None
+        for obj in self.connections:
+            if obj.source == name and obj.target == tail:
+                return obj
+        return None
+
+    def find_docstring(self, name: str) -> DgmDocstring | None:
+        for obj in self.docstrings:
+            if obj.objName == name:
+                return obj
+        return None
+
+    addRank = add_rank
+    addConnection = add_connection
+    addDocstringBox = add_docstring_box
+    addModule = add_module
+    findModule = find_module
+    findConnection = find_connection
+    findDocstring = find_docstring
+
+
+def module_title_from_path(file_name: str) -> str:
+    base_title = basename(file_name).split(".")[0]
+    if base_title != "__init__":
+        return base_title
+    top_dir = basename(dirname(file_name))
+    return f"{top_dir}({base_title})"
+
+
+def is_local_or_project(project: Project, file_name: str, resolved_path: str | None) -> bool:
+    if resolved_path is None or not isabs(resolved_path):
+        return False
+    if project.is_project_path(resolved_path):
+        return True
+    resolved_dir = dirname(realpath(resolved_path))
+    base_dir = dirname(realpath(file_name))
+    return resolved_dir.startswith(base_dir)
+
+
+def populate_module_box(box: DgmModule, info: object, options: ImportDiagramOptions) -> None:
+    if getattr(info, "docstring", None) is not None:
+        box.docstring = info.docstring.text
+    if options.include_classes:
+        box.classes.extend(getattr(info, "classes", []))
+    if options.include_funcs:
+        box.funcs.extend(getattr(info, "functions", []))
+    if options.include_globs:
+        box.globs.extend(getattr(info, "globals", []))
+    if options.include_conn_text:
+        box.imports.extend(getattr(info, "imports", []))
+
+
+def system_wide_docstring(project: Project, path: str) -> str:
+    if not path.endswith(".py") or not isfile(path):
+        return ""
+    try:
+        info = project.cache.get(realpath(path))
+        if getattr(info, "docstring", None) is not None:
+            return info.docstring.text
+    except (OSError, FileNotFoundError):
+        return ""
+    return ""
+
+
+def add_docstring_box(
+    model: ImportDiagramModel,
+    info: object,
+    file_name: str,
+    mod_box_name: str,
+    options: ImportDiagramOptions,
+) -> None:
+    if not options.include_docs or getattr(info, "docstring", None) is None:
+        return
+    doc_box = DgmDocstring()
+    doc_box.docstring = info.docstring
+    doc_box.refFile = file_name
+    doc_box_name = model.add_docstring_box(doc_box)
+    conn = DgmConnection()
+    conn.kind = DgmConnection.ModuleDoc
+    conn.source = mod_box_name
+    conn.target = doc_box_name
+    model.add_connection(conn)
+    rank = DgmRank()
+    rank.firstObj = mod_box_name
+    rank.secondObj = doc_box_name
+    model.add_rank(rank)
+
+
+def add_single_file_to_model(
+    project: Project,
+    model: ImportDiagramModel,
+    info: object,
+    file_name: str,
+    options: ImportDiagramOptions,
+    errors: list[str] | None = None,
+) -> None:
+    """Add one file module and its import dependencies to the diagram model."""
+    if file_name.endswith("__init__.py"):
+        if not getattr(info, "classes", []) and not getattr(info, "functions", []) and not getattr(info, "globals", []) and not getattr(info, "imports", []):
+            return
+
+    mod_box = DgmModule()
+    mod_box.refFile = file_name
+    mod_box.kind = DgmModule.ModuleOfInterest
+    mod_box.title = module_title_from_path(file_name)
+    populate_module_box(mod_box, info, options)
+    mod_box_name = model.add_module(mod_box)
+    add_docstring_box(model, info, file_name, mod_box_name, options)
+
+    context = build_import_context(project, file_name)
+    resolved_imports, import_errors = resolve_imports(context, file_name, info.imports)
+    if errors is not None:
+        errors.extend(import_errors)
+
+    for import_name, resolved_path, imported_names in resolved_imports:
+        imp_box = DgmModule()
+        imp_box.title = import_name
+        if is_local_or_project(project, file_name, resolved_path):
+            imp_box.kind = DgmModule.OtherProjectModule
+            imp_box.refFile = realpath(resolved_path) if resolved_path else ""
+            if resolved_path and resolved_path.endswith(".py") and isfile(resolved_path):
+                other_info = project.cache.get(realpath(resolved_path))
+                populate_module_box(imp_box, other_info, options)
+        elif resolved_path is None:
+            imp_box.kind = DgmModule.UnknownModule
+        elif isabs(resolved_path):
+            imp_box.kind = DgmModule.SystemWideModule
+            imp_box.refFile = resolved_path
+            imp_box.docstring = system_wide_docstring(project, resolved_path)
+        else:
+            imp_box.kind = DgmModule.BuiltInModule
+
+        imp_box_name = model.add_module(imp_box)
+        imp_conn = DgmConnection()
+        imp_conn.kind = DgmConnection.ModuleDependency
+        imp_conn.source = mod_box_name
+        imp_conn.target = imp_box_name
+        if options.include_conn_text:
+            for imp_what in imported_names:
+                if imp_what:
+                    imp_conn.labels.append(imp_what)
+        model.add_connection(imp_conn)
+
 
 def build_import_diagram_model(
     project: Project,
+    files: list[str] | None = None,
     options: ImportDiagramOptions | None = None,
 ) -> ImportDiagramModel:
-    """Build a headless import diagram model from the resolved import graph."""
-    _ = options or ImportDiagramOptions()
+    """Build import diagram model for project files using full resolution logic."""
+    opts = options or ImportDiagramOptions()
     project.require_open()
-    import_graph: GraphIR = build_import_graph(project)
+    target_files = files if files is not None else project.python_files
     model = ImportDiagramModel()
-    node_ids: dict[str, str] = {}
-
-    for node in import_graph.nodes:
-        if not node.id.startswith("file:"):
-            continue
-        module = DgmModule()
-        module.kind = DgmModule.ModuleOfInterest
-        module.title = node.name
-        module.refFile = node.file
-        node_ids[node.id] = model.add_module(module)
-
-    for edge in import_graph.edges:
-        source_id = node_ids.get(edge.from_id)
-        target_id = node_ids.get(edge.to_id)
-        if source_id is None or target_id is None:
-            if edge.to_id.startswith("file:"):
-                imported = DgmModule()
-                imported.kind = DgmModule.OtherProjectModule
-                imported.title = basename(edge.to_id.replace("file:", ""))
-                target_id = model.add_module(imported)
-                node_ids[edge.to_id] = target_id
-            else:
-                imported = DgmModule()
-                if edge.to_id.startswith("builtin:"):
-                    imported.kind = DgmModule.BuiltInModule
-                else:
-                    imported.kind = DgmModule.UnknownModule
-                imported.title = edge.to_id.split(":", 1)[-1]
-                target_id = model.add_module(imported)
-            source_id = node_ids.get(edge.from_id)
-        if source_id is None or target_id is None:
-            continue
-        conn = DgmConnection()
-        conn.kind = DgmConnection.ModuleDependency
-        conn.source = source_id
-        conn.target = target_id
-        if edge.label:
-            conn.labels.append(edge.label)
-        model.add_connection(conn)
-
+    errors: list[str] = []
+    for file_name in target_files:
+        info = project.cache.get(realpath(file_name))
+        add_single_file_to_model(project, model, info, file_name, opts, errors)
     return model

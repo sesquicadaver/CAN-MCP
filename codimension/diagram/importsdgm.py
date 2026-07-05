@@ -39,7 +39,17 @@ from ui.qt import (
 )
 from utils.fileutils import isPythonFile
 from utils.globals import GlobalData
-from utils.importutils import getRequirementsHint, getUnresolvedPackageNames, resolveImports
+from utils.importutils import getRequirementsHint, getUnresolvedPackageNames
+
+from analysis.core_bridge import core_project_from_ide
+from codimension_core.import_diagram import (
+    DgmConnection,
+    DgmDocstring,
+    DgmModule,
+    ImportDiagramModel,
+    ImportDiagramOptions as CoreImportDiagramOptions,
+    add_single_file_to_model,
+)
 from utils.pixmapcache import getPixmap
 
 from .importsdgmgraphics import (
@@ -56,287 +66,6 @@ from .importsdgmgraphics import (
 from .plaindotparser import getGraphFromDescriptionData
 
 
-class DgmConnection:
-    """Holds information about one connection"""
-
-    # Connection types
-    ModuleDoc = 0
-    ModuleDependency = 1
-
-    def __init__(self):
-        self.objName = ""  # Unique object name
-        self.kind = -1  # See connection types
-        self.source = ""  # Connection start point
-        self.target = ""  # Connection end point
-        self.labels = []  # Connection labels: list of what imported
-
-    def toGraphviz(self):
-        """Serialize the connection in graphviz format"""
-        attributes = 'id="' + self.objName + '", arrowhead=none'
-        label = ""
-        for what in self.labels:
-            if label != "":
-                label += "\\n"
-            label += what
-        if label != "":
-            attributes += ', label="' + label + '", fontname=Arial, fontsize=10'
-
-        return self.source + " -> " + self.target + "[ " + attributes + " ];"
-
-    def __eq__(self, other):
-        """Checks if the connection connects the same objects"""
-        return self.source == other.source and self.target == other.target
-
-
-class DgmDocstring:
-    """Holds information about one docstring"""
-
-    def __init__(self):
-        self.objName = ""  # Unique object name
-        self.docstring = None  # Module docstring object
-
-        self.refFile = ""  # File of the docstring
-
-    def toGraphviz(self):
-        """Serialize the docstring box in graphviz format"""
-        escapedText = self.docstring.text.replace("\n", "\\n")
-        escapedText = escapedText.replace('"', '\\"')
-        attributes = "shape=box, fontname=Arial, fontsize=10"
-        return self.objName + " [ " + attributes + ', label="' + escapedText + '" ];'
-
-
-class DgmModule:
-    """Holds information about one module"""
-
-    # Module types
-    ModuleOfInterest = 0
-    OtherProjectModule = 1
-    SystemWideModule = 2
-    BuiltInModule = 3
-    UnknownModule = 4
-
-    def __init__(self):
-        self.objName = ""  # Unique object name
-        self.kind = -1  # See module types
-        self.title = ""  # title
-        self.classes = []  # list of classes objects
-        self.funcs = []  # list of funcs objects
-        self.globs = []  # list of global var objects
-        self.imports = []  # list of imports
-
-        self.refFile = ""  # File of the module
-        self.docstring = ""
-
-    def toGraphviz(self):
-        """Serialize the module box in graphviz format"""
-        classesPart = ""
-        funcsPart = ""
-        globsPart = ""
-
-        for klass in self.classes:
-            if classesPart != "":
-                classesPart += "\\n"
-            classesPart += klass.name
-        for func in self.funcs:
-            if funcsPart != "":
-                funcsPart += "\\n"
-            funcsPart += func.name
-        for glob in self.globs:
-            if globsPart != "":
-                globsPart += "\\n"
-            globsPart += glob.name
-
-        spareForTopBottom = "\\n"
-
-        attributes = "shape=box, fontname=Arial, fontsize=10"
-
-        if self.isProjectModule():
-            return (
-                self.objName
-                + " [ "
-                + attributes
-                + ', label="'
-                + spareForTopBottom
-                + self.title
-                + "\\n"
-                + classesPart
-                + "\\n"
-                + funcsPart
-                + "\\n"
-                + globsPart
-                + '" ];'
-            )
-        return self.objName + " [ " + attributes + ', label="' + self.title + '" ];'
-
-    def isProjectModule(self):
-        """True if belongs to the project or the dir of interest"""
-        return self.kind in [self.ModuleOfInterest, self.OtherProjectModule]
-
-    def __eq__(self, other):
-        """Compares two module boxes when they are added to the data model"""
-        if self.isProjectModule() and other.isProjectModule():
-            return self.refFile == other.refFile
-        return self.refFile == other.refFile and self.kind == other.kind and self.title == other.title
-
-    def getTooltip(self):
-        """Provides a tooltip"""
-        tooltip = ""
-        if self.refFile != "":
-            tooltip = self.refFile
-        if self.docstring != "":
-            if tooltip != "":
-                tooltip += "\n\n"
-            tooltip += self.docstring
-        return tooltip
-
-
-class DgmRank:
-    """Holds information about one rank"""
-
-    def __init__(self):
-        self.firstObj = ""
-        self.secondObj = ""
-
-    def __eq__(self, other):
-        """Compares two ranks"""
-        return self.firstObj == other.firstObj and self.secondObj == other.secondObj
-
-    def toGraphviz(self):
-        """Serialize the rank in graphviz format"""
-        return '{ rank=same; "' + self.firstObj + '"; "' + self.secondObj + '"; }'
-
-
-class ImportDiagramModel:
-    """Holds information about data model of an import diagram"""
-
-    def __init__(self):
-        self.modules = []
-        self.docstrings = []
-        self.connections = []
-        self.ranks = []
-
-        self.__objectsCounter = -1
-
-    def clear(self):
-        """Clears the diagram model"""
-        self.modules = []
-        self.docstrings = []
-        self.connections = []
-        self.ranks = []
-
-        self.__objectsCounter = -1
-
-    def toGraphviz(self):
-        """Serialize the import diagram in graphviz format"""
-        result = "digraph ImportsDiagram { "
-        for item in self.docstrings:
-            result += item.toGraphviz() + "\n"
-        for item in self.modules:
-            result += item.toGraphviz() + "\n"
-        for item in self.connections:
-            result += item.toGraphviz() + "\n"
-        for item in self.ranks:
-            result += item.toGraphviz() + "\n"
-        result += "}"
-        return result
-
-    def __newName(self):
-        """Generates a short name for the graphviz objects"""
-        self.__objectsCounter += 1
-        return "obj" + str(self.__objectsCounter)
-
-    def addRank(self, rank):
-        """Adds a rank"""
-        for idx in range(0, len(self.ranks)):
-            if self.ranks[idx] == rank:
-                return
-        self.ranks.append(rank)
-
-    def addConnection(self, conn):
-        """Adds a connection and provides its name"""
-        # The connections can be added twice if there are two import directives
-        index = -1
-        for idx in range(0, len(self.connections)):
-            if self.connections[idx] == conn:
-                index = idx
-                break
-
-        if index == -1:
-            # new connection, generate name and add
-            conn.objName = self.__newName()
-            self.connections.append(conn)
-            return conn.objName
-
-        # There is already such a connection. So merge labels.
-        self.connections[index].labels += conn.labels
-        return self.connections[index].objName
-
-    def addDocstringBox(self, docBox):
-        """Adds a module docstring"""
-        # Docstring boxes cannot appear twice so just add it
-        docBox.objName = self.__newName()
-        self.docstrings.append(docBox)
-        return docBox.objName
-
-    def addModule(self, modBox):
-        """Adds a module box"""
-        # It might happened that the same module appeared more than once
-        index = -1
-        for idx in range(0, len(self.modules)):
-            if self.modules[idx] == modBox:
-                index = idx
-                break
-
-        if index == -1:
-            # New module box, generate name and add it
-            modBox.objName = self.__newName()
-            self.modules.append(modBox)
-            return modBox.objName
-
-        # There is already such a box, so the box type might need to be
-        # adjusted
-        if modBox.kind == self.modules[index].kind:
-            return self.modules[index].objName
-
-        if modBox.kind == DgmModule.ModuleOfInterest:
-            # Replace the existed one with a new one but keep the object name
-            modBox.objName = self.modules[index].objName
-            self.modules[index] = modBox
-            return modBox.objName
-
-        # No need in adjustments
-        return self.modules[index].objName
-
-    def findModule(self, name):
-        """Searches for a module by the object name"""
-        for obj in self.modules:
-            if obj.objName == name:
-                return obj
-        return None
-
-    def findConnection(self, name, tail=""):
-        """Searches for a connection by the object name"""
-        if tail == "":
-            # Search by the connection name
-            for obj in self.connections:
-                if obj.objName == name:
-                    return obj
-            return None
-
-        # Search by the name of the objects it connects
-        for obj in self.connections:
-            if obj.source == name and obj.target == tail:
-                return obj
-        return None
-
-    def findDocstring(self, name):
-        """Searches for a docstring by the object name"""
-        for obj in self.docstrings:
-            if obj.objName == name:
-                return obj
-        return None
-
-
 class ImportDiagramOptions:
     """Holds the generated diagram settings"""
 
@@ -346,6 +75,15 @@ class ImportDiagramOptions:
         self.includeGlobs = True
         self.includeDocs = False
         self.includeConnText = True
+
+    def to_core(self) -> CoreImportDiagramOptions:
+        return CoreImportDiagramOptions.from_legacy(
+            include_classes=self.includeClasses,
+            include_funcs=self.includeFuncs,
+            include_globs=self.includeGlobs,
+            include_docs=self.includeDocs,
+            include_conn_text=self.includeConnText,
+        )
 
 
 class ImportsDiagramDialog(QDialog):
@@ -542,147 +280,19 @@ class ImportsDiagramProgress(QDialog):
             if isPythonFile(fName):
                 self.__participantFiles.append(fName)
 
-    def __addBoxInfo(self, box, info):
-        """Adds information to the given box if so configured"""
-        if info.docstring is not None:
-            box.docstring = info.docstring.text
-
-        if self.__options.includeClasses:
-            for klass in info.classes:
-                box.classes.append(klass)
-
-        if self.__options.includeFuncs:
-            for func in info.functions:
-                box.funcs.append(func)
-
-        if self.__options.includeGlobs:
-            for glob in info.globals:
-                box.globs.append(glob)
-
-        if self.__options.includeConnText:
-            for imp in info.imports:
-                box.imports.append(imp)
-
-    def __addDocstringBox(self, info, fName, modBoxName):
-        """Adds a docstring box if needed"""
-        if self.__options.includeDocs:
-            if info.docstring is not None:
-                docBox = DgmDocstring()
-                docBox.docstring = info.docstring
-                docBox.refFile = fName
-
-                # Add the box and its connection
-                docBoxName = self.dataModel.addDocstringBox(docBox)
-
-                conn = DgmConnection()
-                conn.kind = DgmConnection.ModuleDoc
-                conn.source = modBoxName
-                conn.target = docBoxName
-                self.dataModel.addConnection(conn)
-
-                # Add rank for better layout
-                rank = DgmRank()
-                rank.firstObj = modBoxName
-                rank.secondObj = docBoxName
-                self.dataModel.addRank(rank)
-
-    def __getSytemWideImportDocstring(self, path):
-        """Provides the system wide module docstring"""
-        if isPythonFile(path):
-            try:
-                info = GlobalData().briefModinfoCache.get(path)
-                if info.docstring is not None:
-                    return info.docstring.text
-            except Exception:
-                pass
-        return ""
-
-    @staticmethod
-    def __getModuleTitle(fName):
-        """Extracts a module name out of the file name"""
-        baseTitle = os.path.basename(fName).split(".")[0]
-        if baseTitle != "__init__":
-            return baseTitle
-
-        # __init__ is not very descriptive. Add a top level dir.
-        dirName = os.path.dirname(fName)
-        topDir = os.path.basename(dirName)
-        return topDir + "(" + baseTitle + ")"
-
-    @staticmethod
-    def __isLocalOrProject(fName, resolvedPath):
-        """True if the module is a project one or is in the nested dirs"""
-        if resolvedPath is None:
-            return False
-        if not os.path.isabs(resolvedPath):
-            return False
-        if GlobalData().project.isProjectFile(resolvedPath):
-            return True
-
-        resolvedDir = os.path.dirname(resolvedPath)
-        baseDir = os.path.dirname(fName)
-        return resolvedDir.startswith(baseDir)
-
     def __addSingleFileToDataModel(self, info, fName):
-        """Adds a single file to the data model"""
-        if fName.endswith("__init__.py"):
-            if not info.classes and not info.functions and not info.globals and not info.imports:
-                # Skip dummy init files
-                return
-
-        modBox = DgmModule()
-        modBox.refFile = fName
-
-        modBox.kind = DgmModule.ModuleOfInterest
-        modBox.title = self.__getModuleTitle(fName)
-
-        self.__addBoxInfo(modBox, info)
-        modBoxName = self.dataModel.addModule(modBox)
-        self.__addDocstringBox(info, fName, modBoxName)
-
-        # Analyze what was imported
-        resolvedImports, errors = resolveImports(fName, info.imports)
-        if errors:
-            self.__allImportErrors.extend(errors)
-
-        for item in resolvedImports:
-            importName = item[0]  # from name
-            resolvedPath = item[1]  # 'built-in', None or absolute path
-            importedNames = item[2]  # list of strings
-
-            impBox = DgmModule()
-            impBox.title = importName
-
-            if self.__isLocalOrProject(fName, resolvedPath):
-                impBox.kind = DgmModule.OtherProjectModule
-                impBox.refFile = resolvedPath
-                if isPythonFile(resolvedPath):
-                    otherInfo = GlobalData().briefModinfoCache.get(resolvedPath)
-                    self.__addBoxInfo(impBox, otherInfo)
-            else:
-                if resolvedPath is None:
-                    # e.g. 'import sys' will have None for the path
-                    impBox.kind = DgmModule.UnknownModule
-                elif os.path.isabs(resolvedPath):
-                    impBox.kind = DgmModule.SystemWideModule
-                    impBox.refFile = resolvedPath
-                    impBox.docstring = self.__getSytemWideImportDocstring(resolvedPath)
-                else:
-                    # e.g. 'import time' will have 'built-in' in the path
-                    impBox.kind = DgmModule.BuiltInModule
-
-            impBoxName = self.dataModel.addModule(impBox)
-
-            impConn = DgmConnection()
-            impConn.kind = DgmConnection.ModuleDependency
-            impConn.source = modBoxName
-            impConn.target = impBoxName
-
-            if self.__options.includeConnText:
-                for impWhat in importedNames:
-                    if impWhat:
-                        impConn.labels.append(impWhat)
-            self.dataModel.addConnection(impConn)
+        """Adds a single file to the data model."""
+        project = core_project_from_ide()
+        if project is None:
+            raise Exception("Project must be loaded for import diagram analysis")
+        add_single_file_to_model(
+            project,
+            self.dataModel,
+            info,
+            fName,
+            self.__options.to_core(),
+            self.__allImportErrors,
+        )
 
     def __process(self):
         """Accumulation process"""

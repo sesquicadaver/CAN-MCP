@@ -2,10 +2,10 @@
 
 VS Code / Cursor companion extension scaffold for [Codimension MCP](../codimension_mcp/README.md).
 
-## Scope (0.1.0)
+## Scope (0.2.0)
 
 - Command palette entry pointing to MCP setup docs
-- Future: WebView panels for Graph IR diagrams rendered by `render_diagram`
+- **Codimension: Show Diagram (HTML WebView)** — opens `.codimension/diagrams/*.html` from `render_diagram`
 
 ## Build
 

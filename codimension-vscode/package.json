@@ -2,19 +2,26 @@
   "name": "codimension-vscode",
   "displayName": "Codimension Analysis",
   "description": "VS Code companion for Codimension MCP code analysis",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "codimension",
   "engines": {
     "vscode": "^1.85.0"
   },
   "categories": ["Other"],
-  "activationEvents": [],
+  "activationEvents": [
+    "onCommand:codimension.showDiagram",
+    "onCommand:codimension.openMcpDocs"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
         "command": "codimension.openMcpDocs",
         "title": "Codimension: Open MCP Setup Guide"
+      },
+      {
+        "command": "codimension.showDiagram",
+        "title": "Codimension: Show Diagram (HTML WebView)"
       }
     ]
   },

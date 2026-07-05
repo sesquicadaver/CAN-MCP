@@ -21,9 +21,7 @@ class SymbolDefinition:
     symbol_id: str
 
 
-def build_reverse_index(project: Project) -> dict[str, list[SymbolDefinition]]:
-    """Build name → definitions map from project symbols."""
-    project.require_open()
+def _build_reverse_index_uncached(project: Project) -> dict[str, list[SymbolDefinition]]:
     index: dict[str, list[SymbolDefinition]] = {}
     graph = get_symbols(project)
     for node in graph.nodes:
@@ -41,6 +39,15 @@ def build_reverse_index(project: Project) -> dict[str, list[SymbolDefinition]]:
             short_name = node.name.split(".")[-1]
             index.setdefault(short_name, []).append(entry)
     return index
+
+
+def build_reverse_index(project: Project) -> dict[str, list[SymbolDefinition]]:
+    """Build name → definitions map from project symbols."""
+    project.require_open()
+    return project.analysis_cache.get_or_build_reverse_index(
+        project.python_files,
+        lambda: _build_reverse_index_uncached(project),
+    )
 
 
 def lookup_symbol(project: Project, name: str) -> GraphIR:
