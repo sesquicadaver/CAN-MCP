@@ -6,12 +6,12 @@ from __future__ import annotations
 import os
 from os.path import join
 
-from codimension_core import build_import_graph
 from codimension_core.callgraph import build_call_graph, impact_analysis
 from codimension_core.cfg import get_control_flow
 from codimension_core.errors import AnalysisError
 from codimension_core.graph_ir import GraphIR
 from codimension_core.graph_render import graph_to_html, graph_to_mermaid
+from codimension_core.import_diagram import build_import_diagram_graph_ir
 
 from .schemas import WorkspaceState
 from .serializers import dumps_payload
@@ -28,7 +28,7 @@ def _require_project(state: WorkspaceState):
 def _build_graph(state: WorkspaceState, kind: str, target: str | None) -> GraphIR:
     project = _require_project(state)
     if kind == "import":
-        return build_import_graph(project)
+        return build_import_diagram_graph_ir(project)
     if kind == "call":
         return build_call_graph(project, target)
     if kind == "control_flow":
@@ -65,18 +65,20 @@ def render_diagram(state: WorkspaceState, kind: str, target: str | None = None) 
     html_path = join(output_dir, file_name)
     with open(html_path, "w", encoding="utf-8") as handle:
         handle.write(html_body)
-    return dumps_payload(
-        {
-            "status": "ok",
-            "kind": kind,
-            "target": target,
-            "html_path": html_path,
-            "mermaid": mermaid,
-            "nodes": len(graph.nodes),
-            "edges": len(graph.edges),
-            "webview_hint": f"Open {html_path} in Cursor Simple Browser or file preview",
-        }
-    )
+    payload: dict[str, object] = {
+        "status": "ok",
+        "kind": kind,
+        "target": target,
+        "html_path": html_path,
+        "mermaid": mermaid,
+        "nodes": len(graph.nodes),
+        "edges": len(graph.edges),
+        "webview_hint": f"Open {html_path} in Cursor Simple Browser, codimension.showDiagram, or file preview",
+    }
+    if kind == "import":
+        payload["modules"] = graph.meta.get("modules", len(graph.nodes))
+        payload["graphviz"] = graph.meta.get("graphviz", "")
+    return dumps_payload(payload)
 
 
 def read_diagram_html(state: WorkspaceState, kind: str, target: str | None = None) -> str:

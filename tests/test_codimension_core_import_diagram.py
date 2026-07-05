@@ -36,3 +36,20 @@ def test_import_diagram_includes_classes_and_docstrings(tmp_path):
     assert "Foo" in dot
     assert "bar" in dot
     assert model.docstrings
+
+
+def test_import_diagram_model_to_graph_ir(tmp_path):
+    from codimension_core.import_diagram import import_diagram_model_to_graph_ir
+
+    project_dir = tmp_path / "proj"
+    project_dir.mkdir()
+    (project_dir / "mod.py").write_text("import os\n", encoding="utf-8")
+    project = Project.open(str(project_dir))
+    project.analyze_all()
+
+    model = build_import_diagram_model(project)
+    graph = import_diagram_model_to_graph_ir(model)
+    assert graph.meta["kind"] == "import_diagram"
+    assert graph.meta["graphviz"]
+    assert graph.nodes
+    assert graph.edges or len(model.connections) == 0

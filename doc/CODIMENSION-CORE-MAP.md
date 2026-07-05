@@ -190,8 +190,8 @@ codimension_core/
 | **codimension_core import diagram** | import_diagram model | unit: tests/test_codimension_core_import_diagram.py |
 | **MCP lookup_symbol** | reverse index tool | unit: tests/test_codimension_mcp.py |
 | **codimension-vscode** | extension scaffold | Manual: npm run compile |
-| **MCP render_diagram** | `.codimension/diagrams/*.html` WebView | ✅ 0.3.0 |
-| `render_diagram(kind, target?)` | `graph_render` + `.codimension/diagrams/` | ✅ 0.3.0 WebView |
+| **MCP render_diagram** | `.codimension/diagrams/*.html` WebView | ✅ 0.7.0 full import diagram model |
+| `render_diagram(kind, target?)` | `import_diagram` Graph IR + Graphviz DOT in payload | ✅ 0.7.0 |
 
 ---
 

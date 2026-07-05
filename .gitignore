@@ -63,4 +63,3 @@ target/
 # symbolic link
 src/thirdparty
 gitsync.sh
-/codimension-vscode

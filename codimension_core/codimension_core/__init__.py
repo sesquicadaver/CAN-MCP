@@ -19,7 +19,13 @@ from .disasm import (
 )
 from .explain import explain_symbol
 from .graph_render import graph_to_html, graph_to_mermaid
-from .import_diagram import ImportDiagramModel, ImportDiagramOptions, build_import_diagram_model
+from .import_diagram import (
+    ImportDiagramModel,
+    ImportDiagramOptions,
+    build_import_diagram_graph_ir,
+    build_import_diagram_model,
+    import_diagram_model_to_graph_ir,
+)
 from .imports import (
     build_import_context,
     collect_import_resolutions_classified,
@@ -46,7 +52,9 @@ __all__ = [
     "analyze_file_diagnostics",
     "build_call_graph",
     "build_import_context",
+    "build_import_diagram_graph_ir",
     "build_import_diagram_model",
+    "import_diagram_model_to_graph_ir",
     "build_import_graph",
     "collect_import_resolutions_classified",
     "collect_unresolved_packages",
@@ -70,4 +78,4 @@ __all__ = [
     "resolve_imports_for_file",
 ]
 
-__version__ = "0.9.0"
+__version__ = "0.11.0"

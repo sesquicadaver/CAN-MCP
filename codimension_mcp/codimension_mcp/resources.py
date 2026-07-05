@@ -79,7 +79,7 @@ def register_resources(mcp: FastMCP, get_state: Callable[[], WorkspaceState]) ->
     @mcp.resource(
         "codimension://diagram/import",
         name="diagram_import",
-        description="HTML/SVG import graph for Cursor WebView.",
+        description="HTML import diagram from full ImportDiagramModel (classes/imports resolution).",
         mime_type="text/html",
     )
     def diagram_import_resource() -> str:

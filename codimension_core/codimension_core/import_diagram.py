@@ -402,3 +402,74 @@ def build_import_diagram_model(
         info = project.cache.get(realpath(file_name))
         add_single_file_to_model(project, model, info, file_name, opts, errors)
     return model
+
+
+def _module_kind_name(kind: int) -> str:
+    mapping = {
+        DgmModule.ModuleOfInterest: "module_of_interest",
+        DgmModule.OtherProjectModule: "other_project_module",
+        DgmModule.SystemWideModule: "system_wide_module",
+        DgmModule.BuiltInModule: "builtin_module",
+        DgmModule.UnknownModule: "unknown_module",
+    }
+    return mapping.get(kind, "module")
+
+
+def import_diagram_model_to_graph_ir(model: ImportDiagramModel) -> GraphIR:
+    """Convert import diagram model to Graph IR for HTML/Mermaid renderers."""
+    from .graph_ir import GraphEdge, GraphIR, GraphNode
+
+    graph = GraphIR(
+        meta={
+            "kind": "import_diagram",
+            "modules": len(model.modules),
+            "connections": len(model.connections),
+            "docstrings": len(model.docstrings),
+            "graphviz": model.to_graphviz(),
+        }
+    )
+    for mod in model.modules:
+        if not mod.objName:
+            continue
+        graph.add_node(
+            GraphNode(
+                id=mod.objName,
+                type=_module_kind_name(mod.kind),
+                name=mod.title or mod.objName,
+                file=mod.refFile,
+                line_start=1,
+                line_end=1,
+                extra={"classes": len(mod.classes), "funcs": len(mod.funcs), "globs": len(mod.globs)},
+            )
+        )
+    for doc in model.docstrings:
+        if not doc.objName:
+            continue
+        graph.add_node(
+            GraphNode(
+                id=doc.objName,
+                type="docstring",
+                name="docstring",
+                file=doc.refFile,
+                line_start=1,
+                line_end=1,
+            )
+        )
+    for conn in model.connections:
+        label = "\\n".join(conn.labels) if conn.labels else ""
+        edge_type = "module_doc" if conn.kind == DgmConnection.ModuleDoc else "module_dependency"
+        graph.add_edge(
+            GraphEdge(
+                from_id=conn.source,
+                to_id=conn.target,
+                type=edge_type,
+                label=label,
+            )
+        )
+    return graph
+
+
+def build_import_diagram_graph_ir(project: Project, options: ImportDiagramOptions | None = None) -> GraphIR:
+    """Build Graph IR from the full import diagram model."""
+    model = build_import_diagram_model(project, options=options)
+    return import_diagram_model_to_graph_ir(model)

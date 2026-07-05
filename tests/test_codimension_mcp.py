@@ -113,6 +113,9 @@ def test_render_diagram_and_html_resource(tmp_path):
     assert payload["status"] == "ok"
     assert payload["html_path"].endswith(".html")
     assert Path(payload["html_path"]).is_file()
+    assert "graphviz" in payload
+    assert "digraph ImportsDiagram" in payload["graphviz"]
+    assert payload.get("modules", 0) >= 1
 
     html = read_diagram_html(state, "import")
     assert html.startswith("<!DOCTYPE html>")
