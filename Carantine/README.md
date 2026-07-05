@@ -13,4 +13,5 @@
 | Шлях | Дата | Причина |
 | ---- | ---- | ------- |
 | `codimension/utils/importutils_legacy.py` | 2026-07-05 | Повна IDE-версія до extraction у `codimension_core.imports` |
+| `codimension/diagram/depsdiagram_legacy.py` | 2026-07-05 | Classification logic до extraction у `collect_import_resolutions_classified` |
 | `codimension/analysis/ierrors_legacy.py` | 2026-07-05 | pyflakes/radon до extraction у `codimension_core.analyzer` |
