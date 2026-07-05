@@ -1,0 +1,1127 @@
+# -*- coding: utf-8 -*-
+#
+# codimension - graphics python two-way code editor and analyzer
+# Copyright (C) 2010-2017  Sergey Satskiy <sergey.satskiy@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+"""Codimension main window menu"""
+
+import datetime
+import os
+import os.path
+import pwd
+import socket
+import sys
+
+from utils.diskvaluesrelay import getRecentFiles
+from utils.globals import GlobalData
+from utils.importutils import (
+    generateRequirementsFromProject,
+    writeRequirementsFile,
+)
+from utils.misc import getIDETemplateFile, getLocaleDate, getProjectTemplateFile
+from utils.pixmapcache import getIcon
+from utils.settings import CLEAR_AND_REUSE, NO_CLEAR_AND_REUSE, NO_REUSE
+from utils.skin import getSkinsList
+
+from .mainwindowtabwidgetbase import MainWindowTabWidgetBase
+from .qt import (
+    QActionGroup,
+    QApplication,
+    QCursor,
+    QDialog,
+    QFontDialog,
+    QMenu,
+    QMessageBox,
+    QStyleFactory,
+    Qt,
+)
+
+
+def getAccelerator(count):
+    """Provides an accelerator text for a menu item"""
+    if count < 10:
+        return "&" + str(count) + ".  "
+    return "&" + chr(count - 10 + ord("a")) + ".  "
+
+
+def _ensure_cdmplugins_in_path():
+    """Ensure cdmplugins package is importable (add project root to sys.path when needed)."""
+    try:
+        import cdmplugins  # noqa: F401
+    except ImportError:
+        try:
+            import plugins
+
+            root = os.path.dirname(os.path.dirname(os.path.dirname(plugins.__file__)))
+            if root not in sys.path:
+                sys.path.insert(0, root)
+        except Exception:
+            pass
+
+
+class MainWindowMenuMixin:
+    """Main window menu mixin"""
+
+    def __init__(self):
+        pass
+
+    def _initMainMenu(self):
+        """Initializes the main menu bar"""
+        menuBar = self.menuBar()
+        for member in [
+            self.__buildProjectMenu,
+            self.__buildTabMenu,
+            self.__buildEditMenu,
+            self.__buildSearchMenu,
+            self.__buildRunMenu,
+            self.__buildDebugMenu,
+            self.__buildToolsMenu,
+            self.__buildDiagramsMenu,
+            self.__buildViewMenu,
+            self.__buildOptionsMenu,
+            self.__buildPluginsMenu,
+            self.__buildHelpMenu,
+        ]:
+            menuBar.addMenu(member(menuBar))
+
+    def __buildProjectMenu(self, menuBar):
+        """Builds a project menu"""
+        prjMenu = QMenu("&Project", menuBar)
+        prjMenu.setObjectName("project")
+        prjMenu.aboutToShow.connect(self.__prjAboutToShow)
+        prjMenu.aboutToHide.connect(self.__prjAboutToHide)
+        self.__newProjectAct = prjMenu.addAction(
+            getIcon("createproject.png"), "&New project", self._createNewProject, "Ctrl+Shift+N"
+        )
+        self.__openProjectAct = prjMenu.addAction(
+            getIcon("project.png"), "&Open project", self._openProject, "Ctrl+Shift+O"
+        )
+        self._unloadProjectAct = prjMenu.addAction(
+            getIcon("unloadproject.png"), "&Unload project", self.projectViewer.unloadProject
+        )
+        self._projectPropsAct = prjMenu.addAction(
+            getIcon("smalli.png"), "&Properties", self.projectViewer.projectProperties
+        )
+        self.__gitRepoAct = prjMenu.addAction("Git &repository...", self._onGitRepository)
+        prjMenu.addSeparator()
+        self._prjTemplateMenu = QMenu("Project-specific &template", self)
+        self.__createPrjTemplateAct = self._prjTemplateMenu.addAction(getIcon("generate.png"), "&Create")
+        self.__createPrjTemplateAct.triggered.connect(self._onCreatePrjTemplate)
+        self.__editPrjTemplateAct = self._prjTemplateMenu.addAction(getIcon("edit.png"), "&Edit")
+        self.__editPrjTemplateAct.triggered.connect(self._onEditPrjTemplate)
+        self._prjTemplateMenu.addSeparator()
+        self.__delPrjTemplateAct = self._prjTemplateMenu.addAction(getIcon("trash.png"), "&Delete")
+        self.__delPrjTemplateAct.triggered.connect(self._onDelPrjTemplate)
+        prjMenu.addMenu(self._prjTemplateMenu)
+        prjMenu.addSeparator()
+        self.__recentPrjMenu = QMenu("&Recent projects", self)
+        self.__recentPrjMenu.triggered.connect(self._onRecentPrj)
+        prjMenu.addMenu(self.__recentPrjMenu)
+        prjMenu.addSeparator()
+        self.__quitAct = prjMenu.addAction(
+            getIcon("exitmenu.png"), "E&xit codimension", QApplication.closeAllWindows, "Ctrl+Q"
+        )
+        return prjMenu
+
+    def __buildTabMenu(self, menuBar):
+        """Build the tab menu"""
+        tabMenu = QMenu("&Tab", menuBar)
+        tabMenu.setObjectName("tab")
+        tabMenu.aboutToShow.connect(self.__tabAboutToShow)
+        tabMenu.aboutToHide.connect(self.__tabAboutToHide)
+        self.__newTabAct = tabMenu.addAction(getIcon("filemenu.png"), "&New tab", self.em.newTabClicked, "Ctrl+N")
+        self.__openFileAct = tabMenu.addAction(getIcon("filemenu.png"), "&Open file", self._openFile, "Ctrl+O")
+        self.__cloneTabAct = tabMenu.addAction(getIcon("clonetabmenu.png"), "&Clone tab", self.em.onClone)
+        self.__closeOtherTabsAct = tabMenu.addAction(getIcon(""), "Close oth&er tabs", self.em.onCloseOther)
+        self.__closeTabAct = tabMenu.addAction(getIcon("closetabmenu.png"), "Close &tab", self.em.onCloseTab)
+        tabMenu.addSeparator()
+        self.__saveFileAct = tabMenu.addAction(getIcon("savemenu.png"), "&Save", self.em.onSave, "Ctrl+S")
+        self.__saveFileAsAct = tabMenu.addAction(
+            getIcon("saveasmenu.png"), "Save &as...", self.em.onSaveAs, "Ctrl+Shift+S"
+        )
+        self.__tabJumpToDefAct = tabMenu.addAction(
+            getIcon("definition.png"), "&Jump to definition", self._onTabJumpToDef
+        )
+        self.__calltipAct = tabMenu.addAction(getIcon("calltip.png"), "Show &calltip", self._onShowCalltip)
+        self.__tabJumpToScopeBeginAct = tabMenu.addAction(
+            getIcon("jumpupscopemenu.png"), "Jump to scope &begin", self._onTabJumpToScopeBegin
+        )
+        self.__tabOpenImportAct = tabMenu.addAction(getIcon("imports.png"), "Open &import(s)", self._onTabOpenImport)
+        self.__openAsFileAct = tabMenu.addAction(getIcon("filemenu.png"), "O&pen as file", self._onOpenAsFile)
+        self.__downloadAndShowAct = tabMenu.addAction(
+            getIcon("filemenu.png"), "Download and show", self._onDownloadAndShow
+        )
+        self.__openInBrowserAct = tabMenu.addAction(
+            getIcon("homepagemenu.png"), "Open in browser", self._onOpenInBrowser
+        )
+        tabMenu.addSeparator()
+        self.__highlightInPrjAct = tabMenu.addAction(
+            getIcon("highlightmenu.png"), "Highlight in project browser", self.em.onHighlightInPrj
+        )
+        self.__highlightInFSAct = tabMenu.addAction(
+            getIcon("highlightmenu.png"), "Highlight in file system browser", self.em.onHighlightInFS
+        )
+        self.__highlightInOutlineAct = tabMenu.addAction(
+            getIcon("highlightmenu.png"), "Highlight in outline browser", self._onHighlightInOutline
+        )
+        tabMenu.addSeparator()
+        self.__recentFilesMenu = QMenu("&Recent files", self)
+        self.__recentFilesMenu.triggered.connect(self._onRecentFile)
+        tabMenu.addMenu(self.__recentFilesMenu)
+        return tabMenu
+
+    def __buildEditMenu(self, menuBar):
+        """Builds edit menu"""
+        editMenu = QMenu("&Edit", menuBar)
+        editMenu.setObjectName("edit")
+        editMenu.aboutToShow.connect(self.__editAboutToShow)
+        editMenu.aboutToHide.connect(self.__editAboutToHide)
+        self.__undoAct = editMenu.addAction(getIcon("undo.png"), "&Undo", self._onUndo)
+        self.__redoAct = editMenu.addAction(getIcon("redo.png"), "&Redo", self._onRedo)
+        editMenu.addSeparator()
+        self.__cutAct = editMenu.addAction(getIcon("cutmenu.png"), "Cu&t", self._onCut)
+        self.__copyAct = editMenu.addAction(getIcon("copymenu.png"), "&Copy", self.em.onCopy)
+        self.__pasteAct = editMenu.addAction(getIcon("pastemenu.png"), "&Paste", self._onPaste)
+        self.__selectAllAct = editMenu.addAction(getIcon("selectallmenu.png"), "Select &all", self._onSelectAll)
+        editMenu.addSeparator()
+        self.__commentAct = editMenu.addAction(getIcon("commentmenu.png"), "C&omment/uncomment", self._onComment)
+        self.__duplicateAct = editMenu.addAction(getIcon("duplicatemenu.png"), "&Duplicate line", self._onDuplicate)
+        self.__autocompleteAct = editMenu.addAction(
+            getIcon("autocompletemenu.png"), "Autoco&mplete", self._onAutocomplete
+        )
+        self.__expandTabsAct = editMenu.addAction(
+            getIcon("expandtabs.png"), "Expand tabs (&4 spaces)", self._onExpandTabs
+        )
+        self.__trailingSpacesAct = editMenu.addAction(
+            getIcon("trailingws.png"), "Remove trailing &spaces", self._onRemoveTrailingSpaces
+        )
+        return editMenu
+
+    def __buildSearchMenu(self, menuBar):
+        """Build the search menu"""
+        searchMenu = QMenu("&Search", menuBar)
+        searchMenu.setObjectName("search")
+        searchMenu.aboutToShow.connect(self.__searchAboutToShow)
+        searchMenu.aboutToHide.connect(self.__searchAboutToHide)
+        self.__searchInFilesAct = searchMenu.addAction(
+            getIcon("findindir.png"), "Find in file&s", self.findInFilesClicked, "Ctrl+Shift+F"
+        )
+        searchMenu.addSeparator()
+        self._findNameMenuAct = searchMenu.addAction(
+            getIcon("findname.png"), "Find &name in project", self.findNameClicked, "Alt+Shift+S"
+        )
+        self._findProjectFileAct = searchMenu.addAction(
+            getIcon("findfile.png"), "Find &project file", self.findFileClicked, "Alt+Shift+O"
+        )
+        searchMenu.addSeparator()
+        self.__findOccurencesAct = searchMenu.addAction(
+            getIcon("findindir.png"), "Find &occurrences", self._onFindOccurences
+        )
+        self.__findAct = searchMenu.addAction(getIcon("findindir.png"), "&Find...", self._onFind)
+        self.__findNextAct = searchMenu.addAction(getIcon("1rightarrow.png"), "&Next highlight", self._onFindNext)
+        self.__findPrevAct = searchMenu.addAction(
+            getIcon("1leftarrow.png"), "Pre&vious highlight", self._onFindPrevious
+        )
+        self.__replaceAct = searchMenu.addAction(getIcon("replace.png"), "&Replace...", self._onReplace)
+        self.__goToLineAct = searchMenu.addAction(getIcon("gotoline.png"), "&Go to line...", self._onGoToLine)
+        return searchMenu
+
+    def __buildRunMenu(self, menuBar):
+        """Build the run menu"""
+        runMenu = QMenu("&Run", menuBar)
+        runMenu.setObjectName("run")
+        runMenu.aboutToShow.connect(self.__runAboutToShow)
+        self.__prjRunAct = runMenu.addAction(getIcon("run.png"), "Run &project main script", self.onRunProject)
+        self.__prjRunDlgAct = runMenu.addAction(
+            getIcon("detailsdlg.png"), "Run p&roject main script...", self.onRunProjectDlg
+        )
+        self._tabRunAct = runMenu.addAction(getIcon("run.png"), "Run &tab script", self.onRunTab)
+        self._tabRunDlgAct = runMenu.addAction(getIcon("detailsdlg.png"), "Run t&ab script...", self.onRunTabDlg)
+        runMenu.addSeparator()
+        self.__prjProfileAct = runMenu.addAction(
+            getIcon("profile.png"), "Profile project main script", self.onProfileProject
+        )
+        self.__prjProfileDlgAct = runMenu.addAction(
+            getIcon("profile.png"), "Profile project main script...", self.onProfileProjectDlg
+        )
+        self._tabProfileAct = runMenu.addAction(getIcon("profile.png"), "Profile tab script", self.onProfileTab)
+        self._tabProfileDlgAct = runMenu.addAction(
+            getIcon("profile.png"), "Profile tab script...", self.onProfileTabDlg
+        )
+        return runMenu
+
+    def __buildDebugMenu(self, menuBar):
+        """Build the debug menu"""
+        dbgMenu = QMenu("Debu&g", menuBar)
+        dbgMenu.setObjectName("debug")
+        dbgMenu.aboutToShow.connect(self.__debugAboutToShow)
+        self._prjDebugAct = dbgMenu.addAction(
+            getIcon("debugger.png"), "Debug &project main script", self.onDebugProject, "Shift+F5"
+        )
+        self._prjDebugDlgAct = dbgMenu.addAction(
+            getIcon("detailsdlg.png"), "Debug p&roject main script...", self.onDebugProjectDlg, "Ctrl+Shift+F5"
+        )
+        self._tabDebugAct = dbgMenu.addAction(getIcon("debugger.png"), "Debug &tab script", self.onDebugTab, "F5")
+        self._tabDebugDlgAct = dbgMenu.addAction(
+            getIcon("detailsdlg.png"), "Debug t&ab script...", self.onDebugTabDlg, "Ctrl+F5"
+        )
+        dbgMenu.addSeparator()
+        self._debugStopAct = dbgMenu.addAction(
+            getIcon("dbgstop.png"), "Stop debugging session", self._onStopDbgSession, "F10"
+        )
+        self._debugStopAct.setEnabled(False)
+        self._debugRestartAct = dbgMenu.addAction(
+            getIcon("dbgrestart.png"), "Restart session", self._onRestartDbgSession, "F4"
+        )
+        self._debugRestartAct.setEnabled(False)
+        dbgMenu.addSeparator()
+        self._debugContinueAct = dbgMenu.addAction(getIcon("dbggo.png"), "Continue", self._onDbgGo, "F6")
+        self._debugContinueAct.setEnabled(False)
+        self._debugStepInAct = dbgMenu.addAction(getIcon("dbgstepinto.png"), "Step in", self._onDbgStepInto, "F7")
+        self._debugStepInAct.setEnabled(False)
+        self._debugStepOverAct = dbgMenu.addAction(getIcon("dbgnext.png"), "Step over", self._onDbgNext, "F8")
+        self._debugStepOverAct.setEnabled(False)
+        self._debugStepOutAct = dbgMenu.addAction(getIcon("dbgreturn.png"), "Step out", self._onDbgReturn, "F9")
+        self._debugStepOutAct.setEnabled(False)
+        self._debugRunToCursorAct = dbgMenu.addAction(
+            getIcon("dbgruntoline.png"), "Run to cursor", self._onDbgRunToLine, "Shift+F6"
+        )
+        self._debugRunToCursorAct.setEnabled(False)
+        self._debugJumpToCurrentAct = dbgMenu.addAction(
+            getIcon("dbgtocurrent.png"), "Show current line", self._onDbgJumpToCurrent, "Ctrl+W"
+        )
+        self._debugJumpToCurrentAct.setEnabled(False)
+        dbgMenu.addSeparator()
+
+        self.__dumpDbgSettingsMenu = QMenu("Dump debug settings", self)
+        dbgMenu.addMenu(self.__dumpDbgSettingsMenu)
+        self._debugDumpSettingsAct = self.__dumpDbgSettingsMenu.addAction(
+            getIcon("dbgsettings.png"), "Debug session settings", self._onDumpDebugSettings
+        )
+        self._debugDumpSettingsAct.setEnabled(False)
+        self._debugDumpSettingsEnvAct = self.__dumpDbgSettingsMenu.addAction(
+            getIcon("detailsdlg.png"), "Session settings with complete environment", self._onDumpFullDebugSettings
+        )
+        self._debugDumpSettingsEnvAct.setEnabled(False)
+        self.__dumpDbgSettingsMenu.addSeparator()
+        self.__debugDumpScriptSettingsAct = self.__dumpDbgSettingsMenu.addAction(
+            getIcon("dbgsettings.png"), "Current script settings", self._onDumpScriptDebugSettings
+        )
+        self.__debugDumpScriptSettingsAct.setEnabled(False)
+        self.__debugDumpScriptSettingsEnvAct = self.__dumpDbgSettingsMenu.addAction(
+            getIcon("detailsdlg.png"),
+            "Current script settings with complete environment",
+            self._onDumpScriptFullDebugSettings,
+        )
+        self.__debugDumpScriptSettingsEnvAct.setEnabled(False)
+        self.__dumpDbgSettingsMenu.addSeparator()
+        self.__debugDumpProjectSettingsAct = self.__dumpDbgSettingsMenu.addAction(
+            getIcon("dbgsettings.png"), "Project main script settings", self._onDumpProjectDebugSettings
+        )
+        self.__debugDumpProjectSettingsAct.setEnabled(False)
+        self.__debugDumpPrjSettingsEnvAct = self.__dumpDbgSettingsMenu.addAction(
+            getIcon("detailsdlg.png"),
+            "Project script settings with complete environment",
+            self._onDumpProjectFullDebugSettings,
+        )
+        self.__debugDumpPrjSettingsEnvAct.setEnabled(False)
+        self.__dumpDbgSettingsMenu.aboutToShow.connect(self.__onDumpDbgSettingsAboutToShow)
+        return dbgMenu
+
+    def __buildToolsMenu(self, menuBar):
+        """Build the tools menu"""
+        toolsMenu = QMenu("T&ools", menuBar)
+        toolsMenu.setObjectName("tools")
+        toolsMenu.aboutToShow.connect(self.__toolsAboutToShow)
+
+        self._deadCodeMenuAct = toolsMenu.addAction(
+            getIcon("deadcode.png"), "Find project &dead code", self.projectDeadCodeClicked, "Alt+Shift+D"
+        )
+        self._tabDeadCodeAct = toolsMenu.addAction(
+            getIcon("deadcode.png"), "Find tab dead code", self.tabDeadCodeClicked, ""
+        )
+        toolsMenu.addSeparator()
+        self.__projectUtilitiesMenu = QMenu("Project utilities", self)
+        self.__projectUtilitiesMenu.setIcon(getIcon("project.png"))
+        self._generateRequirementsAct = self.__projectUtilitiesMenu.addAction(
+            getIcon("generate.png"), "Generate requirements file", self._onGenerateRequirementsFile
+        )
+        toolsMenu.addMenu(self.__projectUtilitiesMenu)
+        toolsMenu.addSeparator()
+        self.disasmMenu = QMenu("Disassembly", self)
+        self.disasmMenu.setIcon(getIcon("disassembly.png"))
+        self.disasmAct0 = self.disasmMenu.addAction(getIcon(""), "Disassembly (no optimization)", self.onDisasm0)
+        self.disasmAct1 = self.disasmMenu.addAction(getIcon(""), "Disassembly (optimization level 1)", self.onDisasm1)
+        self.disasmAct2 = self.disasmMenu.addAction(getIcon(""), "Disassembly (optimization level 2)", self.onDisasm2)
+        toolsMenu.addMenu(self.disasmMenu)
+        return toolsMenu
+
+    def __buildDiagramsMenu(self, menuBar):
+        """Builds the diagram menu"""
+        diagramsMenu = QMenu("&Diagrams", menuBar)
+        diagramsMenu.setObjectName("diagrams")
+        diagramsMenu.aboutToShow.connect(self.__diagramsAboutToShow)
+        self._prjImportDgmAct = diagramsMenu.addAction(
+            getIcon("importsdiagram.png"), "&Project imports diagram", self._onImportDgm
+        )
+        self._prjImportsDgmDlgAct = diagramsMenu.addAction(
+            getIcon("detailsdlg.png"), "P&roject imports diagram...", self._onImportDgmTuned
+        )
+        self.__tabImportDgmAct = diagramsMenu.addAction(
+            getIcon("importsdiagram.png"), "&Tab imports diagram", self._onTabImportDgm
+        )
+        self.__tabImportDgmDlgAct = diagramsMenu.addAction(
+            getIcon("detailsdlg.png"), "T&ab imports diagram...", self._onTabImportDgmTuned
+        )
+        return diagramsMenu
+
+    def __buildViewMenu(self, menuBar):
+        """Build the view menu"""
+        viewMenu = QMenu("&View", menuBar)
+        viewMenu.setObjectName("view")
+        viewMenu.aboutToShow.connect(self.__viewAboutToShow)
+        viewMenu.aboutToHide.connect(self.__viewAboutToHide)
+        self.__shrinkBarsAct = viewMenu.addAction(
+            getIcon("shrinkmenu.png"), "&Hide sidebars", self._onMaximizeEditor, "F11"
+        )
+        self.__leftSideBarMenu = QMenu("&Left sidebar", self)
+        self.__leftSideBarMenu.triggered.connect(self._activateSideTab)
+        self.__prjBarAct = self.__leftSideBarMenu.addAction(getIcon("project.png"), "Activate &project tab")
+        self.__prjBarAct.setData("project")
+        self.__recentBarAct = self.__leftSideBarMenu.addAction(getIcon("project.png"), "Activate &recent tab")
+        self.__recentBarAct.setData("recent")
+        self.__classesBarAct = self.__leftSideBarMenu.addAction(getIcon("class.png"), "Activate &classes tab")
+        self.__classesBarAct.setData("classes")
+        self.__funcsBarAct = self.__leftSideBarMenu.addAction(getIcon("fx.png"), "Activate &functions tab")
+        self.__funcsBarAct.setData("functions")
+        self.__globsBarAct = self.__leftSideBarMenu.addAction(getIcon("globalvar.png"), "Activate &globals tab")
+        self.__globsBarAct.setData("globals")
+        self.__leftSideBarMenu.addSeparator()
+        self.__hideLeftSideBarAct = self.__leftSideBarMenu.addAction(
+            getIcon(""), "&Hide left sidebar", self._leftSideBar.shrink
+        )
+        viewMenu.addMenu(self.__leftSideBarMenu)
+
+        self.__rightSideBarMenu = QMenu("&Right sidebar", self)
+        self.__rightSideBarMenu.triggered.connect(self._activateSideTab)
+        self.__outlineBarAct = self.__rightSideBarMenu.addAction(
+            getIcon("filepython.png"), "Activate file &outline tab"
+        )
+        self.__outlineBarAct.setData("fileoutline")
+        self.__debugBarAct = self.__rightSideBarMenu.addAction(getIcon(""), "Activate &debug tab")
+        self.__debugBarAct.setData("debugger")
+        self.__excptBarAct = self.__rightSideBarMenu.addAction(getIcon(""), "Activate &exceptions tab")
+        self.__excptBarAct.setData("excptions")
+        self.__bpointBarAct = self.__rightSideBarMenu.addAction(getIcon(""), "Activate &breakpoints tab")
+        self.__bpointBarAct.setData("breakpoints")
+        self.__calltraceBarAct = self.__rightSideBarMenu.addAction(getIcon(""), "Activate &call trace tab")
+        self.__calltraceBarAct.setData("calltrace")
+        self.__rightSideBarMenu.addSeparator()
+        self.__hideRightSideBarAct = self.__rightSideBarMenu.addAction(
+            getIcon(""), "&Hide right sidebar", self._rightSideBar.shrink
+        )
+        viewMenu.addMenu(self.__rightSideBarMenu)
+
+        self.__bottomSideBarMenu = QMenu("&Bottom sidebar", self)
+        self.__bottomSideBarMenu.triggered.connect(self._activateSideTab)
+        self.__logBarAct = self.__bottomSideBarMenu.addAction(getIcon("logviewer.png"), "Activate &log tab")
+        self.__logBarAct.setData("log")
+        self.__searchBarAct = self.__bottomSideBarMenu.addAction(getIcon("findindir.png"), "Activate &search tab")
+        self.__searchBarAct.setData("search")
+        self.__bottomSideBarMenu.addSeparator()
+        self.__hideBottomSideBarAct = self.__bottomSideBarMenu.addAction(
+            getIcon(""), "&Hide bottom sidebar", self._bottomSideBar.shrink
+        )
+        viewMenu.addMenu(self.__bottomSideBarMenu)
+        viewMenu.addSeparator()
+        self.__zoomInAct = viewMenu.addAction(getIcon("zoomin.png"), "Zoom &in", self.em.zoomIn)
+        self.__zoomOutAct = viewMenu.addAction(getIcon("zoomout.png"), "Zoom &out", self.em.zoomOut)
+        self.__zoom11Act = viewMenu.addAction(getIcon("zoomreset.png"), "Zoom r&eset", self.em.zoomReset)
+        return viewMenu
+
+    def __buildOptionsMenu(self, menuBar):
+        """Build the options menu"""
+        optionsMenu = QMenu("Optio&ns", menuBar)
+        optionsMenu.setObjectName("options")
+        optionsMenu.aboutToShow.connect(self.__optionsAboutToShow)
+
+        self.__ideTemplateMenu = QMenu("IDE-wide &template", self)
+        self.__ideCreateTemplateAct = self.__ideTemplateMenu.addAction(getIcon("generate.png"), "&Create")
+        self.__ideCreateTemplateAct.triggered.connect(self._onCreateIDETemplate)
+        self.__ideEditTemplateAct = self.__ideTemplateMenu.addAction(getIcon("edit.png"), "&Edit")
+        self.__ideEditTemplateAct.triggered.connect(self._onEditIDETemplate)
+        self.__ideTemplateMenu.addSeparator()
+        self.__ideDelTemplateAct = self.__ideTemplateMenu.addAction(getIcon("trash.png"), "&Delete")
+        self.__ideDelTemplateAct.triggered.connect(self._onDelIDETemplate)
+        optionsMenu.addMenu(self.__ideTemplateMenu)
+
+        optionsMenu.addSeparator()
+        optionItems = [
+            ("Show vertical edge", "verticalEdge", self._verticalEdgeChanged),
+            ("Show whitespaces", "showSpaces", self._showSpacesChanged),
+            ("Wrap long lines", "lineWrap", self._lineWrapChanged),
+            ("Show brace matching", "showBraceMatch", self._showBraceMatchChanged),
+            ("Show indentation guides", "indentationGuides", self._indentationGuidesChanged),
+            ("Highlight current line", "currentLineVisible", self._currentLineVisibleChanged),
+            ("HOME to first non-space", "jumpToFirstNonSpace", self._homeToFirstNonSpaceChanged),
+            ("Auto remove trailing spaces on save", "removeTrailingOnSave", self._removeTrailingChanged),
+            ("Editor calltips", "editorCalltips", self._editorCalltipsChanged),
+            ("Show navigation bar", "showNavigationBar", self._showNavBarChanged),
+            ("Show control flow navigation bar", "showCFNavigationBar", self._showCFNavBarChanged),
+            ("Show main toolbar", "showMainToolBar", self._showMainToolbarChanged),
+        ]
+
+        for name, valueName, handler in optionItems:
+            act = optionsMenu.addAction(name)
+            act.setCheckable(True)
+            act.setChecked(self.settings[valueName])
+            act.changed.connect(handler)
+
+        optionsMenu.addSeparator()
+        redirectedMenu = optionsMenu.addMenu("Redirected I/O")
+        optionItems = [
+            ("Reuse I/O console if available and clear", CLEAR_AND_REUSE),
+            ("Reuse I/O console if available without clearing", NO_CLEAR_AND_REUSE),
+            ("Create new I/O console for a new session", NO_REUSE),
+        ]
+
+        self.__ioGroup = QActionGroup(self)
+        for name, data in optionItems:
+            act = redirectedMenu.addAction(name)
+            act.setCheckable(True)
+            act.setData(data)
+            act.setActionGroup(self.__ioGroup)
+            act.setChecked(self.settings["ioconsolereuse"] == data)
+        redirectedMenu.triggered.connect(self._reuseIOConsoleChanged)
+
+        tooltipsMenu = optionsMenu.addMenu("Tooltips")
+        optionItems = [
+            ("&Project tab", "projectTooltips", self._projectTooltipsChanged),
+            ("&Recent tab", "recentTooltips", self._recentTooltipsChanged),
+            ("&Classes tab", "classesTooltips", self._classesTooltipsChanged),
+            ("&Functions tab", "functionsTooltips", self._functionsTooltipsChanged),
+            ("&Outline tab", "outlineTooltips", self._outlineTooltipsChanged),
+            ("Find &name dialog", "findNameTooltips", self._findNameTooltipsChanged),
+            ("Find fi&le dialog", "findFileTooltips", self._findFileTooltipsChanged),
+            ("&Editor tabs", "editorTooltips", self._editorTooltipsChanged),
+        ]
+
+        for name, valueName, handler in optionItems:
+            act = tooltipsMenu.addAction(name)
+            act.setCheckable(True)
+            act.setChecked(self.settings[valueName])
+            act.changed.connect(handler)
+
+        openTabsMenu = optionsMenu.addMenu("Open tabs button")
+        self.__navigationSortGroup = QActionGroup(self)
+        self.__alphasort = openTabsMenu.addAction("Sort alphabetically")
+        self.__alphasort.setCheckable(True)
+        self.__alphasort.setData(-1)
+        self.__alphasort.setActionGroup(self.__navigationSortGroup)
+        self.__tabsort = openTabsMenu.addAction("Tab order sort")
+        self.__tabsort.setCheckable(True)
+        self.__tabsort.setData(-2)
+        self.__tabsort.setActionGroup(self.__navigationSortGroup)
+        if self.settings["tablistsortalpha"]:
+            self.__alphasort.setChecked(True)
+        else:
+            self.__tabsort.setChecked(True)
+        openTabsMenu.addSeparator()
+        tabOrderPreservedAct = openTabsMenu.addAction("Tab order preserved on selection")
+        tabOrderPreservedAct.setCheckable(True)
+        tabOrderPreservedAct.setData(0)
+        tabOrderPreservedAct.setChecked(self.settings["taborderpreserved"])
+        tabOrderPreservedAct.changed.connect(self._tabOrderPreservedChanged)
+        openTabsMenu.triggered.connect(self._openTabsMenuTriggered)
+
+        optionsMenu.addSeparator()
+        skinsMenu = optionsMenu.addMenu("Skins")
+        self.__skinsGroup = QActionGroup(self)
+        currentSkin = self.settings["skin"]
+        for skin in getSkinsList():
+            skinAct = skinsMenu.addAction(skin)
+            skinAct.setData(skin)
+            skinAct.setCheckable(True)
+            skinAct.setActionGroup(self.__skinsGroup)
+            skinAct.setChecked(currentSkin == skin)
+        skinsMenu.triggered.connect(self._onSkin)
+
+        styleMenu = optionsMenu.addMenu("Styles")
+        self.__styleGroup = QActionGroup(self)
+        availableStyles = QStyleFactory.keys()
+        self.__styles = []
+        for style in availableStyles:
+            styleAct = styleMenu.addAction(style)
+            styleAct.setData(style)
+            styleAct.setCheckable(True)
+            styleAct.setActionGroup(self.__styleGroup)
+            self.__styles.append((str(style), styleAct))
+        styleMenu.triggered.connect(self._onStyle)
+        styleMenu.aboutToShow.connect(self.__styleAboutToShow)
+
+        fontIcon = getIcon("fontmenu.png")
+        optionsMenu.addAction(fontIcon, "Text editor mono font...", self.__onEditorFont)
+        optionsMenu.addAction(fontIcon, "Text editor margin font...", self.__onEditorMarginFont)
+        optionsMenu.addAction(fontIcon, "Control flow mono font...", self.__onControlFlowFont)
+        optionsMenu.addAction(fontIcon, "Control flow badge font...", self.__onControlFlowBadgeFont)
+        return optionsMenu
+
+    def __buildPluginsMenu(self, menuBar):
+        """Build the plugins menu"""
+        self.__pluginsMenu = QMenu("P&lugins", menuBar)
+        self.__pluginsMenu.setObjectName("plugins")
+        self._recomposePluginMenu()
+        return self.__pluginsMenu
+
+    def __buildHelpMenu(self, menuBar):
+        """Build the help menu"""
+        helpMenu = QMenu("&Help", menuBar)
+        helpMenu.setObjectName("help")
+        helpMenu.aboutToShow.connect(self.__helpAboutToShow)
+        helpMenu.aboutToHide.connect(self.__helpAboutToHide)
+        self.__embeddedHelpAct = helpMenu.addAction(getIcon("embhelpmenu.png"), "&Documentation", self._onEmbeddedHelp)
+        self.__shortcutsAct = helpMenu.addAction(getIcon("shortcutsmenu.png"), "&Major shortcuts", self.em.onHelp, "F1")
+        self.__contextHelpAct = helpMenu.addAction(getIcon("helpviewer.png"), "Current &word help", self._onContextHelp)
+        helpMenu.addSeparator()
+        self.__allShotcutsAct = helpMenu.addAction(
+            getIcon("allshortcutsmenu.png"), "&All shortcuts (web page)", self._onAllShortcurs
+        )
+        self.__homePageAct = helpMenu.addAction(getIcon("homepagemenu.png"), "Codimension &home page", self._onHomePage)
+        helpMenu.addSeparator()
+        self.__aboutAct = helpMenu.addAction(getIcon("logo.png"), "A&bout codimension", self._onAbout)
+        return helpMenu
+
+    def __prjAboutToShow(self):
+        """Triggered when project menu is about to show"""
+        self.__newProjectAct.setEnabled(not self.debugMode)
+        self.__openProjectAct.setEnabled(not self.debugMode)
+        self._unloadProjectAct.setEnabled(not self.debugMode)
+
+        # Recent projects part
+        self.__recentPrjMenu.clear()
+        addedCount = 0
+        currentPrj = GlobalData().project.fileName
+        for item in self.settings["recentProjects"]:
+            if item != currentPrj:
+                addedCount += 1
+                act = self.__recentPrjMenu.addAction(
+                    getAccelerator(addedCount) + os.path.basename(item).replace(".cdm3", "")
+                )
+                act.setData(item)
+                act.setEnabled(not self.debugMode and os.path.exists(item))
+        self.__recentPrjMenu.setEnabled(addedCount > 0)
+
+        if GlobalData().project.isLoaded():
+            # Template part
+            exists = os.path.exists(getProjectTemplateFile())
+            self._prjTemplateMenu.setEnabled(True)
+            self.__createPrjTemplateAct.setEnabled(not exists)
+            self.__editPrjTemplateAct.setEnabled(exists)
+            self.__delPrjTemplateAct.setEnabled(exists)
+        else:
+            self._prjTemplateMenu.setEnabled(False)
+
+    def __prjAboutToHide(self):
+        """Triggered when project menu is about to hide"""
+        self.__newProjectAct.setEnabled(True)
+        self.__openProjectAct.setEnabled(True)
+
+    def _onGenerateRequirementsFile(self):
+        """Generate requirements.txt from unresolved imports (Tools → Project utilities)."""
+        project = GlobalData().project
+        if not project.isLoaded():
+            QMessageBox.warning(self, "Project", "No project loaded.")
+            return
+
+        projectDir = project.getProjectDir()
+        reqPath = os.path.join(projectDir, "requirements.txt")
+
+        def progressCallback(current, total, message):
+            QApplication.processEvents()
+
+        QApplication.setOverrideCursor(QCursor(Qt.WaitCursor))
+        try:
+            packages, _ = generateRequirementsFromProject(project.filesList, progressCallback)
+        finally:
+            QApplication.restoreOverrideCursor()
+
+        if not packages:
+            QMessageBox.information(
+                self,
+                "Generate requirements",
+                "No third-party packages detected from unresolved imports.\n"
+                "All imports are either resolved or from the standard library.",
+            )
+            return
+
+        mode = "w"
+        if os.path.isfile(reqPath):
+            msg = QMessageBox(self)
+            msg.setWindowTitle("Generate requirements")
+            msg.setText(f"requirements.txt already exists.\nDetected packages: {', '.join(sorted(packages))}")
+            msg.addButton("Overwrite", QMessageBox.ActionRole)
+            appendBtn = msg.addButton("Append new only", QMessageBox.ActionRole)
+            cancelBtn = msg.addButton("Cancel", QMessageBox.RejectRole)
+            msg.setDefaultButton(appendBtn)
+            msg.exec_()
+            clicked = msg.clickedButton()
+            if clicked == cancelBtn:
+                return
+            if clicked == appendBtn:
+                mode = "a"
+
+        try:
+            written = writeRequirementsFile(reqPath, packages, mode)
+            if written > 0:
+                QMessageBox.information(
+                    self,
+                    "Generate requirements",
+                    f"Wrote {written} package(s) to requirements.txt.",
+                )
+            else:
+                QMessageBox.information(
+                    self,
+                    "Generate requirements",
+                    "All detected packages are already in requirements.txt.",
+                )
+        except OSError as exc:
+            QMessageBox.warning(self, "Generate requirements", f"Cannot write file: {exc}")
+
+    def _onGitRepository(self):
+        """Open Git repository dialog: clone and open project (Project → Git repository)."""
+        try:
+            _ensure_cdmplugins_in_path()
+            from cdmplugins.git.gitconfig import save_repo_override
+            from cdmplugins.git.gitdialogs import RepoOverrideDialog
+            from cdmplugins.git.gitdriver import clone_repo, find_cdm3_in_dir
+        except ImportError:
+            QMessageBox.information(
+                self,
+                "Git",
+                "Git plugin is not available. Install and enable the Git plugin.",
+            )
+            return
+
+        dlg = RepoOverrideDialog(self)
+        if dlg.exec_() != QDialog.Accepted:
+            return
+
+        repo = dlg.get_repo_override()
+        clone_to = dlg.get_clone_to()
+        open_after = dlg.get_open_after_clone()
+
+        if not repo:
+            QMessageBox.warning(self, "Git", "Repository address is required.")
+            return
+
+        save_repo_override(repo)
+
+        if not clone_to:
+            return
+
+        QApplication.setOverrideCursor(QCursor(Qt.WaitCursor))
+        try:
+            ok, err, cloned_path = clone_repo(repo, clone_to)
+        finally:
+            QApplication.restoreOverrideCursor()
+
+        if not ok:
+            QMessageBox.warning(self, "Git", f"Clone failed: {err}")
+            return
+
+        if not open_after or not cloned_path:
+            return
+
+        cdm3_path = find_cdm3_in_dir(cloned_path)
+        if cdm3_path:
+            self._loadProject(cdm3_path)
+            return
+
+        project_name = os.path.basename(cloned_path.rstrip(os.sep)) or "project"
+        project_file = os.path.join(cloned_path.rstrip(os.sep), project_name + ".cdm3")
+
+        try:
+            user_record = pwd.getpwuid(os.getuid())
+            author = user_record[4].split(",")[0].strip() if user_record[4] else user_record[0]
+            try:
+                email = user_record[0] + "@" + socket.gethostname()
+            except Exception:
+                email = ""
+        except Exception:
+            author = ""
+            email = ""
+
+        if self.em.closeRequest():
+            QApplication.setOverrideCursor(QCursor(Qt.WaitCursor))
+            try:
+                prj = GlobalData().project
+                prj.tabsStatus = self.em.getTabsStatus()
+                self.em.closeAll()
+                GlobalData().project.createNew(
+                    project_file,
+                    {
+                        "scriptname": "",
+                        "mddocfile": "",
+                        "creationdate": getLocaleDate(),
+                        "author": author,
+                        "license": "GPL v3",
+                        "copyright": "Copyright (c) " + author + ", " + str(datetime.date.today().year),
+                        "version": "0.0.1",
+                        "email": email,
+                        "description": "",
+                        "encoding": "",
+                        "importdirs": ["."],
+                        "pythoninterpreter": "",
+                    },
+                )
+                self.settings.addRecentProject(project_file)
+                if not self._leftSideBar.isMinimized():
+                    self.activateProjectTab()
+            finally:
+                QApplication.restoreOverrideCursor()
+
+    def __tabAboutToShow(self):
+        """Triggered when tab menu is about to show"""
+        plainTextBuffer = self.__isPlainTextBuffer()
+        isPythonBuffer = self._isPythonBuffer()
+        isGeneratedDiagram = self.__isGeneratedDiagram()
+        isProfileViewer = self.__isProfileViewer()
+
+        self.__cloneTabAct.setEnabled(plainTextBuffer)
+        self.__closeOtherTabsAct.setEnabled(self.em.closeOtherAvailable())
+        self.__saveFileAct.setEnabled(plainTextBuffer or isGeneratedDiagram or isProfileViewer)
+        self.__saveFileAsAct.setEnabled(plainTextBuffer or isGeneratedDiagram or isProfileViewer)
+        self.__closeTabAct.setEnabled(self.em.isTabClosable())
+        self.__tabJumpToDefAct.setEnabled(isPythonBuffer)
+        self.__calltipAct.setEnabled(isPythonBuffer)
+        self.__tabJumpToScopeBeginAct.setEnabled(isPythonBuffer)
+        self.__tabOpenImportAct.setEnabled(isPythonBuffer)
+        if plainTextBuffer:
+            editor = self.em.currentWidget().getEditor()
+            self.__openAsFileAct.setEnabled(editor.openAsFileAvailable())
+            self.__downloadAndShowAct.setEnabled(editor.downloadAndShowAvailable())
+            self.__openInBrowserAct.setEnabled(editor.downloadAndShowAvailable())
+        else:
+            self.__openAsFileAct.setEnabled(False)
+            self.__downloadAndShowAct.setEnabled(False)
+            self.__openInBrowserAct.setEnabled(False)
+
+        self.__highlightInPrjAct.setEnabled(self.em.isHighlightInPrjAvailable())
+        self.__highlightInFSAct.setEnabled(self.em.isHighlightInFSAvailable())
+        self.__highlightInOutlineAct.setEnabled(isPythonBuffer)
+
+        self.__closeTabAct.setShortcut("Ctrl+F4")
+        self.__tabJumpToDefAct.setShortcut("Ctrl+\\")
+        self.__calltipAct.setShortcut("Ctrl+/")
+        self.__tabJumpToScopeBeginAct.setShortcut("Alt+U")
+        self.__tabOpenImportAct.setShortcut("Ctrl+I")
+        self.__highlightInOutlineAct.setShortcut("Ctrl+B")
+
+        self.__recentFilesMenu.clear()
+        addedCount = 0
+
+        for item in getRecentFiles():
+            addedCount += 1
+            act = self.__recentFilesMenu.addAction(getAccelerator(addedCount) + item)
+            act.setData(item)
+            act.setEnabled(os.path.exists(item))
+
+        self.__recentFilesMenu.setEnabled(addedCount > 0)
+
+    def __tabAboutToHide(self):
+        """Triggered when tab menu is about to hide"""
+        self.__closeTabAct.setShortcut("")
+        self.__tabJumpToDefAct.setShortcut("")
+        self.__calltipAct.setShortcut("")
+        self.__tabJumpToScopeBeginAct.setShortcut("")
+        self.__tabOpenImportAct.setShortcut("")
+        self.__highlightInOutlineAct.setShortcut("")
+        self.__saveFileAct.setEnabled(True)
+        self.__saveFileAsAct.setEnabled(True)
+
+    def __searchAboutToShow(self):
+        """Triggered when search menu is about to show"""
+        isPlainTextBuffer = self.__isPlainTextBuffer()
+        isPythonBuffer = self._isPythonBuffer()
+        currentWidget = self.em.currentWidget()
+
+        self.__findOccurencesAct.setEnabled(isPythonBuffer and os.path.isabs(currentWidget.getFileName()))
+        self.__goToLineAct.setEnabled(isPlainTextBuffer)
+        self.__findAct.setEnabled(isPlainTextBuffer)
+        self.__replaceAct.setEnabled(
+            isPlainTextBuffer and currentWidget.getType() != MainWindowTabWidgetBase.VCSAnnotateViewer
+        )
+        self.__findNextAct.setEnabled(isPlainTextBuffer)
+        self.__findPrevAct.setEnabled(isPlainTextBuffer)
+
+        self.__findOccurencesAct.setShortcut("Ctrl+]")
+        self.__goToLineAct.setShortcut("Ctrl+G")
+        self.__findAct.setShortcut("Ctrl+F")
+        self.__replaceAct.setShortcut("Ctrl+R")
+        self.__findNextAct.setShortcut("Ctrl+.")
+        self.__findPrevAct.setShortcut("Ctrl+,")
+
+    def __searchAboutToHide(self):
+        """Triggered when search menu is about to hide"""
+        self.__findOccurencesAct.setShortcut("")
+        self.__goToLineAct.setShortcut("")
+        self.__findAct.setShortcut("")
+        self.__replaceAct.setShortcut("")
+        self.__findNextAct.setShortcut("")
+        self.__findPrevAct.setShortcut("")
+
+    def __diagramsAboutToShow(self):
+        """Triggered when the diagrams menu is about to show"""
+        isPythonBuffer = self._isPythonBuffer()
+        widget = self.em.currentWidget()
+
+        enabled = isPythonBuffer and widget.getType() != MainWindowTabWidgetBase.VCSAnnotateViewer
+        self.__tabImportDgmAct.setEnabled(enabled)
+        self.__tabImportDgmDlgAct.setEnabled(enabled)
+
+    def __runAboutToShow(self):
+        """Triggered when the run menu is about to show"""
+        projectLoaded = GlobalData().project.isLoaded()
+        prjScriptValid = GlobalData().isProjectScriptValid()
+
+        enabled = projectLoaded and prjScriptValid and not self.debugMode
+        self.__prjRunAct.setEnabled(enabled)
+        self.__prjRunDlgAct.setEnabled(enabled)
+
+        self.__prjProfileAct.setEnabled(enabled)
+        self.__prjProfileDlgAct.setEnabled(enabled)
+
+    def __debugAboutToShow(self):
+        """Triggered when the debug menu is about to show"""
+        projectLoaded = GlobalData().project.isLoaded()
+        prjScriptValid = GlobalData().isProjectScriptValid()
+
+        enabled = projectLoaded and prjScriptValid and not self.debugMode
+        self._prjDebugAct.setEnabled(enabled)
+        self._prjDebugDlgAct.setEnabled(enabled)
+
+    def __toolsAboutToShow(self):
+        """Triggered when tools menu is about to show"""
+        isPythonBuffer = self._isPythonBuffer()
+        projectLoaded = GlobalData().project.isLoaded()
+
+        self._deadCodeMenuAct.setEnabled(projectLoaded)
+        self._tabDeadCodeAct.setEnabled(isPythonBuffer)
+        self.__projectUtilitiesMenu.setEnabled(projectLoaded)
+        self._generateRequirementsAct.setEnabled(projectLoaded)
+        self.disasmMenu.setEnabled(isPythonBuffer)
+
+    def __viewAboutToShow(self):
+        """Triggered when view menu is about to show"""
+        isPlainTextBuffer = self.__isPlainTextBuffer()
+        isGraphicsBuffer = self.__isGraphicsBuffer()
+        isGeneratedDiagram = self.__isGeneratedDiagram()
+        isProfileViewer = self.__isProfileViewer()
+        isDiffViewer = self.__isDiffViewer()
+        zoomEnabled = isPlainTextBuffer or isGraphicsBuffer or isGeneratedDiagram or isDiffViewer
+        if not zoomEnabled and isProfileViewer:
+            zoomEnabled = self.em.currentWidget().isZoomApplicable()
+        self.__zoomInAct.setEnabled(zoomEnabled)
+        self.__zoomOutAct.setEnabled(zoomEnabled)
+        self.__zoom11Act.setEnabled(zoomEnabled)
+
+        self.__zoomInAct.setShortcut("Ctrl+=")
+        self.__zoomOutAct.setShortcut("Ctrl+-")
+        self.__zoom11Act.setShortcut("Ctrl+0")
+
+        self.__debugBarAct.setEnabled(self.debugMode)
+
+    def __viewAboutToHide(self):
+        """Triggered when view menu is about to hide"""
+        self.__zoomInAct.setShortcut("")
+        self.__zoomOutAct.setShortcut("")
+        self.__zoom11Act.setShortcut("")
+
+    def __optionsAboutToShow(self):
+        """Triggered when the options menu is about to show"""
+        exists = os.path.exists(getIDETemplateFile())
+        self.__ideCreateTemplateAct.setEnabled(not exists)
+        self.__ideEditTemplateAct.setEnabled(exists)
+        self.__ideDelTemplateAct.setEnabled(exists)
+
+    def __helpAboutToShow(self):
+        """Triggered when help menu is about to show"""
+        isPythonBuffer = self._isPythonBuffer()
+        self.__contextHelpAct.setEnabled(isPythonBuffer)
+        self.__contextHelpAct.setShortcut("Ctrl+F1")
+
+    def __helpAboutToHide(self):
+        """Triggered when help menu is about to hide"""
+        self.__contextHelpAct.setShortcut("")
+
+    def __editAboutToShow(self):
+        """Triggered when edit menu is about to show"""
+        isPlainBuffer = self.__isPlainTextBuffer()
+        if isPlainBuffer:
+            editor = self.em.currentWidget().getEditor()
+
+        editable = isPlainBuffer and not editor.isReadOnly()
+        self.__undoAct.setShortcut("Ctrl+Z")
+        self.__undoAct.setEnabled(isPlainBuffer and editor.document().isUndoAvailable())
+        self.__redoAct.setShortcut("Ctrl+Y")
+        self.__redoAct.setEnabled(isPlainBuffer and editor.document().isRedoAvailable())
+        self.__cutAct.setShortcut("Ctrl+X")
+        self.__cutAct.setEnabled(editable)
+        self.__copyAct.setShortcut("Ctrl+C")
+        self.__copyAct.setEnabled(self.em.isCopyAvailable())
+        self.__pasteAct.setShortcut("Ctrl+V")
+        self.__pasteAct.setEnabled(editable and QApplication.clipboard().text() != "")
+        self.__selectAllAct.setShortcut("Ctrl+A")
+        self.__selectAllAct.setEnabled(isPlainBuffer)
+        self.__commentAct.setShortcut("Ctrl+M")
+        self.__commentAct.setEnabled(editable)
+        self.__duplicateAct.setShortcut("Ctrl+D")
+        self.__duplicateAct.setEnabled(editable)
+        self.__autocompleteAct.setShortcut("Ctrl+Space")
+        self.__autocompleteAct.setEnabled(editable)
+        self.__expandTabsAct.setEnabled(editable)
+        self.__trailingSpacesAct.setEnabled(editable)
+
+    def __editAboutToHide(self):
+        """Triggered when edit menu is about to hide"""
+        self.__undoAct.setShortcut("")
+        self.__redoAct.setShortcut("")
+        self.__cutAct.setShortcut("")
+        self.__copyAct.setShortcut("")
+        self.__pasteAct.setShortcut("")
+        self.__selectAllAct.setShortcut("")
+        self.__commentAct.setShortcut("")
+        self.__duplicateAct.setShortcut("")
+        self.__autocompleteAct.setShortcut("")
+
+    def __onDumpDbgSettingsAboutToShow(self):
+        """Dump debug settings is about to show"""
+        scriptAvailable = self._dumpScriptDbgSettingsAvailable()
+        self.__debugDumpScriptSettingsAct.setEnabled(scriptAvailable)
+        self.__debugDumpScriptSettingsEnvAct.setEnabled(scriptAvailable)
+
+        projectAvailable = self._dumpProjectDbgSettingsAvailable()
+        self.__debugDumpProjectSettingsAct.setEnabled(projectAvailable)
+        self.__debugDumpPrjSettingsEnvAct.setEnabled(projectAvailable)
+
+    def __styleAboutToShow(self):
+        """Style menu is about to show"""
+        currentStyle = self.settings["style"].lower()
+        for item in self.__styles:
+            item[1].setChecked(item[0].lower() == currentStyle)
+
+    def _recomposePluginMenu(self):
+        """Recomposes the plugin menu"""
+        self.__pluginsMenu.clear()
+        self.__pluginsMenu.addAction(getIcon("pluginmanagermenu.png"), "Plugin &manager", self._onPluginManager)
+        if self._pluginMenus:
+            self.__pluginsMenu.addSeparator()
+        for path in self._pluginMenus:
+            self.__pluginsMenu.addMenu(self._pluginMenus[path])
+
+    def __isPlainTextBuffer(self):
+        """Provides if saving is enabled"""
+        currentWidget = self.em.currentWidget()
+        if currentWidget is None:
+            return False
+        return currentWidget.getType() in [
+            MainWindowTabWidgetBase.PlainTextEditor,
+            MainWindowTabWidgetBase.VCSAnnotateViewer,
+        ]
+
+    def __isGraphicsBuffer(self):
+        """True if is pictures viewer"""
+        currentWidget = self.em.currentWidget()
+        if currentWidget is None:
+            return False
+        return currentWidget.getType() == MainWindowTabWidgetBase.PictureViewer
+
+    def __isGeneratedDiagram(self):
+        """True if this is a generated diagram"""
+        currentWidget = self.em.currentWidget()
+        if currentWidget is None:
+            return False
+        if currentWidget.getType() == MainWindowTabWidgetBase.GeneratedDiagram:
+            return True
+        if currentWidget.getType() == MainWindowTabWidgetBase.ProfileViewer:
+            if currentWidget.isDiagramActive():
+                return True
+        return False
+
+    def __isProfileViewer(self):
+        """True if this is a profile viewer"""
+        currentWidget = self.em.currentWidget()
+        if currentWidget is None:
+            return False
+        return currentWidget.getType() == MainWindowTabWidgetBase.ProfileViewer
+
+    def __isDiffViewer(self):
+        """True if this is a diff viewer"""
+        currentWidget = self.em.currentWidget()
+        if currentWidget is None:
+            return False
+        return currentWidget.getType() == MainWindowTabWidgetBase.DiffViewer
+
+    def _reuseIOConsoleChanged(self, act):
+        """Triggered when a reuse I/O setting is changed"""
+        self.settings["ioconsolereuse"] = act.data()
+
+    def __selectFont(self, scalable, nonScalable, mono, proportional, title, settingName):
+        """Returns the new font or None"""
+        dialog = QFontDialog(self)
+        dialog.setOption(QFontDialog.DontUseNativeDialog, True)
+        dialog.setOption(QFontDialog.ScalableFonts, scalable)
+        dialog.setOption(QFontDialog.NonScalableFonts, nonScalable)
+        dialog.setOption(QFontDialog.MonospacedFonts, mono)
+        dialog.setOption(QFontDialog.ProportionalFonts, proportional)
+        dialog.setWindowTitle("Select " + title + " for zoom level 0")
+        dialog.setCurrentFont(GlobalData().skin[settingName])
+
+        if dialog.exec_():
+            font = dialog.selectedFont()
+            if font.toString() != GlobalData().skin[settingName].toString():
+                return font
+        return None
+
+    def __onEditorFont(self):
+        """Select editor font"""
+        font = self.__selectFont(False, False, True, False, "editor font", "monoFont")
+        if font is not None:
+            GlobalData().skin.setTextMonoFont(font)
+            self.em.onTextZoomChanged()
+            self.onTextZoomChanged()
+
+    def __onEditorMarginFont(self):
+        """Select editor margin font"""
+        font = self.__selectFont(True, False, True, True, "editor margin font", "lineNumFont")
+        if font is not None:
+            GlobalData().skin.setMarginFont(font)
+            self.em.onTextZoomChanged()
+
+    def __onControlFlowFont(self):
+        """Select the control flow mono font"""
+        font = self.__selectFont(False, False, True, False, "control flow mono font", "cfMonoFont")
+        if font is not None:
+            GlobalData().skin.setFlowMonoFont(font)
+            self.em.onFlowZoomChanged()
+
+    def __onControlFlowBadgeFont(self):
+        """Select the control flow badge font"""
+        font = self.__selectFont(True, False, True, True, "control flow badge font", "badgeFont")
+        if font is not None:
+            GlobalData().skin.setFlowBadgeFont(font)
+            self.em.onFlowZoomChanged()

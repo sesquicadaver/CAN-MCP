@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "codimension"
+dynamic = ["version"]
+description = "Experimental Python 3 IDE with graphics-based code analysis (fork, Python 3.10+)"
+readme = "README.md"
+requires-python = ">=3.10"
+# Fork of https://github.com/SergeySatskiy/codimension (unmaintained). Active: https://github.com/sesquicadaver/codimension
+
+[project.urls]
+Repository = "https://github.com/sesquicadaver/codimension"
+Homepage = "https://github.com/sesquicadaver/codimension"
+
+[project.gui-scripts]
+codimension = "codimension.codimension:main"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+exclude = ["doc/", "*.egg-info/", ".mypy_cache/"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+# Demo/test file for flow UI - contains intentional patterns
+"codimension/flowui/everything.py" = ["E402", "E401", "F811", "F821", "E722", "F841"]
+# HTML strings in help - long lines acceptable
+"codimension/ui/helpwidget.py" = ["E501"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+exclude = ["doc/", ".*", "codimension/flowui/everything.py"]
+
+[tool.setuptools.dynamic]
+version = {attr = "codimension.cdmverspec.version"}
+
+[tool.pyright]
+# cdmplugins import plugins, ui, utils — resolved when codimension pkg dir is in path
+extraPaths = ["codimension"]
+reportMissingImports = "warning"
+# PyQt5 re-exports via ui.qt; optional/None patterns in plugin lifecycle
+reportAttributeAccessIssue = "none"
+reportIncompatibleMethodOverride = "none"
+reportOptionalMemberAccess = "none"
