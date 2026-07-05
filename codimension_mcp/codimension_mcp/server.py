@@ -12,6 +12,7 @@ from .schemas import WorkspaceState
 from .tools import (
     analyze_file_tool,
     analyze_project,
+    find_callees_tool,
     find_callers_tool,
     format_tool_error,
     get_call_graph_tool,
@@ -89,7 +90,7 @@ def get_import_graph() -> str:
 
 @mcp.tool()
 def get_call_graph(symbol: str | None = None) -> str:
-    """Return static call graph (not implemented yet)."""
+    """Return static call graph for the open project."""
     _state.record_tool("get_call_graph")
     try:
         return get_call_graph_tool(_state, symbol)
@@ -109,7 +110,7 @@ def get_control_flow(function_id: str) -> str:
 
 @mcp.tool()
 def find_callers(symbol: str) -> str:
-    """Find callers of a symbol (not implemented yet)."""
+    """Find callers of a symbol."""
     _state.record_tool("find_callers")
     try:
         return find_callers_tool(_state, symbol)
@@ -118,8 +119,18 @@ def find_callers(symbol: str) -> str:
 
 
 @mcp.tool()
+def find_callees(symbol: str) -> str:
+    """Find callees called by a symbol."""
+    _state.record_tool("find_callees")
+    try:
+        return find_callees_tool(_state, symbol)
+    except Exception as exc:  # noqa: BLE001
+        return format_tool_error(exc)
+
+
+@mcp.tool()
 def impact_analysis(target: str) -> str:
-    """Estimate change blast radius (not implemented yet)."""
+    """Estimate change blast radius."""
     _state.record_tool("impact_analysis")
     try:
         return impact_analysis_tool(_state, target)

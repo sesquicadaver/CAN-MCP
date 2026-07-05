@@ -41,6 +41,8 @@ codimension_core/
 
 **Scaffold (0.1.0):** `Project.open()`, scan `.py`, venv + `excludeFromAnalysis` з `.cdm3`.
 
+**Extraction (0.2.0):** `build_import_search_paths`, `get_python_executable`, `get_site_packages`.
+
 ---
 
 ## 3. symbols.py
@@ -71,6 +73,8 @@ codimension_core/
 **Не переносити:** GUI частини `importsdgm.py`.
 
 **Scaffold (0.1.0):** stub + docstring; MVP import edges з brief parser (без resolution).
+
+**Extraction (0.2.0):** повний `importutils` headless API + IDE wrapper.
 
 ---
 
@@ -111,6 +115,8 @@ codimension_core/
 **Grep:** `callgraph`, `impact analysis` — **0 збігів** у Codimension.
 
 **Scaffold (0.1.0):** stub `NotImplementedError`; greenfield AST-based builder.
+
+**Extraction (0.2.0):** AST static call graph, `find_callers/callees`, MVP `impact_analysis`.
 
 ---
 
@@ -164,13 +170,13 @@ codimension_core/
 | `get_project_tree()` | `Project.python_files()` | ✅ MVP |
 | `get_symbols(path?)` | `symbols.get_symbols()` | ✅ MVP |
 | `get_import_graph()` | `dependency_graph.build_import_graph()` | ✅ MVP |
-| `get_call_graph(symbol?)` | `callgraph.build_call_graph()` | ⏳ stub |
+| `get_call_graph(symbol?)` | `callgraph.build_call_graph()` | ✅ 0.2.0 |
 | `get_control_flow(function_id)` | `cfg.get_control_flow()` | ✅ MVP |
-| `find_callers(symbol)` | `callgraph.find_callers()` | ⏳ stub |
-| `find_callees(symbol)` | `callgraph.find_callees()` | ⏳ stub |
+| `find_callers(symbol)` | `callgraph.find_callers()` | ✅ 0.2.0 |
+| `find_callees(symbol)` | `callgraph.find_callees()` | ✅ 0.2.0 |
 | `find_usages(symbol)` | `symbols.find_usages()` | ⏳ stub |
 | `explain_symbol(symbol)` | LLM prompt + structured context | ⏳ future |
-| `impact_analysis(path\|symbol)` | `callgraph.impact_analysis()` | ⏳ stub |
+| `impact_analysis(path\|symbol)` | `callgraph.impact_analysis()` | ✅ MVP |
 
 ---
 

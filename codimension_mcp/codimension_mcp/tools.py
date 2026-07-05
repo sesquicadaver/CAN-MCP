@@ -11,7 +11,7 @@ from codimension_core import (
     get_control_flow,
     get_symbols,
 )
-from codimension_core.callgraph import build_call_graph, find_callers, impact_analysis
+from codimension_core.callgraph import build_call_graph, find_callees, find_callers, impact_analysis
 from codimension_core.errors import AnalysisError, NotImplementedYetError, ProjectNotOpenError
 from codimension_core.project import Project
 
@@ -74,7 +74,7 @@ def get_import_graph_tool(state: WorkspaceState) -> str:
 
 
 def get_call_graph_tool(state: WorkspaceState, symbol: str | None = None) -> str:
-    """Return static call graph (stub until implemented)."""
+    """Return static call graph."""
     project = _require_project(state)
     return dumps_graph(build_call_graph(project, symbol))
 
@@ -86,13 +86,19 @@ def get_control_flow_tool(state: WorkspaceState, function_id: str) -> str:
 
 
 def find_callers_tool(state: WorkspaceState, symbol: str) -> str:
-    """Find callers of a symbol (stub)."""
+    """Find callers of a symbol."""
     project = _require_project(state)
     return dumps_graph(find_callers(project, symbol))
 
 
+def find_callees_tool(state: WorkspaceState, symbol: str) -> str:
+    """Find callees of a symbol."""
+    project = _require_project(state)
+    return dumps_graph(find_callees(project, symbol))
+
+
 def impact_analysis_tool(state: WorkspaceState, target: str) -> str:
-    """Impact analysis for a path or symbol (stub)."""
+    """Impact analysis for a path or symbol."""
     project = _require_project(state)
     return dumps_graph(impact_analysis(project, target))
 

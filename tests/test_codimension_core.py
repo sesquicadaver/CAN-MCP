@@ -15,9 +15,8 @@ from codimension_core import (
     get_symbols,
     graph_ir,
 )
-from codimension_core.callgraph import build_call_graph
+from codimension_core.callgraph import build_call_graph, find_callers, find_callees
 from codimension_core.cfg import get_control_flow_from_source
-from codimension_core.errors import NotImplementedYetError
 from codimension_core.symbols import analyze_source
 
 
@@ -108,11 +107,31 @@ def test_get_control_flow_in_project(tmp_path):
     assert graph.nodes
 
 
-def test_call_graph_not_implemented(tmp_path):
-    (tmp_path / "a.py").write_text("pass\n", encoding="utf-8")
-    project = Project.open(str(tmp_path))
-    with pytest.raises(NotImplementedYetError):
-        build_call_graph(project)
+def test_static_call_graph_internal_call(tmp_path):
+    project_dir = tmp_path / "proj"
+    project_dir.mkdir()
+    (project_dir / "main.py").write_text(
+        "def helper():\n    return 1\n\ndef run():\n    return helper()\n",
+        encoding="utf-8",
+    )
+    project = Project.open(str(project_dir))
+    graph = build_call_graph(project)
+    call_edges = [(edge.from_id, edge.to_id) for edge in graph.edges if edge.type == "calls"]
+    assert any("run" in src and "helper" in dst for src, dst in call_edges)
+
+
+def test_find_callers_and_callees(tmp_path):
+    project_dir = tmp_path / "proj"
+    project_dir.mkdir()
+    (project_dir / "main.py").write_text(
+        "def helper():\n    return 1\n\ndef run():\n    return helper()\n",
+        encoding="utf-8",
+    )
+    project = Project.open(str(project_dir))
+    callers = find_callers(project, "helper")
+    callees = find_callees(project, "run")
+    assert callers.edges
+    assert callees.edges
 
 
 def test_tools_json_payload_shape(tmp_path):

@@ -64,10 +64,7 @@ def build_import_graph(project: Project) -> GraphIR:
 
 def _import_module_name(import_obj: object) -> str:
     if getattr(import_obj, "what", None):
-        package = getattr(import_obj, "package", "") or ""
-        if package.startswith("."):
-            return package.lstrip(".")
-        return package
+        return getattr(import_obj, "name", "") or ""
     return getattr(import_obj, "name", "") or ""
 
 

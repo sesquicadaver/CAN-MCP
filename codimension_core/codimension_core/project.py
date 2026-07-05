@@ -3,11 +3,13 @@
 
 from __future__ import annotations
 
+import glob
 import json
 import os
 import re
+import sys
 from dataclasses import dataclass, field
-from os.path import exists, isabs, isdir, isfile, islink, join, realpath, sep
+from os.path import dirname, exists, isabs, isdir, isfile, islink, join, realpath, sep
 
 from .cache import ModuleInfoCache
 from .errors import ProjectNotOpenError
@@ -204,3 +206,68 @@ class Project:
     def invalidate_file(self, path: str) -> None:
         """Drop cache entry after external file change."""
         self.cache.remove(path)
+
+    def get_python_executable(self) -> str:
+        """Return Python executable for venv detection and site-packages lookup."""
+        self.require_open()
+        interp = self.python_interpreter.strip()
+        if not interp:
+            venv_dir = _resolve_venv_dir(self.root, "")
+            if venv_dir:
+                for candidate in (
+                    join(venv_dir, "bin", "python"),
+                    join(venv_dir, "bin", "python3"),
+                    join(venv_dir, "Scripts", "python.exe"),
+                ):
+                    if isfile(candidate) and os.access(candidate, os.X_OK):
+                        return realpath(candidate)
+            return sys.executable
+
+        if not isabs(interp):
+            interp = os.path.normpath(join(self.root, interp))
+        if isfile(interp) and os.access(interp, os.X_OK):
+            return realpath(interp)
+        if isdir(interp):
+            for candidate in (
+                join(interp, "bin", "python"),
+                join(interp, "bin", "python3"),
+                join(interp, "Scripts", "python.exe"),
+            ):
+                if isfile(candidate) and os.access(candidate, os.X_OK):
+                    return realpath(candidate)
+        return sys.executable
+
+    def get_site_packages(self) -> str | None:
+        """Return site-packages path for the project venv, if any."""
+        python_path = self.get_python_executable()
+        if not python_path or python_path == sys.executable:
+            return None
+        bin_dir = dirname(realpath(python_path))
+        venv_dir = dirname(bin_dir)
+        if os.path.basename(bin_dir) not in ("bin", "Scripts"):
+            return None
+        for lib in ("lib", "lib64"):
+            pattern = join(venv_dir, lib, "python*", "site-packages")
+            matches = glob.glob(pattern)
+            if matches:
+                return matches[0]
+        return None
+
+    def build_import_search_paths(self, file_path: str | None = None) -> list[str]:
+        """Build sys.path entries used for import resolution."""
+        self.require_open()
+        paths: list[str] = []
+        if file_path:
+            file_dir = dirname(realpath(file_path))
+            if file_dir not in paths:
+                paths.append(file_dir)
+        root = realpath(self.root)
+        if root not in paths:
+            paths.append(root)
+        for path in self.get_import_dirs_absolute():
+            if path not in paths:
+                paths.append(path)
+        site_packages = self.get_site_packages()
+        if site_packages and site_packages not in paths:
+            paths.append(site_packages)
+        return paths
