@@ -18,6 +18,7 @@ from codimension_core import (
 )
 from codimension_core.callgraph import build_call_graph, find_callees, find_callers, impact_analysis
 from codimension_core.errors import AnalysisError, NotImplementedYetError, ProjectNotOpenError
+from codimension_core.graph_layout import layout_graph_from_dot
 from codimension_core.import_diagram import build_import_diagram_model
 from codimension_core.project import Project
 
@@ -147,10 +148,26 @@ def lookup_symbol_tool(state: WorkspaceState, name: str) -> str:
 
 
 def get_import_diagram_tool(state: WorkspaceState) -> str:
-    """Return headless import diagram Graphviz DOT."""
+    """Return headless import diagram Graphviz DOT and optional layout summary."""
     project = _require_project(state)
     model = build_import_diagram_model(project)
-    return dumps_payload({"status": "ok", "graphviz": model.to_graphviz(), "modules": len(model.modules)})
+    graphviz = model.to_graphviz()
+    payload: dict[str, object] = {
+        "status": "ok",
+        "graphviz": graphviz,
+        "modules": len(model.modules),
+    }
+    try:
+        layout = layout_graph_from_dot(graphviz)
+        payload["layout"] = {
+            "width": round(layout.width, 2),
+            "height": round(layout.height, 2),
+            "nodes": len(layout.nodes),
+            "edges": len(layout.edges),
+        }
+    except AnalysisError as exc:
+        payload["layout"] = {"status": "unavailable", "error": str(exc)}
+    return dumps_payload(payload)
 
 
 def get_cache_stats_tool(state: WorkspaceState) -> str:

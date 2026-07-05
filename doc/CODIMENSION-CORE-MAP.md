@@ -96,7 +96,7 @@ codimension_core/
 | Codimension файл | Класи / функції | PyQt / GlobalData | Дія |
 | ---------------- | --------------- | ----------------- | --- |
 | `codimension/diagram/importsdgm.py` (data) | `DgmModule`, `DgmConnection`, `ImportDiagramModel`, `__addSingleFileToDataModel` | QDialog, GlobalData | **Split:** model + builder → core |
-| `codimension/diagram/plaindotparser.py` | `Graph`, `Node`, `Edge`, `getGraphFromPlainDotData` | subprocess dot | **Optional** layout |
+| `codimension/diagram/plaindotparser.py` | thin wrapper → `codimension_core.graph_layout` | subprocess dot | ✅ 0.14.0 layout in core |
 | `codimension/diagram/depsdiagram.py` | `collectImportResolutions` | — | див. imports.py |
 
 **Не переносити:** `importsdgmgraphics.py`, `depsitems.py`, `depsvcanvas.py`.
@@ -188,6 +188,8 @@ codimension_core/
 | **codimension_core disasm/astutils** | disasm.py, astutils.py | unit: tests/test_codimension_core_disasm.py |
 | **codimension_core reverse index** | reverse_index.lookup_symbol | unit: tests/test_codimension_core_reverse_index.py |
 | **codimension_core import diagram** | import_diagram model | unit: tests/test_codimension_core_import_diagram.py |
+| **codimension_core graph layout** | graph_layout.py | unit: tests/test_codimension_core_graph_layout.py |
+| **MCP get_import_diagram layout** | layout summary in tool payload | unit: tests/test_codimension_mcp.py |
 | **MCP lookup_symbol** | reverse index tool | unit: tests/test_codimension_mcp.py |
 | **codimension-vscode** | extension scaffold | Manual: npm run compile |
 | **MCP render_diagram** | `.codimension/diagrams/*.html` WebView | ✅ 0.7.0 full import diagram model |

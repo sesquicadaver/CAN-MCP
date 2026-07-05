@@ -153,3 +153,6 @@ def test_mcp_lookup_symbol_and_import_diagram(tmp_path):
     diagram = json.loads(get_import_diagram_tool(state))
     assert diagram["status"] == "ok"
     assert "digraph ImportsDiagram" in diagram["graphviz"]
+    assert "layout" in diagram
+    if "nodes" in diagram["layout"]:
+        assert diagram["layout"]["nodes"] >= 1

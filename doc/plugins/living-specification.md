@@ -45,6 +45,8 @@
 | **codimension_core incremental cache** | codimension_core.analysis_cache | content-hash revision, CFG per-file invalidation | unit: tests/test_codimension_core_cache.py |
 | **codimension_core mypy** | codimension_core + parser_types | Protocol types for brief AST | CI: mypy codimension_core |
 | **codimension_core import diagram** | codimension_core.import_diagram | build_import_diagram_model, add_single_file_to_model | unit: tests/test_codimension_core_import_diagram.py |
+| **codimension_core graph layout** | codimension_core.graph_layout | layout_graph_from_dot, plain dot parser | unit: tests/test_codimension_core_graph_layout.py |
+| **IDE plaindotparser wrapper** | codimension.diagram.plaindotparser | re-export from codimension_core.graph_layout | Smoke: import diagram dialog |
 | **IDE import diagram wrapper** | codimension.diagram.importsdgm | core model + PyQt scene | Smoke: imports diagram dialog |
 | **VS Code diagram WebView** | codimension-vscode | codimension.showDiagram | Smoke: open `.codimension/diagrams/*.html` |
 | **MCP import diagram render parity** | codimension_mcp.diagrams | render_diagram import + graphviz payload | unit: tests/test_codimension_mcp.py |

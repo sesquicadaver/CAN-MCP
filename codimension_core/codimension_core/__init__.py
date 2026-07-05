@@ -18,6 +18,7 @@ from .disasm import (
 )
 from .errors import AnalysisError, ProjectNotOpenError
 from .explain import explain_symbol
+from .graph_layout import Graph, layout_graph_from_dot
 from .graph_render import graph_to_html, graph_to_mermaid
 from .import_diagram import (
     ImportDiagramModel,
@@ -70,13 +71,15 @@ __all__ = [
     "get_buffer_errors",
     "get_control_flow",
     "get_symbols",
+    "Graph",
     "graph_ir",
     "graph_to_html",
     "graph_to_mermaid",
+    "layout_graph_from_dot",
     "impact_analysis",
     "lookup_symbol_definitions",
     "parse_source_to_ast",
     "resolve_imports_for_file",
 ]
 
-__version__ = "0.13.0"
+__version__ = "0.14.0"
