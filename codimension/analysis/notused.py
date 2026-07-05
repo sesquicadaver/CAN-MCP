@@ -18,21 +18,28 @@
 #
 
 
-"""not used code analysis using vulture"""
+#
+# Legacy archive removed after extraction to codimension_core.analyzer (2026-07-05).
+#
+
+"""not used code analysis using vulture — IDE wrapper over codimension_core.analyzer."""
 
 import logging
 import os
 import os.path
 import sys
-import tempfile
-from subprocess import PIPE, Popen
 
+from analysis.core_bridge import core_project_from_ide
+from codimension_core.analyzer import (
+    build_vulture_exclude_patterns,
+    find_pyproject_vulture_config,
+    run_vulture,
+)
 from search.searchsupport import ItemToSearchIn, getSearchItemIndex
 from search.vultureprovider import VultureSearchProvider
 from ui.qt import QApplication, QCursor, QDialog, QDialogButtonBox, QLabel, Qt, QTimer, QVBoxLayout
 from utils.config import DEFAULT_ENCODING
 from utils.globals import GlobalData
-from utils.venvutils import getProjectVenvDir
 
 
 class NotUsedAnalysisProgress(QDialog):
@@ -128,17 +135,40 @@ class NotUsedAnalysisProgress(QDialog):
             self.close()
 
     def _get_exclude_patterns(self):
-        """Build comma-separated exclude patterns for vulture."""
+        """Build comma-separated exclude patterns for vulture (fallback without core project)."""
         patterns = [".venv", "venv", "__pycache__"]
         project = GlobalData().project
         if project.isLoaded() and project.getProjectDir() == self.__path:
-            venv_dir = getProjectVenvDir(project)
-            if venv_dir:
-                patterns.append(venv_dir)
             for excl in project.getExcludeFromAnalysisAsAbsolutePaths():
                 if excl:
                     patterns.append(excl)
         return ",".join(patterns)
+
+    def _resolve_vulture_options(self):
+        """Return exclude patterns, config path, and python executable for vulture."""
+        core = core_project_from_ide()
+        config_path = find_pyproject_vulture_config(core) if core else None
+        if config_path is None:
+            config_path = self._get_pyproject_config()
+        exclude = None
+        if os.path.isdir(self.__path):
+            if core:
+                exclude = build_vulture_exclude_patterns(core)
+            else:
+                exclude = self._get_exclude_patterns() or None
+        python_executable = core.get_python_executable() if core else sys.executable
+        return exclude, config_path, python_executable
+
+    def __run(self):
+        """Runs vulture via codimension_core.analyzer."""
+        exclude, config_path, python_executable = self._resolve_vulture_options()
+        lines, stderr = run_vulture(
+            self.__path,
+            exclude=exclude,
+            config_path=config_path,
+            python_executable=python_executable,
+        )
+        return "\n".join(lines), stderr
 
     def _get_dead_code_dir(self):
         """Return absolute path to deadCode directory in the analyzed project root."""
@@ -215,33 +245,6 @@ class NotUsedAnalysisProgress(QDialog):
                 logging.warning("Dead code analysis (%s): %s", self.__path, line)
             else:
                 logging.error("Dead code analysis (%s): %s", self.__path, line)
-
-    def __run(self):
-        """Runs vulture via current Python interpreter (same venv as IDE)."""
-        errTmp = tempfile.mkstemp()
-        errStream = os.fdopen(errTmp[0])
-        cmd = [sys.executable, "-m", "vulture"]
-        config_path = self._get_pyproject_config()
-        if config_path:
-            cmd.extend(["--config", config_path])
-        if os.path.isdir(self.__path):
-            exclude_patterns = self._get_exclude_patterns()
-            if exclude_patterns:
-                cmd.extend(["--exclude", exclude_patterns])
-        cmd.append(self.__path)
-        process = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=errStream)
-        process.stdin.close()
-        processStdout = process.stdout.read()
-        process.stdout.close()
-        errStream.seek(0)
-        err = errStream.read()
-        errStream.close()
-        process.wait()
-        try:
-            os.unlink(errTmp[1])
-        except OSError:
-            pass
-        return processStdout.decode(DEFAULT_ENCODING), err.strip()
 
     def __process(self):
         """Analysis process"""

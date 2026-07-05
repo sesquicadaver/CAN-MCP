@@ -8,11 +8,19 @@
 2. Після повного від’єднання IDE від архівного коду — **видалити** відповідний файл з `Carantine/`.
 3. Не імпортувати з `Carantine/` у production-код (IDE, core, MCP).
 
-## Зміст
+## Статус (etapa 9)
 
-| Шлях | Дата | Причина |
-| ---- | ---- | ------- |
-| `codimension/utils/importutils_legacy.py` | 2026-07-05 | Повна IDE-версія до extraction у `codimension_core.imports` |
-| `codimension/diagram/depsdiagram_legacy.py` | 2026-07-05 | Classification logic до extraction у `collect_import_resolutions_classified` |
-| `codimension/analysis/ierrors_legacy.py` | 2026-07-05 | pyflakes/radon до extraction у `codimension_core.analyzer` |
-| `codimension/analysis/notused_vulture_legacy.py` | 2026-07-05 | vulture runner до extraction у `codimension_core.analyzer` |
+Усі модулі extraction etapas 1–5 повністю делегують у `codimension_core`; архівні копії **видалено**:
+
+| Модуль IDE | Core API | Carantine |
+| ---------- | -------- | --------- |
+| `importutils.py` | `codimension_core.imports` | видалено |
+| `depsdiagram.py` | `collect_import_resolutions_classified` | видалено |
+| `ierrors.py` | `get_buffer_errors` | видалено |
+| `notused.py` | `run_vulture`, exclude/config helpers | видалено |
+
+Каталог залишається для майбутніх extraction (flow UI, importsdgm graphics тощо).
+
+## Спільний міст
+
+`codimension/analysis/core_bridge.py` — `core_project_from_ide()` для thin wrappers.

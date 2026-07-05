@@ -43,6 +43,8 @@
 | **MCP resources** | codimension_mcp.resources | codimension:// URIs | unit: tests/test_codimension_mcp.py |
 | **MCP diagram WebView** | codimension_mcp.diagrams | render_diagram, codimension://diagram/* | unit: tests/test_codimension_mcp.py |
 | **codimension_core incremental cache** | codimension_core.analysis_cache | ProjectAnalysisCache, CFG cache | unit: tests/test_codimension_core_cache.py |
+| **IDE core_bridge** | codimension.analysis.core_bridge | core_project_from_ide | Review: thin wrapper PR |
+| **IDE notused wrapper** | codimension.analysis.notused | run_vulture via core | Smoke: dead code dialog |
 | **codimension_mcp scaffold** | codimension_mcp | server.py, tools.py, serializers.py | unit: tests/test_codimension_mcp.py |
 | **Module extraction map** | doc | CODIMENSION-CORE-MAP.md | Review on each extraction PR |
 

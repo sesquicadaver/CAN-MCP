@@ -124,13 +124,14 @@ codimension_core/
 
 | Codimension файл | Класи / функції | PyQt / GlobalData | Дія |
 | ---------------- | --------------- | ----------------- | --- |
-| `codimension/analysis/ierrors.py` | `getBufferErrors` (pyflakes + radon) | — | **Copy** |
+| `codimension/analysis/ierrors.py` | `getBufferErrors` (pyflakes + radon) | — | ✅ thin wrapper → `analyzer` |
 | `codimension/analysis/disasm.py` | `disassemble*`, marshal helpers | — | **Copy** |
-| `codimension/analysis/notused.py` | vulture subprocess logic | QDialog, GlobalData | **Extract** runner |
+| `codimension/analysis/notused.py` | vulture runner | QDialog, GlobalData | ✅ thin wrapper → `analyzer` |
+| `codimension/analysis/core_bridge.py` | `core_project_from_ide` | GlobalData | ✅ IDE bridge |
 | `codimension/utils/astutils.py` | `parseSourceToAST` | — | **Copy** |
 | `codimension/search/searchsupport.py` | `Match`, `ItemToSearchIn`, regex search | GlobalData buffers | **Extract** text search |
 
-**Scaffold (0.1.0):** stub; делегування до `ierrors` у наступній ітерації.
+**Status (0.8.0):** analyzer extracted; IDE thin wrappers via `core_bridge`.
 
 ---
 
