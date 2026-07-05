@@ -7,7 +7,9 @@
 1. **Fork** репозиторій (якщо ще не зробили)
 2. Створіть гілку: `git checkout -b feature/your-feature`
 3. Внесіть зміни, дотримуючись існуючого стилю
-4. Запустіть перевірки: `ruff check codimension cdmplugins`, `mypy $(find codimension cdmplugins -name '*.py' ! -path '*/flowui/everything.py')`, `pytest tests/`
+4. Запустіть перевірки:
+   - **CAN-MCP (merge gate):** `./scripts/test-analysis.sh` або див. [CI](#ci) нижче
+   - **Legacy IDE (PyQt):** `ruff check codimension cdmplugins`, mypy, `pytest tests/` (потрібен PyQt5)
 5. Оновіть ChangeLog
 6. Зробіть commit з зрозумілим повідомленням
 7. Push та створіть [Pull Request](https://github.com/sesquicadaver/codimension/compare) (шаблон заповниться автоматично)
@@ -32,7 +34,11 @@ python -m venv .venv
 
 ## CI
 
-Перевірки запускаються автоматично при PR: ruff, mypy, pytest, pip-audit. Див. [Actions](https://github.com/sesquicadaver/codimension/actions).
+**Merge gate** (обов'язковий при PR): workflow [ci.yml](.github/workflows/ci.yml) — `analysis` (core + mcp + headless unit tests) та `security` (pip-audit).
+
+**Legacy UI** (за змінами в `codimension/`, `cdmplugins/`, `codimension-vscode/`): [ci-legacy-ui.yml](.github/workflows/ci-legacy-ui.yml).
+
+Локально: `./scripts/test-analysis.sh`. Див. [Actions](https://github.com/sesquicadaver/codimension/actions).
 
 ## Документація
 

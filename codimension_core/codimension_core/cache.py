@@ -5,9 +5,8 @@ from __future__ import annotations
 
 from os.path import exists, getmtime, getsize, realpath
 
-from .brief_ast import getBriefModuleInfoFromFile
-
 from .analysis_cache import file_content_hash
+from .brief_ast import getBriefModuleInfoFromFile
 
 
 class ModuleInfoCache:

@@ -13,7 +13,6 @@ from os.path import basename, dirname, realpath, sep
 from typing import TypedDict, cast
 
 from .brief_ast import getBriefModuleInfoFromMemory
-
 from .graph_ir import GraphEdge, GraphIR, GraphNode
 from .parser_types import BriefImport, BriefModuleInfo
 from .project import Project

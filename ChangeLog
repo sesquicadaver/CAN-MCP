@@ -1,3 +1,12 @@
+2026 Jul 06
+
+* Slim MCP-first CI (etapa 21):
+  - .github/workflows/ci.yml: merge gate = analysis + security only; extended headless pytest
+  - .github/workflows/ci-legacy-ui.yml: IDE lint + vscode compile (path filter / manual)
+  - scripts/test-analysis.sh: local parity with analysis job
+  - README.md, CONTRIBUTING.md, living-specification.md: CAN-MCP primary path
+  - codimension_core: ruff I001 import order fixes
+
 2026 Jul 05
 
 * Occurrences search redo:

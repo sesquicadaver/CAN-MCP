@@ -3,13 +3,13 @@
 
 from __future__ import annotations
 
-from typing import cast
-
 from collections.abc import Sequence
+from typing import cast
 
 from .flow_ast import FUNCTION_FRAGMENT, getControlFlowFromFile, getControlFlowFromMemory
 from .graph_ir import GraphEdge, GraphIR, GraphNode
 from .project import Project
+
 
 def get_control_flow(project: Project, function_id: str) -> GraphIR:
     """Return a CFG subgraph for ``file.py:function:name`` id."""

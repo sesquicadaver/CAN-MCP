@@ -6,6 +6,25 @@
 
 **Fork of [SergeySatskiy/codimension](https://github.com/SergeySatskiy/codimension).** Оригінальний проєкт не підтримується понад 4 роки. Цей форк — активна версія з підтримкою Python 3.10+.
 
+## CAN-MCP (headless analysis) — основний шлях розробки
+
+Стратегія еволюції: [CODIMENSION-EVO.md](CODIMENSION-EVO.md). Merge gate CI перевіряє **`codimension_core`** + **`codimension_mcp`** (ruff, mypy, pytest). Legacy PyQt IDE та VS Code extension — окремий workflow [ci-legacy-ui.yml](.github/workflows/ci-legacy-ui.yml).
+
+```shell
+git clone https://github.com/sesquicadaver/codimension.git
+cd codimension
+python3 -m venv .venv
+.venv/bin/pip install --upgrade pip
+.venv/bin/pip install -e ./codimension_core -e ./codimension_mcp
+.venv/bin/pytest tests/test_codimension_core*.py tests/test_codimension_mcp.py -q
+# або повний локальний merge gate:
+./scripts/test-analysis.sh
+```
+
+MCP-сервер: каталог `codimension_mcp/`. Розширення VS Code: `codimension-vscode/`.
+
+---
+
 Експериментальна Python IDE з графічним аналізом коду (flow diagram, algorithmic tree).
 
 ## Посилання

@@ -7,7 +7,6 @@ import sys
 from os.path import basename, realpath
 
 from .brief_ast import getBriefModuleInfoFromFile, getBriefModuleInfoFromMemory
-
 from .graph_ir import GraphEdge, GraphIR, GraphNode
 from .project import Project
 

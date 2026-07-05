@@ -53,7 +53,9 @@
 | **IDE import diagram wrapper** | codimension.diagram.importsdgm | core model + PyQt scene | Smoke: imports diagram dialog |
 | **VS Code diagram WebView** | codimension-vscode | codimension.showDiagram | Smoke: open `.codimension/diagrams/*.html` |
 | **MCP import diagram render parity** | codimension_mcp.diagrams | render_diagram import + graphviz payload | unit: tests/test_codimension_mcp.py |
-| **GitHub Actions CI** | .github/workflows/ci.yml | analysis + ide lint + vscode compile | CI on push/PR |
+| **GitHub Actions CI (merge gate)** | .github/workflows/ci.yml | analysis + security | CI on push/PR |
+| **GitHub Actions CI (legacy UI)** | .github/workflows/ci-legacy-ui.yml | ide lint + vscode compile (path filter) | CI on UI paths / manual |
+| **Local analysis gate** | scripts/test-analysis.sh | parity with ci.yml analysis job | Manual |
 | **UI artifact cleanup** | scripts/clean-ui-artifacts.sh | doc/www, VisioDiagrams removed | Manual: `./scripts/clean-ui-artifacts.sh` |
 | **CI pip-audit** | .github/workflows/ci.yml `security` job | requirements.txt CVE scan | CI on push/PR |
 | **IDE core_bridge** | codimension.analysis.core_bridge | core_project_from_ide | Review: thin wrapper PR |
@@ -69,11 +71,12 @@
 | --------- | ------- | ------- |
 | Ruff (core + mcp) | `ruff check codimension_core codimension_mcp` | .github/workflows/ci.yml `analysis` |
 | Mypy (core) | `mypy codimension_core` | .github/workflows/ci.yml `analysis` |
-| Pytest (core + mcp) | `pytest tests/test_codimension_core*.py tests/test_codimension_mcp.py` | .github/workflows/ci.yml `analysis` |
-| Ruff (IDE) | `ruff check codimension cdmplugins` | .github/workflows/ci.yml `ide` |
-| Mypy (IDE) | `mypy codimension cdmplugins` | .github/workflows/ci.yml `ide` |
+| Pytest (core + mcp + headless) | `pytest tests/test_codimension_core*.py … test_astview.py` | .github/workflows/ci.yml `analysis` |
+| Local analysis gate | `./scripts/test-analysis.sh` | scripts/test-analysis.sh |
+| Ruff (IDE) | `ruff check codimension cdmplugins` | .github/workflows/ci-legacy-ui.yml `ide` |
+| Mypy (IDE) | `mypy codimension cdmplugins` | .github/workflows/ci-legacy-ui.yml `ide` |
 | pip-audit | `pip-audit -r requirements.txt` | .github/workflows/ci.yml `security` |
-| VS Code compile | `npm ci && npm run compile` | .github/workflows/ci.yml `vscode` |
+| VS Code compile | `npm ci && npm run compile` | .github/workflows/ci-legacy-ui.yml `vscode` |
 
 ---
 
@@ -83,7 +86,8 @@
 - [x] setup.py оновлено
 - [x] requirements.txt оновлено
 - [x] Документація оновлена (plugins.md, living-specification.md)
-- [x] CI проходить (analysis, ide, vscode, security/pip-audit)
+- [x] CI merge gate проходить (analysis, security/pip-audit)
+- [x] Legacy UI CI окремо (ci-legacy-ui.yml)
 - [x] Smoke-тест: codimension запускається
 
 ---
