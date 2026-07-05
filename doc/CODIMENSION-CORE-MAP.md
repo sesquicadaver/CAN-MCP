@@ -82,7 +82,7 @@ codimension_core/
 
 | Codimension файл | Класи / функції | PyQt / GlobalData | Дія |
 | ---------------- | --------------- | ----------------- | --- |
-| `codimension/parsers/flow_ast.py` | `_ControlFlow`, `getControlFlowFromMemory/File` | — | **Reuse** |
+| `codimension/parsers/flow_ast.py` | thin wrapper → `codimension_core.flow_ast` | — | ✅ 0.16.0 vendored in core |
 | `codimension/flowui/cml.py` | `CMLVersion.validateCMLComments`, `validateCMLList` | buildColor via colorfont | **Extract** validation без color |
 
 **Не переносити:** `flowui/vcanvas.py`, `flowui/*items*.py`, `flowui/routines.py` (QPainterPath).
