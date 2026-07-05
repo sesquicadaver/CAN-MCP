@@ -55,6 +55,7 @@
 | **MCP import diagram render parity** | codimension_mcp.diagrams | render_diagram import + graphviz payload | unit: tests/test_codimension_mcp.py |
 | **GitHub Actions CI** | .github/workflows/ci.yml | analysis + ide lint + vscode compile | CI on push/PR |
 | **UI artifact cleanup** | scripts/clean-ui-artifacts.sh | doc/www, VisioDiagrams removed | Manual: `./scripts/clean-ui-artifacts.sh` |
+| **CI pip-audit** | .github/workflows/ci.yml `security` job | requirements.txt CVE scan | CI on push/PR |
 | **IDE core_bridge** | codimension.analysis.core_bridge | core_project_from_ide | Review: thin wrapper PR |
 | **IDE notused wrapper** | codimension.analysis.notused | run_vulture via core | Smoke: dead code dialog |
 | **codimension_mcp scaffold** | codimension_mcp | server.py, tools.py, serializers.py | unit: tests/test_codimension_mcp.py |
@@ -66,12 +67,13 @@
 
 | Перевірка | Команда | Джерело |
 | --------- | ------- | ------- |
-| Ruff lint | `ruff check codimension cdmplugins` | .github/workflows/ci.yml |
-| Ruff format | `ruff format --check codimension cdmplugins` | .github/workflows/ci.yml |
-| Mypy | `mypy $(find codimension cdmplugins -name '*.py' ! -path '*/flowui/everything.py')` | .github/workflows/ci.yml |
-| Smoke | `import codimension; import cdmplugins` | .github/workflows/ci.yml |
-| pip-audit | `pip-audit -r requirements.txt` | .github/workflows/ci.yml |
-| Pytest | `pytest tests/` | .github/workflows/ci.yml |
+| Ruff (core + mcp) | `ruff check codimension_core codimension_mcp` | .github/workflows/ci.yml `analysis` |
+| Mypy (core) | `mypy codimension_core` | .github/workflows/ci.yml `analysis` |
+| Pytest (core + mcp) | `pytest tests/test_codimension_core*.py tests/test_codimension_mcp.py` | .github/workflows/ci.yml `analysis` |
+| Ruff (IDE) | `ruff check codimension cdmplugins` | .github/workflows/ci.yml `ide` |
+| Mypy (IDE) | `mypy codimension cdmplugins` | .github/workflows/ci.yml `ide` |
+| pip-audit | `pip-audit -r requirements.txt` | .github/workflows/ci.yml `security` |
+| VS Code compile | `npm ci && npm run compile` | .github/workflows/ci.yml `vscode` |
 
 ---
 
@@ -81,7 +83,7 @@
 - [x] setup.py оновлено
 - [x] requirements.txt оновлено
 - [x] Документація оновлена (plugins.md, living-specification.md)
-- [x] CI проходить (ruff, mypy)
+- [x] CI проходить (analysis, ide, vscode, security/pip-audit)
 - [x] Smoke-тест: codimension запускається
 
 ---
