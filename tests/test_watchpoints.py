@@ -6,6 +6,8 @@ import os
 import sys
 import types
 
+import pytest
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CODMENSION_DIR = os.path.join(ROOT, "codimension")
 DEBUGGER_DIR = os.path.join(CODMENSION_DIR, "debugger")
@@ -74,6 +76,7 @@ def test_parse_remote_watch_condition_roundtrip():
     assert special == "??created??"
 
 
+@pytest.mark.pyqt
 def test_watchpoint_model_add_and_lookup():
     """WatchPointModel stores and finds expressions by condition and trigger."""
     model_mod = _load_watchpoint_model()
@@ -84,6 +87,7 @@ def test_watchpoint_model_add_and_lookup():
     assert model.getWatchPointByIndex(idx)[:5] == ["x > 1", "??changed??", False, True, 2]
 
 
+@pytest.mark.pyqt
 def test_watchpoint_model_find_by_remote_condition():
     """Remote wire conditions resolve back to model rows."""
     model_mod = _load_watchpoint_model()

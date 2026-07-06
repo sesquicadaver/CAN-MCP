@@ -21,7 +21,7 @@ jobs:
       - name: Install analysis packages and test tools
         run: |
           python -m pip install --upgrade pip
-          pip install pytest ruff mypy pyflakes radon jedi vulture
+          pip install pytest ruff mypy pyflakes radon jedi vulture mistune pygments
           pip install -e ./codimension_core -e ./codimension_mcp
 
       - name: Ruff (core + mcp)
@@ -31,22 +31,8 @@ jobs:
         working-directory: codimension_core
         run: mypy codimension_core
 
-      - name: Pytest (core + mcp + headless unit tests)
-        run: |
-          python -m pytest \
-            tests/test_codimension_core*.py \
-            tests/test_codimension_mcp.py \
-            tests/test_brief_ast.py \
-            tests/test_flow_ast.py \
-            tests/test_importutils.py \
-            tests/test_gitstatusparser.py \
-            tests/test_todoscanner.py \
-            tests/test_binfiles.py \
-            tests/test_occurrencesprovider.py \
-            tests/test_lint_drivers.py \
-            tests/test_greenlet_trace.py \
-            tests/test_astview.py \
-            -q
+      - name: Pytest (full headless suite, skip pyqt)
+        run: python -m pytest tests/ -m "not pyqt" -q
 
   security:
     name: dependency audit

@@ -16,7 +16,7 @@ cd codimension
 python3 -m venv .venv
 .venv/bin/pip install --upgrade pip
 .venv/bin/pip install -e ./codimension_core -e ./codimension_mcp
-.venv/bin/pytest tests/test_codimension_core*.py tests/test_codimension_mcp.py -q
+.venv/bin/pytest tests/ -m "not pyqt" -q
 # або повний локальний merge gate:
 ./scripts/test-analysis.sh
 ```

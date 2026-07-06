@@ -71,7 +71,8 @@
 | --------- | ------- | ------- |
 | Ruff (core + mcp) | `ruff check codimension_core codimension_mcp` | .github/workflows/ci.yml `analysis` |
 | Mypy (core) | `mypy codimension_core` | .github/workflows/ci.yml `analysis` |
-| Pytest (core + mcp + headless) | `pytest tests/test_codimension_core*.py … test_astview.py` | .github/workflows/ci.yml `analysis` |
+| Pytest (headless, full suite) | `pytest tests/ -m "not pyqt"` | .github/workflows/ci.yml `analysis` |
+| Pytest (PyQt legacy) | `pytest tests/ -m pyqt` | .github/workflows/ci-legacy-ui.yml `ide` |
 | Local analysis gate | `./scripts/test-analysis.sh` | scripts/test-analysis.sh |
 | Ruff (IDE) | `ruff check codimension cdmplugins` | .github/workflows/ci-legacy-ui.yml `ide` |
 | Mypy (IDE) | `mypy codimension cdmplugins` | .github/workflows/ci-legacy-ui.yml `ide` |

@@ -32,7 +32,8 @@ jobs:
       - name: Install IDE lint dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install ruff mypy PyQt5 pyflakes radon jedi vulture yapsy packaging qdarkstyle mistune pygments
+          pip install pytest ruff mypy PyQt5 pyflakes radon jedi vulture yapsy packaging qdarkstyle mistune pygments
+          pip install -e ./codimension_core -e ./codimension_mcp
 
       - name: Ruff (codimension + cdmplugins)
         run: ruff check codimension cdmplugins
@@ -44,6 +45,9 @@ jobs:
       - name: Smoke import (plugins package)
         run: |
           python -c "import sys; sys.path.insert(0, 'codimension'); import cdmplugins; print('smoke ok')"
+
+      - name: Pytest (PyQt legacy IDE tests)
+        run: python -m pytest tests/ -m pyqt -q
 
   vscode:
     name: codimension-vscode

@@ -50,3 +50,9 @@ reportMissingImports = "warning"
 reportAttributeAccessIssue = "none"
 reportIncompatibleMethodOverride = "none"
 reportOptionalMemberAccess = "none"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "pyqt: legacy IDE tests that require PyQt5",
+]
