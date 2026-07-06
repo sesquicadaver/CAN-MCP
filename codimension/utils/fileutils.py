@@ -23,7 +23,6 @@
 # pylint: disable=W0702
 # pylint: disable=W0703
 
-import json
 import logging
 import os
 import tempfile
@@ -38,6 +37,13 @@ from ui.qt import QImageReader
 
 from .config import DEFAULT_ENCODING
 from .pixmapcache import getIcon
+
+from codimension_core.file_io import (
+    load_json as _load_json,
+    read_text_file as _read_text_file,
+    save_json as _save_json,
+    write_text_file as _write_text_file,
+)
 
 __QTSupportedImageFormats = [fmt.data().decode(DEFAULT_ENCODING) for fmt in QImageReader.supportedImageFormats()]
 VIEWABLE_IMAGE_MIMES = ["image/" + ext for ext in __QTSupportedImageFormats]
@@ -719,52 +725,25 @@ def isCDMProjectFile(fName):
     return "x-codimension3" in mime
 
 
-# Utility functions to save/load generic JSON
+# Utility functions to save/load generic JSON (headless logic in codimension_core.file_io)
 def loadJSON(fileName, errorWhat, defaultValue):
     """Generic JSON loading"""
-    try:
-        with open(fileName, "r", encoding=DEFAULT_ENCODING) as diskfile:
-            return json.load(diskfile)
-    except Exception as exc:
-        logging.error("Error loading %s (from %s): %s", errorWhat, fileName, str(exc))
-        return defaultValue
+    return _load_json(fileName, errorWhat, defaultValue, encoding=DEFAULT_ENCODING)
 
 
 def saveJSON(fileName, values, errorWhat):
     """Generic JSON saving"""
-    try:
-        with open(fileName, "w", encoding=DEFAULT_ENCODING) as diskfile:
-            json.dump(values, diskfile, indent=4)
-    except Exception as exc:
-        logging.error("Error saving %s (to %s): %s", errorWhat, fileName, str(exc))
-        return False
-    return True
+    return _save_json(fileName, values, errorWhat, encoding=DEFAULT_ENCODING)
 
 
 def getFileContent(fileName, allowException=True, enc=DEFAULT_ENCODING):
     """Provides the file content"""
-    try:
-        with open(fileName, "r", encoding=enc) as diskfile:
-            content = diskfile.read()
-        return content
-    except Exception as exc:
-        if allowException:
-            raise
-        logging.error("Error reading from file %s: %s", fileName, str(exc))
-        return None
+    return _read_text_file(fileName, encoding=enc, allow_exception=allowException)
 
 
 def saveToFile(fileName, content, allowException=True, enc=DEFAULT_ENCODING):
     """Overwrites the file content"""
-    try:
-        with open(fileName, "w", encoding=enc) as diskfile:
-            diskfile.write(content)
-        return True
-    except Exception as exc:
-        if allowException:
-            raise
-        logging.error("Error writing to file %s: %s", fileName, str(exc))
-    return False
+    return _write_text_file(fileName, content, encoding=enc, allow_exception=allowException)
 
 
 def saveBinaryToFile(fileName, content, allowException=True):

@@ -1,5 +1,11 @@
 2026 Jul 06
 
+* Extract file_io JSON/text helpers to codimension_core (etapa 36):
+  - codimension_core/file_io.py; IDE wrappers for loadJSON/saveJSON/getFileContent
+  - core 0.20.1
+
+2026 Jul 06
+
 * Extract venvutils to codimension_core (etapa 35):
   - codimension_core/venvutils.py; IDE thin wrapper; project.py dedup
   - tests: test_codimension_core_venvutils.py, test_codimension_core_astutils.py
