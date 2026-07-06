@@ -1,5 +1,12 @@
 2026 Jul 06
 
+* CFG MCP resources + Cursor MCP sample config (etapa 27):
+  - codimension://graph/control_flow/{function_key}, diagram/control_flow/{function_key}
+  - .cursor/mcp.json.example, scripts/install-cursor-mcp.sh
+  - codimension_mcp 0.17.0
+
+2026 Jul 06
+
 * Per-file MCP resources + from-import frozen stdlib fix (etapa 26):
   - codimension://deps/file/{path}, codimension://symbols/file/{path}
   - imports.py: _resolve_from handles frozen stdlib (from os import ...)

@@ -42,7 +42,8 @@
 | **codimension_core impact** | codimension_core.callgraph | impact_analysis transitive | unit: tests/test_codimension_core_impact.py |
 | **MCP resources** | codimension_mcp.resources | codimension:// URIs | unit: tests/test_codimension_mcp.py |
 | **codimension_core summaries** | codimension_core.summaries | build_dependency_summary, build_symbol_summary | unit: tests/test_codimension_core_summaries.py |
-| **MCP per-file summaries** | codimension_mcp.resources | codimension://deps/file/{path}, symbols/file/{path} | unit: tests/test_codimension_mcp.py |
+| **MCP CFG resources** | codimension_mcp.resources | control_flow graph + diagram URIs | unit: tests/test_codimension_mcp_cfg_resources.py |
+| **Cursor MCP sample** | .cursor/mcp.json.example | install-cursor-mcp.sh | Manual |
 | **MCP symbol summary** | codimension_mcp | get_symbol_summary tool + codimension://symbols/summary | unit: tests/test_codimension_mcp.py |
 | **VS Code MCP config** | codimension-vscode/mcpConfig.ts | copyMcpConfig, showMcpResources | CI: npm run compile |
 | **Legacy IDE policy** | doc/LEGACY-IDE.md | maintenance mode for codimension/ + cdmplugins | Review on IDE changes |

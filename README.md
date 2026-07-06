@@ -21,7 +21,7 @@ python3 -m venv .venv
 ./scripts/test-analysis.sh
 ```
 
-MCP-сервер: каталог `codimension_mcp/`. Розширення VS Code: `codimension-vscode/`. Legacy PyQt IDE: [doc/LEGACY-IDE.md](doc/LEGACY-IDE.md).
+MCP-сервер: каталог `codimension_mcp/`. Швидке підключення Cursor: `./scripts/install-cursor-mcp.sh` (з `.cursor/mcp.json.example`). Розширення VS Code: `codimension-vscode/`. Legacy PyQt IDE: [doc/LEGACY-IDE.md](doc/LEGACY-IDE.md).
 
 ---
 

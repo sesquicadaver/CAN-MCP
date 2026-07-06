@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "codimension": {
+      "command": "codimension-mcp",
+      "args": ["--workspace", "${workspaceFolder}"]
+    }
+  }
+}

@@ -53,7 +53,8 @@ codimension-mcp --workspace /path/to/project
 | `codimension://graph/import` | application/json | Import Graph IR |
 | `codimension://graph/call` | application/json | Call Graph IR |
 | `codimension://diagram/import` | text/html | Import diagram HTML |
-| `codimension://diagram/call` | text/html | Call graph HTML |
+| `codimension://diagram/control_flow/{function_key}` | text/html | CFG HTML (`main.py__function__name`) |
+| `codimension://graph/control_flow/{function_key}` | application/json | CFG Graph IR |
 | `codimension://cache/stats` | application/json | Cache hit/miss stats |
 
 ## Prompts
@@ -78,16 +79,25 @@ Resources `codimension://diagram/import` and `codimension://diagram/call` return
 
 ## Cursor config
 
+Copy the sample and adjust the workspace path:
+
+```shell
+./scripts/install-cursor-mcp.sh
+# or manually copy .cursor/mcp.json.example → .cursor/mcp.json
+```
+
 ```json
 {
   "mcpServers": {
     "codimension": {
       "command": "codimension-mcp",
-      "args": ["--workspace", "/path/to/project"]
+      "args": ["--workspace", "${workspaceFolder}"]
     }
   }
 }
 ```
+
+**Function resource keys:** encode `file.py:function:name` as `file.py__function__name` in URIs.
 
 ## Legacy IDE
 

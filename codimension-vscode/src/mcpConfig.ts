@@ -37,6 +37,8 @@ export function listMcpResourceUris(): string {
     "codimension://symbols/file/{path}",
     "codimension://diagram/import",
     "codimension://diagram/call",
+    "codimension://diagram/control_flow/{function_key}",
+    "codimension://graph/control_flow/{function_key}",
     "codimension://cache/stats",
   ].join("\n");
 }

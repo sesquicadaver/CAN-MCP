@@ -8,6 +8,7 @@ from collections.abc import Callable
 from os.path import realpath
 
 from codimension_core import build_call_graph, build_import_graph
+from codimension_core.errors import AnalysisError
 from codimension_core.summaries import build_dependency_summary, build_symbol_summary
 from mcp.server.fastmcp import FastMCP
 
@@ -89,6 +90,44 @@ def read_file_symbol_summary(state: WorkspaceState, path: str) -> str:
     try:
         abs_path = _resolve_project_path(state.project.root, path)
         return dumps_payload(build_symbol_summary(state.project, abs_path))
+    except ValueError as exc:
+        return dumps_payload({"status": "error", "error": str(exc)})
+
+
+def encode_function_key(function_id: str) -> str:
+    """Encode file.py:function:name for use in MCP resource URI path segments."""
+    return function_id.replace(":function:", "__function__").replace(":class:", "__class__")
+
+
+def decode_function_key(function_key: str) -> str:
+    """Decode MCP resource function key back to a symbol id."""
+    if "__function__" in function_key:
+        file_part, name = function_key.split("__function__", 1)
+        return f"{file_part}:function:{name}"
+    if "__class__" in function_key:
+        file_part, name = function_key.split("__class__", 1)
+        return f"{file_part}:class:{name}"
+    raise ValueError(f"Invalid function key: {function_key}")
+
+
+def read_control_flow_graph(state: WorkspaceState, function_key: str) -> str:
+    if state.project is None:
+        return dumps_payload({"status": "error", "error": "Call open_project(path) first"})
+    try:
+        function_id = decode_function_key(function_key)
+        from codimension_core.cfg import get_control_flow
+
+        return dumps_graph(get_control_flow(state.project, function_id))
+    except (ValueError, AnalysisError) as exc:
+        return dumps_payload({"status": "error", "error": str(exc)})
+
+
+def read_control_flow_diagram(state: WorkspaceState, function_key: str) -> str:
+    if state.project is None:
+        return dumps_payload({"status": "error", "error": "Call open_project(path) first"})
+    try:
+        function_id = decode_function_key(function_key)
+        return read_diagram_html(state, "control_flow", function_id)
     except ValueError as exc:
         return dumps_payload({"status": "error", "error": str(exc)})
 
@@ -194,3 +233,21 @@ def register_resources(mcp: FastMCP, get_state: Callable[[], WorkspaceState]) ->
     )
     def symbol_file_resource(path: str) -> str:
         return read_file_symbol_summary(get_state(), path)
+
+    @mcp.resource(
+        "codimension://graph/control_flow/{function_key}",
+        name="control_flow_graph",
+        description="CFG Graph IR for a function (key: main.py__function__name).",
+        mime_type="application/json",
+    )
+    def control_flow_graph_resource(function_key: str) -> str:
+        return read_control_flow_graph(get_state(), function_key)
+
+    @mcp.resource(
+        "codimension://diagram/control_flow/{function_key}",
+        name="control_flow_diagram",
+        description="CFG HTML diagram for a function (key: main.py__function__name).",
+        mime_type="text/html",
+    )
+    def control_flow_diagram_resource(function_key: str) -> str:
+        return read_control_flow_diagram(get_state(), function_key)
