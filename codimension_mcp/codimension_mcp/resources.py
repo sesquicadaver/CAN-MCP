@@ -12,6 +12,7 @@ from codimension_core.errors import AnalysisError
 from codimension_core.summaries import build_dependency_summary, build_symbol_summary
 from mcp.server.fastmcp import FastMCP
 
+from .catalog import read_mcp_catalog
 from .diagrams import read_diagram_html
 from .schemas import WorkspaceState
 from .serializers import dumps_graph, dumps_payload
@@ -170,6 +171,15 @@ def read_control_flow_diagram(state: WorkspaceState, function_key: str) -> str:
 
 def register_resources(mcp: FastMCP, get_state: Callable[[], WorkspaceState]) -> None:
     """Register codimension:// resources on the MCP server."""
+
+    @mcp.resource(
+        "codimension://catalog",
+        name="mcp_catalog",
+        description="Machine-readable list of all Codimension MCP tools, resources, and prompts.",
+        mime_type="application/json",
+    )
+    def mcp_catalog_resource() -> str:
+        return read_mcp_catalog()
 
     @mcp.resource(
         "codimension://workspace/status",

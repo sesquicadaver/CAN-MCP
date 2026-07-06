@@ -15,10 +15,22 @@ pip install -e ./codimension_mcp
 codimension-mcp --workspace /path/to/project
 ```
 
+## Discovery
+
+Start with the catalog — no need to guess URIs or tool names:
+
+- **Resource:** `codimension://catalog`
+- **Tool:** `list_mcp_catalog`
+
+```shell
+# After codimension-mcp is running, agents should read the catalog first.
+```
+
 ## Tools
 
 | Tool | Purpose |
 | ---- | ------- |
+| `list_mcp_catalog` | Full tools/resources/prompts catalog (discovery) |
 | `open_project` | Open workspace directory |
 | `analyze_project` | Warm caches for all Python files |
 | `analyze_file` | Symbol Graph IR for one file |
@@ -44,6 +56,7 @@ codimension-mcp --workspace /path/to/project
 
 | URI | MIME | Content |
 | --- | ---- | ------- |
+| `codimension://catalog` | application/json | **Start here** — full capability catalog |
 | `codimension://workspace/status` | application/json | Open path, file counts |
 | `codimension://project/tree` | application/json | Python file list |
 | `codimension://deps/summary` | application/json | Classified import summary |
@@ -53,7 +66,8 @@ codimension-mcp --workspace /path/to/project
 | `codimension://graph/import` | application/json | Import Graph IR |
 | `codimension://graph/call` | application/json | Call Graph IR |
 | `codimension://diagram/import` | text/html | Import diagram HTML |
-| `codimension://diagram/impact/{target_key}` | text/html | Impact blast-radius HTML |
+| `codimension://diagram/call` | text/html | Call graph HTML |
+| `codimension://diagram/control_flow/{function_key}` | text/html | CFG HTML |
 | `codimension://graph/impact/{target_key}` | application/json | Impact Graph IR |
 | `codimension://graph/control_flow/{function_key}` | application/json | CFG Graph IR |
 | `codimension://cache/stats` | application/json | Cache hit/miss stats |

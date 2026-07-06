@@ -42,7 +42,7 @@
 | **codimension_core impact** | codimension_core.callgraph | impact_analysis transitive | unit: tests/test_codimension_core_impact.py |
 | **MCP resources** | codimension_mcp.resources | codimension:// URIs | unit: tests/test_codimension_mcp.py |
 | **codimension_core summaries** | codimension_core.summaries | build_dependency_summary, build_symbol_summary | unit: tests/test_codimension_core_summaries.py |
-| **MCP impact resources** | codimension_mcp.resources | impact graph + diagram URIs | unit: tests/test_codimension_mcp_impact_resources.py |
+| **MCP catalog** | codimension_mcp.catalog | codimension://catalog, list_mcp_catalog | unit: tests/test_codimension_mcp_catalog.py |
 | **MCP assess_change_impact prompt** | codimension_mcp.prompts | blast-radius workflow | unit: tests/test_codimension_mcp.py |
 | **Cursor MCP sample** | .cursor/mcp.json.example | install-cursor-mcp.sh | Manual |
 | **MCP symbol summary** | codimension_mcp | get_symbol_summary tool + codimension://symbols/summary | unit: tests/test_codimension_mcp.py |

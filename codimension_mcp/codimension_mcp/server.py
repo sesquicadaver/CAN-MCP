@@ -8,6 +8,7 @@ import sys
 
 from mcp.server.fastmcp import FastMCP
 
+from .catalog import read_mcp_catalog
 from .prompts import register_prompts
 from .resources import register_resources
 from .schemas import WorkspaceState
@@ -241,6 +242,13 @@ def render_diagram(kind: str, target: str | None = None) -> str:
         return render_diagram_tool(_state, kind, target)
     except Exception as exc:  # noqa: BLE001
         return format_tool_error(exc)
+
+
+@mcp.tool()
+def list_mcp_catalog() -> str:
+    """Return the full Codimension MCP catalog (tools, resources, prompts, URI encoding rules)."""
+    _state.record_tool("list_mcp_catalog")
+    return read_mcp_catalog()
 
 
 @mcp.tool()

@@ -1,5 +1,12 @@
 2026 Jul 06
 
+* MCP capability catalog for agent discovery (etapa 29):
+  - codimension_mcp/catalog.py: tools, resources, prompts registry
+  - codimension://catalog resource + list_mcp_catalog tool
+  - codimension_mcp 0.19.0
+
+2026 Jul 06
+
 * Impact MCP resources + assess_change_impact prompt (etapa 28):
   - codimension://graph/impact/{target_key}, diagram/impact/{target_key}
   - prompt assess_change_impact; codimension_mcp 0.18.0

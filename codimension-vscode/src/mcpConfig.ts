@@ -27,6 +27,7 @@ export async function copyMcpConfigToClipboard(): Promise<void> {
 
 export function listMcpResourceUris(): string {
   return [
+    "codimension://catalog",
     "codimension://workspace/status",
     "codimension://project/tree",
     "codimension://graph/import",
@@ -48,7 +49,7 @@ export function listMcpResourceUris(): string {
 export async function showMcpResources(): Promise<void> {
   const uris = listMcpResourceUris();
   const doc = await vscode.workspace.openTextDocument({
-    content: `# Codimension MCP resources\n\n${uris}\n\nSee codimension_mcp/README.md for tools and prompts.\n`,
+    content: `# Codimension MCP resources\n\nStart with codimension://catalog or list_mcp_catalog.\n\n${uris}\n\nSee codimension_mcp/README.md for tools and prompts.\n`,
     language: "markdown",
   });
   await vscode.window.showTextDocument(doc, vscode.ViewColumn.Beside);
