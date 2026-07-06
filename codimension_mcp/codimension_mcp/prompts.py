@@ -3,7 +3,92 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from mcp.server.fastmcp import FastMCP
+
+from .resources import encode_impact_key
+
+
+def build_refactor_symbol_prompt(symbol: str) -> str:
+    """Return workflow text for safe symbol refactoring."""
+    return (
+        f"You are refactoring `{symbol}` in an open Python project.\n"
+        "1. Call `explain_symbol` with the full symbol id (e.g. file.py:function:name).\n"
+        "2. Call `impact_analysis` for the same target to list transitive callers and import dependents.\n"
+        "3. Call `find_usages` and `find_callers` to confirm references.\n"
+        "4. Propose minimal edits and list tests to run before merging."
+    )
+
+
+def build_review_dead_code_prompt() -> str:
+    """Return workflow text for reviewing vulture findings."""
+    return (
+        "Review dead code candidates for the open project.\n"
+        "1. Call `find_dead_code` on the project root.\n"
+        "2. For each finding, call `find_usages` and `impact_analysis` to avoid false positives.\n"
+        "3. Group safe removals vs items kept for API/public surface.\n"
+        "4. Output a deletion plan with file:line references only."
+    )
+
+
+def build_review_imports_prompt() -> str:
+    """Return workflow text for import graph review."""
+    return (
+        "Review import dependencies for the open Python project.\n"
+        "1. Call `open_project` and `analyze_project` if not already done.\n"
+        "2. Read resource `codimension://graph/import` or call `get_import_graph`.\n"
+        "3. Call `get_import_diagram` for Graphviz layout metadata.\n"
+        "4. Flag circular imports, stdlib vs third-party mixing, and unused modules.\n"
+        "5. Suggest minimal dependency fixes with file-level rationale."
+    )
+
+
+def build_analyze_module_prompt(path: str) -> str:
+    """Return workflow text for deep-diving one module."""
+    return (
+        f"Analyze module `{path}` in the open project.\n"
+        "1. Call `analyze_file` for symbol Graph IR.\n"
+        "2. Call `get_diagnostics` for lint/complexity issues.\n"
+        "3. For each public function, call `get_control_flow` with file.py:function:name ids.\n"
+        "4. Call `find_callers` and `find_callees` for entry points and side effects.\n"
+        "5. Summarize responsibilities, risks, and suggested tests."
+    )
+
+
+def build_audit_dependencies_prompt() -> str:
+    """Return workflow text for dependency audit."""
+    return (
+        "Audit Python project dependencies.\n"
+        "1. Read resource `codimension://deps/summary` or call `get_dependency_summary`.\n"
+        "2. Read `codimension://symbols/summary` for module/function counts.\n"
+        "3. Call `get_import_graph` for structural edges.\n"
+        "4. Flag unresolved imports and unexpected third-party usage.\n"
+        "5. Propose requirements.txt updates only when evidence supports them."
+    )
+
+
+def build_assess_change_impact_prompt(target: str) -> str:
+    """Return workflow text for blast-radius review before a change."""
+    key = encode_impact_key(target)
+    return (
+        f"Assess change impact for `{target}` before editing.\n"
+        f"1. Read `codimension://graph/impact/{key}` or call `impact_analysis`.\n"
+        f"2. Open `codimension://diagram/impact/{key}` for a visual blast-radius view.\n"
+        "3. Call `find_callers` and `get_import_graph` to cross-check static edges.\n"
+        "4. For functions, read `codimension://graph/control_flow/{{function_key}}` if control flow matters.\n"
+        "5. List affected files, tests to run, and rollback risks."
+    )
+
+
+PROMPT_BUILDERS: dict[str, Callable[..., str]] = {
+    "refactor_symbol": build_refactor_symbol_prompt,
+    "review_dead_code": build_review_dead_code_prompt,
+    "review_imports": build_review_imports_prompt,
+    "analyze_module": build_analyze_module_prompt,
+    "audit_dependencies": build_audit_dependencies_prompt,
+    "assess_change_impact": build_assess_change_impact_prompt,
+}
 
 
 def register_prompts(mcp: FastMCP) -> None:
@@ -14,23 +99,39 @@ def register_prompts(mcp: FastMCP) -> None:
         description="Plan a safe refactor using explain_symbol, impact_analysis, and find_usages.",
     )
     def refactor_symbol(symbol: str) -> str:
-        return (
-            f"You are refactoring `{symbol}` in an open Python project.\n"
-            "1. Call `explain_symbol` with the full symbol id (e.g. file.py:function:name).\n"
-            "2. Call `impact_analysis` for the same target to list transitive callers and import dependents.\n"
-            "3. Call `find_usages` and `find_callers` to confirm references.\n"
-            "4. Propose minimal edits and list tests to run before merging."
-        )
+        return build_refactor_symbol_prompt(symbol)
 
     @mcp.prompt(
         name="review_dead_code",
         description="Review vulture findings before deletion.",
     )
     def review_dead_code() -> str:
-        return (
-            "Review dead code candidates for the open project.\n"
-            "1. Call `find_dead_code` on the project root.\n"
-            "2. For each finding, call `find_usages` and `impact_analysis` to avoid false positives.\n"
-            "3. Group safe removals vs items kept for API/public surface.\n"
-            "4. Output a deletion plan with file:line references only."
-        )
+        return build_review_dead_code_prompt()
+
+    @mcp.prompt(
+        name="review_imports",
+        description="Audit import graph and circular dependencies.",
+    )
+    def review_imports() -> str:
+        return build_review_imports_prompt()
+
+    @mcp.prompt(
+        name="analyze_module",
+        description="Deep-dive one Python file: symbols, CFG, callers, diagnostics.",
+    )
+    def analyze_module(path: str) -> str:
+        return build_analyze_module_prompt(path)
+
+    @mcp.prompt(
+        name="audit_dependencies",
+        description="Audit classified imports and symbol surface area.",
+    )
+    def audit_dependencies() -> str:
+        return build_audit_dependencies_prompt()
+
+    @mcp.prompt(
+        name="assess_change_impact",
+        description="Review blast radius before changing a symbol or file.",
+    )
+    def assess_change_impact(target: str) -> str:
+        return build_assess_change_impact_prompt(target)

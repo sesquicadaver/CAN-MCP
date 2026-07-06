@@ -26,7 +26,7 @@ def get_buffer_errors(source_code: str, file_name: str = "<string>") -> tuple[di
     try:
         tree = compile(source_code, file_name, "exec", ast.PyCF_ONLY_AST)
     except SyntaxError as value:
-        if value.text is None:
+        if value.text is None or value.lineno is None:
             return {}, []
         return {value.lineno: [value.args[0]]}, []
     except (ValueError, TypeError) as value:

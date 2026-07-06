@@ -9,7 +9,9 @@ from codimension_core import (
     analyze_dead_code,
     analyze_file,
     analyze_file_diagnostics,
+    build_dependency_summary,
     build_import_graph,
+    build_symbol_summary,
     explain_symbol,
     find_usages,
     get_control_flow,
@@ -18,6 +20,7 @@ from codimension_core import (
 )
 from codimension_core.callgraph import build_call_graph, find_callees, find_callers, impact_analysis
 from codimension_core.errors import AnalysisError, NotImplementedYetError, ProjectNotOpenError
+from codimension_core.graph_layout import layout_graph_from_dot
 from codimension_core.import_diagram import build_import_diagram_model
 from codimension_core.project import Project
 
@@ -147,16 +150,46 @@ def lookup_symbol_tool(state: WorkspaceState, name: str) -> str:
 
 
 def get_import_diagram_tool(state: WorkspaceState) -> str:
-    """Return headless import diagram Graphviz DOT."""
+    """Return headless import diagram Graphviz DOT and optional layout summary."""
     project = _require_project(state)
     model = build_import_diagram_model(project)
-    return dumps_payload({"status": "ok", "graphviz": model.to_graphviz(), "modules": len(model.modules)})
+    graphviz = model.to_graphviz()
+    payload: dict[str, object] = {
+        "status": "ok",
+        "graphviz": graphviz,
+        "modules": len(model.modules),
+    }
+    try:
+        layout = layout_graph_from_dot(graphviz)
+        payload["layout"] = {
+            "width": round(layout.width, 2),
+            "height": round(layout.height, 2),
+            "nodes": len(layout.nodes),
+            "edges": len(layout.edges),
+        }
+    except AnalysisError as exc:
+        payload["layout"] = {"status": "unavailable", "error": str(exc)}
+    return dumps_payload(payload)
 
 
 def get_cache_stats_tool(state: WorkspaceState) -> str:
     """Return module and derived-graph cache statistics."""
     project = _require_project(state)
     return dumps_payload(project.get_cache_stats())
+
+
+def get_dependency_summary_tool(state: WorkspaceState, path: str | None = None) -> str:
+    """Return classified import summary for the project or one file."""
+    project = _require_project(state)
+    resolved = _resolve_path(project, path) if path else None
+    return dumps_payload(build_dependency_summary(project, resolved))
+
+
+def get_symbol_summary_tool(state: WorkspaceState, path: str | None = None) -> str:
+    """Return symbol counts by type for the project or one file."""
+    project = _require_project(state)
+    resolved = _resolve_path(project, path) if path else None
+    return dumps_payload(build_symbol_summary(project, resolved))
 
 
 def _require_project(state: WorkspaceState) -> Project:

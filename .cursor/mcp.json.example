@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "codimension": {
+      "command": "/absolute/path/to/CAN-MCP/.venv/bin/codimension-mcp",
+      "args": ["--workspace", "${workspaceFolder}"],
+      "env": {
+        "VIRTUAL_ENV": "/absolute/path/to/CAN-MCP/.venv",
+        "PATH": "/absolute/path/to/CAN-MCP/.venv/bin:/usr/local/bin:/usr/bin:/bin"
+      }
+    }
+  }
+}

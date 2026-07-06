@@ -8,6 +8,7 @@ import sys
 
 from mcp.server.fastmcp import FastMCP
 
+from .catalog import read_mcp_catalog
 from .prompts import register_prompts
 from .resources import register_resources
 from .schemas import WorkspaceState
@@ -23,10 +24,12 @@ from .tools import (
     get_cache_stats_tool,
     get_call_graph_tool,
     get_control_flow_tool,
+    get_dependency_summary_tool,
     get_diagnostics_tool,
     get_import_diagram_tool,
     get_import_graph_tool,
     get_project_tree,
+    get_symbol_summary_tool,
     get_symbols_tool,
     impact_analysis_tool,
     lookup_symbol_tool,
@@ -41,7 +44,7 @@ register_resources(mcp, lambda: _state)
 register_prompts(mcp)
 
 
-@mcp.tool()
+@mcp.tool(name="open_project")
 def open_project_tool(path: str) -> str:
     """Open a Python project directory for analysis."""
     _state.record_tool("open_project")
@@ -51,7 +54,7 @@ def open_project_tool(path: str) -> str:
         return format_tool_error(exc)
 
 
-@mcp.tool()
+@mcp.tool(name="analyze_project")
 def analyze_project_tool() -> str:
     """Analyze all Python files in the open project."""
     _state.record_tool("analyze_project")
@@ -71,7 +74,7 @@ def analyze_file(path: str) -> str:
         return format_tool_error(exc)
 
 
-@mcp.tool()
+@mcp.tool(name="get_project_tree")
 def get_project_tree_tool() -> str:
     """Return relative paths of Python files in the open project."""
     _state.record_tool("get_project_tree")
@@ -212,6 +215,26 @@ def get_cache_stats() -> str:
 
 
 @mcp.tool()
+def get_dependency_summary(path: str | None = None) -> str:
+    """Return classified import summary (system/project/unresolved) for project or file."""
+    _state.record_tool("get_dependency_summary")
+    try:
+        return get_dependency_summary_tool(_state, path)
+    except Exception as exc:  # noqa: BLE001
+        return format_tool_error(exc)
+
+
+@mcp.tool()
+def get_symbol_summary(path: str | None = None) -> str:
+    """Return symbol counts by type (function/class/global/module) for project or file."""
+    _state.record_tool("get_symbol_summary")
+    try:
+        return get_symbol_summary_tool(_state, path)
+    except Exception as exc:  # noqa: BLE001
+        return format_tool_error(exc)
+
+
+@mcp.tool()
 def render_diagram(kind: str, target: str | None = None) -> str:
     """Render import/call/control_flow/impact graph as HTML for Cursor WebView."""
     _state.record_tool("render_diagram")
@@ -219,6 +242,13 @@ def render_diagram(kind: str, target: str | None = None) -> str:
         return render_diagram_tool(_state, kind, target)
     except Exception as exc:  # noqa: BLE001
         return format_tool_error(exc)
+
+
+@mcp.tool()
+def list_mcp_catalog() -> str:
+    """Return the full Codimension MCP catalog (tools, resources, prompts, URI encoding rules)."""
+    _state.record_tool("list_mcp_catalog")
+    return read_mcp_catalog()
 
 
 @mcp.tool()

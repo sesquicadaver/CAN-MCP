@@ -3,13 +3,12 @@
 
 from __future__ import annotations
 
-import codimension.parsers  # noqa: F401
-from cdmcfparser import getControlFlowFromFile, getControlFlowFromMemory
+from collections.abc import Sequence
+from typing import cast
 
+from .flow_ast import FUNCTION_FRAGMENT, getControlFlowFromFile, getControlFlowFromMemory
 from .graph_ir import GraphEdge, GraphIR, GraphNode
 from .project import Project
-
-FUNCTION_FRAGMENT = 7
 
 
 def get_control_flow(project: Project, function_id: str) -> GraphIR:
@@ -20,7 +19,7 @@ def get_control_flow(project: Project, function_id: str) -> GraphIR:
     if cached is not None:
         return cached
     cflow = getControlFlowFromFile(file_path)
-    fn_obj = _find_function(cflow.nsuite, fn_name)
+    fn_obj = _find_function(cast(Sequence[object], cflow.nsuite), fn_name)
     if fn_obj is None:
         raise ValueError(f"Function not found: {function_id}")
     graph = _function_to_graph(fn_obj, file_path, function_id)
@@ -31,7 +30,7 @@ def get_control_flow(project: Project, function_id: str) -> GraphIR:
 def get_control_flow_from_source(source: str, function_name: str, file_name: str = "<memory>") -> GraphIR:
     """Analyze in-memory source (tests)."""
     cflow = getControlFlowFromMemory(source)
-    fn_obj = _find_function(cflow.nsuite, function_name)
+    fn_obj = _find_function(cast(Sequence[object], cflow.nsuite), function_name)
     if fn_obj is None:
         raise ValueError(f"Function not found: {function_name}")
     function_id = f"{file_name}:function:{function_name}"
@@ -50,7 +49,7 @@ def _parse_function_id(function_id: str, project: Project) -> tuple[str, str]:
     raise ValueError(f"File not found in project: {file_name}")
 
 
-def _find_function(suite: list[object], name: str) -> object | None:
+def _find_function(suite: Sequence[object], name: str) -> object | None:
     for node in suite:
         if getattr(node, "kind", None) == FUNCTION_FRAGMENT:
             fn_name = getattr(getattr(node, "name", None), "getContent", lambda: "")()
@@ -58,7 +57,7 @@ def _find_function(suite: list[object], name: str) -> object | None:
                 return node
         nested = getattr(node, "nsuite", None)
         if nested:
-            found = _find_function(nested, name)
+            found = _find_function(cast(Sequence[object], nested), name)
             if found is not None:
                 return found
     return None
@@ -67,7 +66,7 @@ def _find_function(suite: list[object], name: str) -> object | None:
 def _line_range(node: object) -> tuple[int, int]:
     body = getattr(node, "body", None)
     if body is not None and hasattr(body, "getLineRange"):
-        return body.getLineRange()
+        return cast(tuple[int, int], body.getLineRange())
     return (0, 0)
 
 

@@ -6,9 +6,7 @@ from __future__ import annotations
 import sys
 from os.path import basename, realpath
 
-import codimension.parsers  # noqa: F401
-from cdmpyparser import getBriefModuleInfoFromFile, getBriefModuleInfoFromMemory
-
+from .brief_ast import getBriefModuleInfoFromFile, getBriefModuleInfoFromMemory
 from .graph_ir import GraphEdge, GraphIR, GraphNode
 from .project import Project
 

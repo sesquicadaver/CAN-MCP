@@ -8,13 +8,14 @@ import importlib.util
 import os
 import re
 import sys
+import sysconfig
 from dataclasses import dataclass, field
 from os.path import basename, dirname, realpath, sep
+from typing import TypedDict, cast
 
-import codimension.parsers  # noqa: F401
-from cdmpyparser import getBriefModuleInfoFromMemory
-
+from .brief_ast import getBriefModuleInfoFromMemory
 from .graph_ir import GraphEdge, GraphIR, GraphNode
+from .parser_types import BriefImport, BriefModuleInfo
 from .project import Project
 
 _STDLIB_MODULES = frozenset(
@@ -83,7 +84,15 @@ class ImportContext:
 class ImportResolution:
     """Resolution result for one import statement."""
 
-    def __init__(self, import_obj, item_index, built_in, path, what, message=None):
+    def __init__(
+        self,
+        import_obj: BriefImport,
+        item_index: int | None,
+        built_in: bool,
+        path: str | None,
+        what: list[str] | None,
+        message: str | None = None,
+    ):
         self.importObj = import_obj
         self.itemIndex = item_index
         self.path = path
@@ -95,15 +104,24 @@ class ImportResolution:
         return self.path is not None or self.builtIn
 
     def getVisibleName(self) -> str:
-        name = self.importObj.name
+        name: str = self.importObj.name
         if self.itemIndex is not None:
             name += "." + self.importObj.what[self.itemIndex].name
         return name
 
 
-def get_imports_list(file_content: str) -> list[object]:
+class ClassifiedImportResolutions(TypedDict):
+    system: list[ImportResolution]
+    project: list[ImportResolution]
+    other: list[ImportResolution]
+    unresolved: list[ImportResolution]
+    totalCount: int
+    errors: list[str]
+
+
+def get_imports_list(file_content: str) -> list[BriefImport]:
     """Return brief-parser Import objects from source text."""
-    info = getBriefModuleInfoFromMemory(file_content)
+    info = cast(BriefModuleInfo, getBriefModuleInfoFromMemory(file_content))
     return info.imports
 
 
@@ -111,7 +129,7 @@ def get_imports_in_line(file_content: str, line_number: int) -> tuple[list[str],
     """Return module names and imported object names on a given line."""
     imports: list[str] = []
     imports_what: list[str] = []
-    info = getBriefModuleInfoFromMemory(str(file_content))
+    info = cast(BriefModuleInfo, getBriefModuleInfoFromMemory(str(file_content)))
     for import_obj in info.imports:
         if import_obj.line == line_number:
             if import_obj.name not in imports:
@@ -157,7 +175,7 @@ def build_dir_modules(path: str) -> list[str]:
     return _scan_dir("", abspath)
 
 
-def is_import_module(info: object, name: str) -> list[str]:
+def is_import_module(info: BriefModuleInfo, name: str) -> list[str]:
     matches: list[str] = []
     for item in info.imports:
         if item.what:
@@ -170,7 +188,7 @@ def is_import_module(info: object, name: str) -> list[str]:
     return matches
 
 
-def is_imported_object(info: object, name: str) -> list[list[str]]:
+def is_imported_object(info: BriefModuleInfo, name: str) -> list[list[str]]:
     matches: list[list[str]] = []
     for item in info.imports:
         if not item.what:
@@ -190,8 +208,43 @@ def _sys_path_base(context: ImportContext) -> list[str]:
     return list(sys.path)
 
 
+def _top_level_import_name(import_name: str) -> str | None:
+    if not import_name or import_name.startswith("."):
+        return None
+    top = import_name.split(".", 1)[0]
+    if not top or not top.isidentifier():
+        return None
+    return top
+
+
+def _stdlib_roots() -> list[str]:
+    roots: list[str] = []
+    for key in ("stdlib", "platstdlib"):
+        path = sysconfig.get_path(key)
+        if path:
+            roots.append(realpath(path))
+    return roots
+
+
+def _is_stdlib_module_name(name: str) -> bool:
+    top = _top_level_import_name(name)
+    if not top:
+        return False
+    if top in sys.builtin_module_names:
+        return True
+    return top in _STDLIB_MODULES
+
+
+def _is_stdlib_path(path: str) -> bool:
+    resolved = realpath(path)
+    for root in _stdlib_roots():
+        if resolved == root or resolved.startswith(root + sep):
+            return True
+    return False
+
+
 def _resolve_import(
-    import_obj,
+    import_obj: BriefImport,
     base_and_project_paths: list[str],
     result: list[ImportResolution],
     context: ImportContext,
@@ -204,13 +257,21 @@ def _resolve_import(
     sys.path = _sys_path_base(context) + base_and_project_paths
     try:
         spec = importlib.util.find_spec(import_obj.name)
-        if spec and spec.has_location:
-            result.append(ImportResolution(import_obj, None, False, spec.origin, None))
-            return
+        if spec is not None:
+            if spec.origin == "frozen" or not spec.has_location:
+                result.append(ImportResolution(import_obj, None, True, None, None))
+                return
+            if spec.origin:
+                result.append(ImportResolution(import_obj, None, False, spec.origin, None))
+                return
     except Exception:
         pass
     finally:
         sys.path = old_sys_path
+
+    if _is_stdlib_module_name(import_obj.name):
+        result.append(ImportResolution(import_obj, None, True, None, None))
+        return
 
     result.append(
         ImportResolution(
@@ -224,8 +285,8 @@ def _resolve_import(
     )
 
 
-def _resolve_from(import_obj, import_name: str, result: list[ImportResolution]) -> None:
-    if import_obj.name in sys.builtin_module_names:
+def _resolve_from(import_obj: BriefImport, import_name: str, result: list[ImportResolution]) -> None:
+    if import_obj.name in sys.builtin_module_names or _is_stdlib_module_name(import_obj.name):
         result.append(
             ImportResolution(import_obj, None, True, None, [what.name for what in import_obj.what])
         )
@@ -233,30 +294,29 @@ def _resolve_from(import_obj, import_name: str, result: list[ImportResolution]) 
 
     try:
         spec = importlib.util.find_spec(import_name)
-        if spec and spec.has_location:
-            result.append(
-                ImportResolution(
-                    import_obj,
-                    None,
-                    False,
-                    spec.origin,
-                    [what.name for what in import_obj.what],
+        if spec is not None:
+            if spec.origin == "frozen" or not spec.has_location:
+                result.append(
+                    ImportResolution(
+                        import_obj,
+                        None,
+                        True,
+                        None,
+                        [what.name for what in import_obj.what],
+                    )
                 )
-            )
-            return
-
-        if spec and spec.loader is not None:
-            result.append(
-                ImportResolution(
-                    import_obj,
-                    None,
-                    False,
-                    None,
-                    None,
-                    f"Could not resolve 'from {import_obj.name} import ...' at line {import_obj.line}",
+                return
+            if spec.origin:
+                result.append(
+                    ImportResolution(
+                        import_obj,
+                        None,
+                        False,
+                        spec.origin,
+                        [what.name for what in import_obj.what],
+                    )
                 )
-            )
-            return
+                return
 
         if spec and spec.submodule_search_locations:
             for index, what in enumerate(import_obj.what):
@@ -298,7 +358,7 @@ def _resolve_from(import_obj, import_name: str, result: list[ImportResolution]) 
 
 
 def _resolve_from_import(
-    import_obj,
+    import_obj: BriefImport,
     base_path: str | None,
     base_and_project_paths: list[str],
     result: list[ImportResolution],
@@ -311,7 +371,7 @@ def _resolve_from_import(
 
 
 def _resolve_relative_import(
-    import_obj,
+    import_obj: BriefImport,
     base_path: str | None,
     result: list[ImportResolution],
 ) -> None:
@@ -363,7 +423,7 @@ def _resolve_relative_import(
 def get_import_resolutions(
     context: ImportContext,
     file_name: str | None,
-    imports: list[object],
+    imports: list[BriefImport],
 ) -> list[ImportResolution]:
     """Resolve import objects using the provided search context."""
     result: list[ImportResolution] = []
@@ -400,7 +460,7 @@ def get_import_resolutions(
 def resolve_imports(
     context: ImportContext,
     file_name: str | None,
-    imports: list[object],
+    imports: list[BriefImport],
 ) -> tuple[list[tuple[str, str | None, list[str]]], list[str]]:
     """Legacy triple format: (name, path, what), errors."""
     resolved: list[tuple[str, str | None, list[str]]] = []
@@ -411,7 +471,7 @@ def resolve_imports(
             what = resolution.what if resolution.what is not None else []
             resolved.append((resolution.getVisibleName(), path, what))
         else:
-            errors.append(resolution.errMessage)
+            errors.append(resolution.errMessage or "Could not resolve import")
     return resolved, errors
 
 
@@ -427,7 +487,7 @@ def resolve_imports_for_file(project: Project, file_path: str) -> GraphIR:
     project.require_open()
     abs_path = realpath(file_path)
     context = build_import_context(project, abs_path)
-    info = project.cache.get(abs_path)
+    info = cast(BriefModuleInfo, project.cache.get(abs_path))
     graph = GraphIR(meta={"kind": "resolved_imports", "file": abs_path})
     source_id = f"file:{basename(abs_path)}"
     graph.add_node(
@@ -495,15 +555,6 @@ def _resolution_node_id(resolution: ImportResolution, graph: GraphIR) -> str:
     return node_id
 
 
-def _top_level_import_name(import_name: str) -> str | None:
-    if not import_name or import_name.startswith("."):
-        return None
-    top = import_name.split(".", 1)[0]
-    if not top or not top.isidentifier():
-        return None
-    return top
-
-
 def get_unresolved_package_names(errors: list[str]) -> set[str]:
     names: set[str] = set()
     for err in errors:
@@ -550,13 +601,16 @@ def collect_unresolved_packages(project: Project, progress_callback=None) -> tup
         if progress_callback:
             progress_callback(idx, total, "Scanning " + basename(file_path) + "...")
         try:
-            info = project.cache.get(file_path)
+            info = cast(BriefModuleInfo, project.cache.get(file_path))
             context = build_import_context(project, file_path)
             _, errors = resolve_imports(context, file_path, info.imports)
             all_errors.extend(errors)
         except Exception:
             pass
     return get_unresolved_package_names(all_errors), len(all_errors)
+
+
+generate_requirements_from_project = collect_unresolved_packages
 
 
 def classify_resolution(
@@ -567,8 +621,12 @@ def classify_resolution(
 ) -> str:
     """Classify a resolution as system, project, other, or unresolved."""
     if not resolution.isResolved():
+        if _is_stdlib_module_name(resolution.importObj.name):
+            return "system"
         return "unresolved"
     if resolution.builtIn:
+        return "system"
+    if resolution.path and _is_stdlib_path(resolution.path):
         return "system"
     if resolution.path and project and project.is_project_path(resolution.path):
         return "project"
@@ -581,6 +639,8 @@ def classify_resolution(
         for path in sys_path:
             if path and resolved_dir.startswith(path):
                 return "system"
+    if _is_stdlib_module_name(resolution.importObj.name):
+        return "system"
     if resolution.path:
         return "other"
     return "unresolved"
@@ -591,9 +651,9 @@ def collect_import_resolutions_classified(
     file_name: str | None,
     project: Project | None = None,
     sys_path: list[str] | None = None,
-) -> dict[str, object]:
+) -> ClassifiedImportResolutions:
     """Classify import resolutions like codimension.diagram.depsdiagram."""
-    dep_classes: dict[str, object] = {
+    dep_classes: ClassifiedImportResolutions = {
         "system": [],
         "project": [],
         "other": [],
@@ -613,8 +673,15 @@ def collect_import_resolutions_classified(
             bucket = classify_resolution(resolution, file_name or "", project, sys_path)
             if bucket == "other":
                 bucket = "unresolved"
-            dep_classes[bucket].append(resolution)
-            dep_classes["totalCount"] = int(dep_classes["totalCount"]) + 1
+            if bucket == "system":
+                dep_classes["system"].append(resolution)
+            elif bucket == "project":
+                dep_classes["project"].append(resolution)
+            elif bucket == "unresolved":
+                dep_classes["unresolved"].append(resolution)
+            else:
+                dep_classes["other"].append(resolution)
+            dep_classes["totalCount"] += 1
     except Exception as exc:
         dep_classes["errors"].append(str(exc))
     return dep_classes

@@ -2,7 +2,7 @@
 
 **Версія:** 1.0  
 **Дата:** 2026-07-05  
-**Джерело стратегії:** [CODIMENSION-EVO.md](../CODIMENSION-EVO.md)
+**Джерело стратегії:** [README.md](../README.md) (CAN-MCP scope)
 
 Матриця відповідності «Codimension файл → codimension_core модуль → статус extraction».
 
@@ -31,10 +31,10 @@ codimension_core/
 | Codimension файл | Класи / функції | PyQt / GlobalData | Дія |
 | ---------------- | --------------- | ----------------- | --- |
 | `codimension/utils/project.py` | `CodimensionProject`, `getProjectProperties`, `__scanDir`, `getImportDirsAsAbsolutePaths`, `getExcludeFromAnalysisAsAbsolutePaths`, `isProjectFile` | QObject, pyqtSignal, Watcher | **Split:** core dataclass без signals/watcher |
-| `codimension/utils/venvutils.py` | `resolveVenvToPython`, `getProjectVenvDir` | — | **Copy as-is** |
+| `codimension/utils/venvutils.py` | `resolveVenvToPython`, `getProjectVenvDir` | — | ✅ 0.20.0 thin wrapper → `codimension_core.venvutils` |
 | `codimension/utils/run.py` (частково) | `getProjectPythonPath`, `getVenvSitePackages` | — | **Extract** subprocess helpers |
-| `codimension/utils/fileutils.py` (частково) | `isPythonFile`, `getFileContent`, `loadJSON`, `saveJSON` | QImageReader, Qutepart у icons | **Extract** I/O без mime/icons |
-| `codimension/utils/encoding.py` (частково) | `getCodingFromText`, `detectFileEncodingToRead`, `readEncodedFile` | editor param | **Extract** encoding без editor |
+| `codimension/utils/fileutils.py` (частково) | `getFileContent`, `loadJSON`, `saveJSON`, `saveToFile` | QImageReader, Qutepart у icons | ✅ 0.20.1 I/O → `codimension_core.file_io`; mime/icons лишаються в IDE |
+| `codimension/utils/encoding.py` (частково) | `getCodingFromText`, `detectFileEncodingToRead`, `readEncodedFile`, `decode` | editor param | ✅ 0.20.4 `decode_content` + DRY project/IDE fallbacks; ✅ 0.20.3 `read_encoded_bytes` |
 | `codimension/utils/globals.py` (частково) | `getSubdirs` | — | **Optional** |
 
 **Не переносити:** `fsenv.py`, `searchenv.py`, `flowgroups.py`, `debugenv.py`, `runparamscache.py`, `watcher.py`.
@@ -49,7 +49,7 @@ codimension_core/
 
 | Codimension файл | Класи / функції | PyQt / GlobalData | Дія |
 | ---------------- | --------------- | ----------------- | --- |
-| `codimension/parsers/brief_ast.py` | `BriefModuleInfo`, `Function`, `Class`, `Import`; `getBriefModuleInfoFromMemory/File` | — | **Reuse** (пізніше vendoring) |
+| `codimension/parsers/brief_ast.py` | thin wrapper → `codimension_core.brief_ast` | — | ✅ 0.15.0 vendored in core |
 | `codimension/parsers/__init__.py` | cdmpyparser/cdmcfparser fallback | — | **Import side-effect** |
 | `codimension/autocomplete/bufferutils.py` | `TextCursorContext`, `getContext`, `_IdentifyScope` | lazy `ui.viewitems` | **Extract** scope без viewitems |
 | `codimension/autocomplete/completelists.py` | `getJediProject`, `getDefinitions`, `getOccurrences` | QDir, GlobalData | **Extract** jedi з injectable project |
@@ -67,7 +67,7 @@ codimension_core/
 
 | Codimension файл | Класи / функції | PyQt / GlobalData | Дія |
 | ---------------- | --------------- | ----------------- | --- |
-| `codimension/utils/importutils.py` | `getImportsList`, `ImportResolution`, `resolveImports`, `getImportResolutions`, `generateRequirementsFromProject` | QApplication.processEvents, GlobalData | **Refactor:** inject paths + cache |
+| `codimension/utils/importutils.py` | thin wrapper → `codimension_core.imports` | QApplication.processEvents, GlobalData | ✅ 0.15.0 generateRequirements → core |
 | `codimension/diagram/depsdiagram.py` | `collectImportResolutions`, `__isLocalOrProject`, `__isSystem` | GlobalData.project | **Extract** classification |
 
 **Не переносити:** GUI частини `importsdgm.py`.
@@ -82,7 +82,7 @@ codimension_core/
 
 | Codimension файл | Класи / функції | PyQt / GlobalData | Дія |
 | ---------------- | --------------- | ----------------- | --- |
-| `codimension/parsers/flow_ast.py` | `_ControlFlow`, `getControlFlowFromMemory/File` | — | **Reuse** |
+| `codimension/parsers/flow_ast.py` | thin wrapper → `codimension_core.flow_ast` | — | ✅ 0.16.0 vendored in core |
 | `codimension/flowui/cml.py` | `CMLVersion.validateCMLComments`, `validateCMLList` | buildColor via colorfont | **Extract** validation без color |
 
 **Не переносити:** `flowui/vcanvas.py`, `flowui/*items*.py`, `flowui/routines.py` (QPainterPath).
@@ -96,7 +96,7 @@ codimension_core/
 | Codimension файл | Класи / функції | PyQt / GlobalData | Дія |
 | ---------------- | --------------- | ----------------- | --- |
 | `codimension/diagram/importsdgm.py` (data) | `DgmModule`, `DgmConnection`, `ImportDiagramModel`, `__addSingleFileToDataModel` | QDialog, GlobalData | **Split:** model + builder → core |
-| `codimension/diagram/plaindotparser.py` | `Graph`, `Node`, `Edge`, `getGraphFromPlainDotData` | subprocess dot | **Optional** layout |
+| `codimension/diagram/plaindotparser.py` | thin wrapper → `codimension_core.graph_layout` | subprocess dot | ✅ 0.14.0 layout in core |
 | `codimension/diagram/depsdiagram.py` | `collectImportResolutions` | — | див. imports.py |
 
 **Не переносити:** `importsdgmgraphics.py`, `depsitems.py`, `depsvcanvas.py`.
@@ -128,7 +128,7 @@ codimension_core/
 | `codimension/analysis/disasm.py` | `disassemble*`, marshal helpers | — | **Copy** |
 | `codimension/analysis/notused.py` | vulture runner | QDialog, GlobalData | ✅ thin wrapper → `analyzer` |
 | `codimension/analysis/core_bridge.py` | `core_project_from_ide` | GlobalData | ✅ IDE bridge |
-| `codimension/utils/astutils.py` | `parseSourceToAST` | — | **Copy** |
+| `codimension/utils/astutils.py` | `parseSourceToAST` | — | ✅ thin wrapper → `codimension_core.astutils` |
 | `codimension/search/searchsupport.py` | `Match`, `ItemToSearchIn`, regex search | GlobalData buffers | **Extract** text search |
 
 **Status (0.8.0):** analyzer extracted; IDE thin wrappers via `core_bridge`.
@@ -139,7 +139,7 @@ codimension_core/
 
 | Codimension файл | Класи / функції | PyQt / GlobalData | Дія |
 | ---------------- | --------------- | ----------------- | --- |
-| `codimension/utils/briefmodinfocache.py` | `BriefModuleInfoCache.get/remove/clear` | — | **Port** + hash invalidation |
+| `codimension/utils/briefmodinfocache.py` | `BriefModuleInfoCache.get/remove/clear` | — | ✅ thin wrapper → `codimension_core.cache.ModuleInfoCache` |
 
 **Не переносити:** `pixmapcache.py`, `webresourcecache.py`, `plantumlcache.py`.
 
@@ -183,11 +183,13 @@ codimension_core/
 | **MCP resources** | `codimension://workspace/status`, `graph/import`, `graph/call` | ✅ 0.2.0 |
 | **MCP prompts** | `refactor_symbol`, `review_dead_code` | ✅ 0.2.0 |
 | **Graph render** | `graph_render.graph_to_html/mermaid` | ✅ 0.7.0 |
-| **Incremental cache** | `analysis_cache`, `Project.get_cache_stats` | ✅ 0.8.0 |
+| **Incremental cache** | `analysis_cache`, `Project.get_cache_stats` | selective import/call/reverse invalidation | ✅ 0.17.0 |
 | **MCP get_cache_stats** | cache stats tool + `codimension://cache/stats` | ✅ 0.4.0 |
-| **codimension_core disasm/astutils** | disasm.py, astutils.py | unit: tests/test_codimension_core_disasm.py |
+| **codimension_core disasm/astutils** | disasm.py, astutils.py, venvutils.py | unit: tests/test_codimension_core_disasm.py, test_codimension_core_astutils.py, test_codimension_core_venvutils.py |
 | **codimension_core reverse index** | reverse_index.lookup_symbol | unit: tests/test_codimension_core_reverse_index.py |
 | **codimension_core import diagram** | import_diagram model | unit: tests/test_codimension_core_import_diagram.py |
+| **codimension_core graph layout** | graph_layout.py | unit: tests/test_codimension_core_graph_layout.py |
+| **MCP get_import_diagram layout** | layout summary in tool payload | unit: tests/test_codimension_mcp.py |
 | **MCP lookup_symbol** | reverse index tool | unit: tests/test_codimension_mcp.py |
 | **codimension-vscode** | extension scaffold | Manual: npm run compile |
 | **MCP render_diagram** | `.codimension/diagrams/*.html` WebView | ✅ 0.7.0 full import diagram model |

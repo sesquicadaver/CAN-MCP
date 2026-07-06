@@ -2,7 +2,7 @@
   "name": "codimension-vscode",
   "displayName": "Codimension Analysis",
   "description": "VS Code companion for Codimension MCP code analysis",
-  "version": "0.4.0",
+  "version": "0.5.1",
   "publisher": "codimension",
   "engines": {
     "vscode": "^1.85.0"
@@ -12,6 +12,8 @@
     "onStartupFinished",
     "onCommand:codimension.showDiagram",
     "onCommand:codimension.openMcpDocs",
+    "onCommand:codimension.copyMcpConfig",
+    "onCommand:codimension.showMcpResources",
     "workspaceContains:.codimension/diagrams"
   ],
   "main": "./out/extension.js",
@@ -30,6 +32,14 @@
       {
         "command": "codimension.openMcpDocs",
         "title": "Codimension: Open MCP Setup Guide"
+      },
+      {
+        "command": "codimension.copyMcpConfig",
+        "title": "Codimension: Copy MCP Server Config"
+      },
+      {
+        "command": "codimension.showMcpResources",
+        "title": "Codimension: List MCP Resource URIs"
       },
       {
         "command": "codimension.showDiagram",

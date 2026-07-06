@@ -11,9 +11,10 @@ import sys
 from dataclasses import dataclass, field
 from os.path import dirname, exists, isabs, isdir, isfile, islink, join, realpath, sep
 
-from .analysis_cache import ProjectAnalysisCache
+from .analysis_cache import ProjectAnalysisCache, compute_file_derived_signatures, file_content_hash
 from .cache import ModuleInfoCache
 from .errors import ProjectNotOpenError
+from .venvutils import detect_project_venv_dir
 
 _DEFAULT_EXCLUDE_NAMES = (
     r"^\..*",
@@ -32,36 +33,6 @@ _DEFAULT_EXCLUDE_NAMES = (
 
 def _is_python_file(path: str) -> bool:
     return path.endswith(".py") and isfile(path)
-
-
-def _resolve_venv_dir(project_dir: str, python_interpreter: str) -> str | None:
-    """Detect venv directory for exclusion during scan."""
-    if python_interpreter:
-        interp = python_interpreter
-        if not isabs(interp):
-            interp = os.path.normpath(join(project_dir, interp))
-        if isfile(interp) and os.access(interp, os.X_OK):
-            bin_dir = os.path.dirname(realpath(interp))
-            if os.path.basename(bin_dir) in ("bin", "Scripts"):
-                return os.path.dirname(bin_dir)
-        if isdir(interp):
-            for candidate in (
-                join(interp, "bin", "python"),
-                join(interp, "bin", "python3"),
-                join(interp, "Scripts", "python.exe"),
-            ):
-                if isfile(candidate) and os.access(candidate, os.X_OK):
-                    return realpath(interp)
-    for venv_name in (".venv", "venv", "env"):
-        venv_path = join(project_dir, venv_name)
-        for candidate in (
-            join(venv_path, "bin", "python"),
-            join(venv_path, "bin", "python3"),
-            join(venv_path, "Scripts", "python.exe"),
-        ):
-            if isfile(candidate) and os.access(candidate, os.X_OK):
-                return realpath(venv_path)
-    return None
 
 
 @dataclass
@@ -132,7 +103,7 @@ class Project:
     def _rescan(self) -> None:
         """Rebuild the list of project python files."""
         root = self.root.rstrip(sep) + sep
-        venv_dir = _resolve_venv_dir(self.root, self.python_interpreter)
+        venv_dir = detect_project_venv_dir(self.root, self.python_interpreter)
         exclude_paths = self._absolute_exclude_paths()
         files: list[str] = []
         self._scan_dir(root, venv_dir, exclude_paths, files)
@@ -208,8 +179,21 @@ class Project:
     def invalidate_file(self, path: str) -> None:
         """Drop cache entries after external file change."""
         abs_path = realpath(path) if isabs(path) else realpath(join(self.root, path))
+        old_signatures = self.analysis_cache.file_derived_signatures.get(abs_path)
         self.cache.remove(abs_path)
-        self.analysis_cache.invalidate_file(abs_path)
+        info = self.cache.get(abs_path)
+        with open(abs_path, encoding="utf-8", errors="replace") as handle:
+            source = handle.read()
+        new_signatures = compute_file_derived_signatures(
+            info,
+            source,
+            content_hash=file_content_hash(abs_path),
+        )
+        self.analysis_cache.invalidate_file(
+            abs_path,
+            old_signatures=old_signatures,
+            new_signatures=new_signatures,
+        )
 
     def rescan(self) -> int:
         """Rescan project tree; clear derived caches if file set changed."""
@@ -230,7 +214,7 @@ class Project:
         self.require_open()
         interp = self.python_interpreter.strip()
         if not interp:
-            venv_dir = _resolve_venv_dir(self.root, "")
+            venv_dir = detect_project_venv_dir(self.root, "")
             if venv_dir:
                 for candidate in (
                     join(venv_dir, "bin", "python"),
@@ -238,13 +222,13 @@ class Project:
                     join(venv_dir, "Scripts", "python.exe"),
                 ):
                     if isfile(candidate) and os.access(candidate, os.X_OK):
-                        return realpath(candidate)
+                        return os.path.abspath(candidate)
             return sys.executable
 
         if not isabs(interp):
             interp = os.path.normpath(join(self.root, interp))
         if isfile(interp) and os.access(interp, os.X_OK):
-            return realpath(interp)
+            return os.path.abspath(interp)
         if isdir(interp):
             for candidate in (
                 join(interp, "bin", "python"),
@@ -252,7 +236,7 @@ class Project:
                 join(interp, "Scripts", "python.exe"),
             ):
                 if isfile(candidate) and os.access(candidate, os.X_OK):
-                    return realpath(candidate)
+                    return os.path.abspath(candidate)
         return sys.executable
 
     def get_site_packages(self) -> str | None:
@@ -260,7 +244,7 @@ class Project:
         python_path = self.get_python_executable()
         if not python_path or python_path == sys.executable:
             return None
-        bin_dir = dirname(realpath(python_path))
+        bin_dir = dirname(os.path.abspath(python_path))
         venv_dir = dirname(bin_dir)
         if os.path.basename(bin_dir) not in ("bin", "Scripts"):
             return None

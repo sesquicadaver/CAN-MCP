@@ -1,35 +1,21 @@
 # -*- coding: utf-8 -*-
-"""Pytest configuration for Codimension tests."""
+"""Pytest configuration for CAN-MCP (codimension_core + codimension_mcp)."""
 
 import os
 import sys
 
 import pytest
 
-# Ensure project root and codimension package dir are in path (cdmplugins imports plugins, ui, utils)
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CODMENSION_DIR = os.path.join(ROOT, "codimension")
 CORE_DIR = os.path.join(ROOT, "codimension_core")
 MCP_DIR = os.path.join(ROOT, "codimension_mcp")
-if ROOT not in sys.path:
-    sys.path.insert(0, ROOT)
-if CODMENSION_DIR not in sys.path:
-    sys.path.insert(0, CODMENSION_DIR)
-if CORE_DIR not in sys.path:
-    sys.path.insert(0, CORE_DIR)
-if MCP_DIR not in sys.path:
-    sys.path.insert(0, MCP_DIR)
+
+for path in (ROOT, CORE_DIR, MCP_DIR):
+    if path not in sys.path:
+        sys.path.insert(0, path)
 
 
 @pytest.fixture(scope="session")
-def qapp():
-    """Single QApplication instance for widget/driver tests."""
-    try:
-        from ui.qt import QApplication
-    except ImportError:
-        from PyQt5.QtWidgets import QApplication
-
-    app = QApplication.instance()
-    if app is None:
-        app = QApplication([])
-    return app
+def repo_root():
+    """Repository root path."""
+    return ROOT

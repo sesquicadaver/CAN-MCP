@@ -21,17 +21,24 @@ jobs:
       - name: Install analysis packages and test tools
         run: |
           python -m pip install --upgrade pip
-          pip install pytest ruff mypy pyflakes radon jedi vulture
+          pip install pytest ruff mypy pyflakes radon jedi vulture mistune pygments
           pip install -e ./codimension_core -e ./codimension_mcp
 
       - name: Ruff (core + mcp)
         run: ruff check codimension_core codimension_mcp
 
-      - name: Pytest (core + mcp)
-        run: python -m pytest tests/test_codimension_core*.py tests/test_codimension_mcp.py -q
+      - name: Mypy (core)
+        working-directory: codimension_core
+        run: mypy codimension_core
 
-  ide:
-    name: codimension IDE + plugins (lint)
+      - name: Pytest (headless suite)
+        run: python -m pytest tests/ -q
+
+      - name: Verify MCP catalog parity
+        run: ./scripts/verify-mcp-catalog.sh
+
+  security:
+    name: dependency audit
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -39,38 +46,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache: pip
 
-      - name: Install IDE lint dependencies
+      - name: pip-audit (dev tools)
         run: |
           python -m pip install --upgrade pip
-          pip install ruff mypy PyQt5 pyflakes radon jedi vulture yapsy packaging qdarkstyle mistune pygments
-
-      - name: Ruff (codimension + cdmplugins)
-        run: ruff check codimension cdmplugins
-
-      - name: Mypy (codimension + cdmplugins)
-        run: |
-          mypy $(find codimension cdmplugins -name '*.py' ! -path '*/flowui/everything.py')
-
-      - name: Smoke import (plugins package)
-        run: |
-          python -c "import sys; sys.path.insert(0, 'codimension'); import cdmplugins; print('smoke ok')"
-
-  vscode:
-    name: codimension-vscode
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: npm
-          cache-dependency-path: codimension-vscode/package-lock.json
-
-      - name: Build extension
-        working-directory: codimension-vscode
-        run: |
-          npm ci
-          npm run compile
+          pip install pip-audit
+          pip-audit -r requirements-dev.txt

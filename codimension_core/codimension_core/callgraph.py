@@ -220,7 +220,11 @@ def _index_to_graph(index: _CallGraphIndex, symbol_filter: str | None = None) ->
 
 
 def _get_call_index(project: Project) -> _CallGraphIndex:
-    return project.analysis_cache.get_or_build_call_index(project.python_files, lambda: _build_index(project))
+    return project.analysis_cache.get_or_build_call_index(
+        project.python_files,
+        lambda: _build_index(project),
+        refresh=lambda: project.analysis_cache.refresh_signatures(project.python_files, project.cache),
+    )
 
 
 def build_call_graph(project: Project, symbol: str | None = None) -> GraphIR:

@@ -2,7 +2,7 @@
 """Headless code analysis core for Codimension."""
 
 from . import graph_ir
-from .analysis_cache import ProjectAnalysisCache, compute_project_revision, file_fingerprint
+from .analysis_cache import ProjectAnalysisCache, compute_project_revision, file_content_hash, file_fingerprint
 from .analyzer import analyze_dead_code, analyze_file_diagnostics, get_buffer_errors
 from .astutils import parse_source_to_ast
 from .cache import ModuleInfoCache
@@ -18,6 +18,7 @@ from .disasm import (
 )
 from .errors import AnalysisError, ProjectNotOpenError
 from .explain import explain_symbol
+from .graph_layout import Graph, layout_graph_from_dot
 from .graph_render import graph_to_html, graph_to_mermaid
 from .import_diagram import (
     ImportDiagramModel,
@@ -30,10 +31,12 @@ from .imports import (
     build_import_context,
     collect_import_resolutions_classified,
     collect_unresolved_packages,
+    generate_requirements_from_project,
     resolve_imports_for_file,
 )
 from .project import Project
 from .reverse_index import lookup_symbol as lookup_symbol_definitions
+from .summaries import build_dependency_summary, build_symbol_summary
 from .symbols import analyze_file, find_usages, get_symbols
 
 __all__ = [
@@ -55,27 +58,33 @@ __all__ = [
     "build_import_diagram_graph_ir",
     "build_import_diagram_model",
     "import_diagram_model_to_graph_ir",
+    "build_dependency_summary",
     "build_import_graph",
+    "build_symbol_summary",
     "collect_import_resolutions_classified",
     "collect_unresolved_packages",
+    "generate_requirements_from_project",
     "compute_project_revision",
     "explain_symbol",
     "find_callers",
     "find_callees",
     "find_usages",
+    "file_content_hash",
     "file_fingerprint",
     "get_buffer_disassembled",
     "get_file_disassembled",
     "get_buffer_errors",
     "get_control_flow",
     "get_symbols",
+    "Graph",
     "graph_ir",
     "graph_to_html",
     "graph_to_mermaid",
+    "layout_graph_from_dot",
     "impact_analysis",
     "lookup_symbol_definitions",
     "parse_source_to_ast",
     "resolve_imports_for_file",
 ]
 
-__version__ = "0.11.0"
+__version__ = "0.20.5"

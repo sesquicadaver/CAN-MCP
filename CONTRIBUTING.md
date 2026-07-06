@@ -1,42 +1,29 @@
-# Contributing to Codimension (Fork)
+# Contributing to CAN-MCP
 
-Цей проєкт — форк [SergeySatskiy/codimension](https://github.com/SergeySatskiy/codimension). Оригінал не підтримується.
+## Workflow
 
-## Як внести зміни
+1. Fork and branch: `git checkout -b feature/your-feature`
+2. Install dev env:
 
-1. **Fork** репозиторій (якщо ще не зробили)
-2. Створіть гілку: `git checkout -b feature/your-feature`
-3. Внесіть зміни, дотримуючись існуючого стилю
-4. Запустіть перевірки: `ruff check codimension cdmplugins`, `mypy $(find codimension cdmplugins -name '*.py' ! -path '*/flowui/everything.py')`, `pytest tests/`
-5. Оновіть ChangeLog
-6. Зробіть commit з зрозумілим повідомленням
-7. Push та створіть [Pull Request](https://github.com/sesquicadaver/codimension/compare) (шаблон заповниться автоматично)
-
-**Issues:** при створенні issue оберіть шаблон (Bug report / Feature request).
-
-## Стандарти
-
-- **Код:** ruff (E, F, W, I), mypy
-- **Документація:** оновлювати doc/, README, ChangeLog при зміні функціоналу
-- **Ліцензія:** GPL v3. Зберігати copyright оригіналу у модифікованих файлах
-
-## Середовище
-
-Рекомендовано працювати у віртуальному середовищі (venv):
-
-```shell
-python -m venv .venv
-.venv/bin/pip install -r requirements.txt
-.venv/bin/pip install -e .
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements-dev.txt
+pip install -e ./codimension_core -e ./codimension_mcp
 ```
+
+3. Run merge gate: `./scripts/test-analysis.sh`
+4. Update [doc/plugins/living-specification.md](doc/plugins/living-specification.md) when adding extracted modules
+5. Open a Pull Request
 
 ## CI
 
-Перевірки запускаються автоматично при PR: ruff, mypy, pytest, pip-audit. Див. [Actions](https://github.com/sesquicadaver/codimension/actions).
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) — ruff, mypy (core), pytest, MCP catalog parity, pip-audit.
 
-## Документація
+## Standards
 
-- [FORK.md](FORK.md) — статус форку
-- [doc/LICENSE_COMPLIANCE.md](doc/LICENSE_COMPLIANCE.md) — вимоги GPL
-- [doc/github-integration-plan.md](doc/github-integration-plan.md) — план інтеграції з GitHub
-- [TODO_FIXME.md](TODO_FIXME.md) — відомі проблеми
+- **Scope:** only `codimension_core`, `codimension_mcp`, `codimension-vscode`, MCP docs, and headless tests
+- **Lint:** ruff (E, F, W, I) on core + mcp
+- **Types:** mypy on `codimension_core`
+- **License:** GPL v3
