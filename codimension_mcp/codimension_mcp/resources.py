@@ -110,6 +110,42 @@ def decode_function_key(function_key: str) -> str:
     raise ValueError(f"Invalid function key: {function_key}")
 
 
+def encode_impact_key(target: str) -> str:
+    """Encode impact target (symbol id, file path, or bare name) for resource URIs."""
+    if ":function:" in target or ":class:" in target:
+        return encode_function_key(target)
+    return target.replace("/", "__path__")
+
+
+def decode_impact_key(target_key: str) -> str:
+    """Decode impact resource key back to an impact_analysis target."""
+    if "__function__" in target_key or "__class__" in target_key:
+        return decode_function_key(target_key)
+    return target_key.replace("__path__", "/")
+
+
+def read_impact_graph(state: WorkspaceState, target_key: str) -> str:
+    if state.project is None:
+        return dumps_payload({"status": "error", "error": "Call open_project(path) first"})
+    try:
+        from codimension_core.callgraph import impact_analysis
+
+        target = decode_impact_key(target_key)
+        return dumps_graph(impact_analysis(state.project, target))
+    except (ValueError, AnalysisError) as exc:
+        return dumps_payload({"status": "error", "error": str(exc)})
+
+
+def read_impact_diagram(state: WorkspaceState, target_key: str) -> str:
+    if state.project is None:
+        return dumps_payload({"status": "error", "error": "Call open_project(path) first"})
+    try:
+        target = decode_impact_key(target_key)
+        return read_diagram_html(state, "impact", target)
+    except ValueError as exc:
+        return dumps_payload({"status": "error", "error": str(exc)})
+
+
 def read_control_flow_graph(state: WorkspaceState, function_key: str) -> str:
     if state.project is None:
         return dumps_payload({"status": "error", "error": "Call open_project(path) first"})
@@ -251,3 +287,21 @@ def register_resources(mcp: FastMCP, get_state: Callable[[], WorkspaceState]) ->
     )
     def control_flow_diagram_resource(function_key: str) -> str:
         return read_control_flow_diagram(get_state(), function_key)
+
+    @mcp.resource(
+        "codimension://graph/impact/{target_key}",
+        name="impact_graph",
+        description="Impact analysis Graph IR for symbol, file, or bare name.",
+        mime_type="application/json",
+    )
+    def impact_graph_resource(target_key: str) -> str:
+        return read_impact_graph(get_state(), target_key)
+
+    @mcp.resource(
+        "codimension://diagram/impact/{target_key}",
+        name="impact_diagram",
+        description="Impact analysis HTML diagram for symbol, file, or bare name.",
+        mime_type="text/html",
+    )
+    def impact_diagram_resource(target_key: str) -> str:
+        return read_impact_diagram(get_state(), target_key)

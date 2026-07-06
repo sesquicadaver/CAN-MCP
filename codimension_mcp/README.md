@@ -53,7 +53,8 @@ codimension-mcp --workspace /path/to/project
 | `codimension://graph/import` | application/json | Import Graph IR |
 | `codimension://graph/call` | application/json | Call Graph IR |
 | `codimension://diagram/import` | text/html | Import diagram HTML |
-| `codimension://diagram/control_flow/{function_key}` | text/html | CFG HTML (`main.py__function__name`) |
+| `codimension://diagram/impact/{target_key}` | text/html | Impact blast-radius HTML |
+| `codimension://graph/impact/{target_key}` | application/json | Impact Graph IR |
 | `codimension://graph/control_flow/{function_key}` | application/json | CFG Graph IR |
 | `codimension://cache/stats` | application/json | Cache hit/miss stats |
 
@@ -66,6 +67,7 @@ codimension-mcp --workspace /path/to/project
 | `review_imports` | — | import graph → cycles → fixes |
 | `analyze_module` | `path` | symbols → CFG → callers → summary |
 | `audit_dependencies` | — | deps/symbols summary → graph → fixes |
+| `assess_change_impact` | `target` | impact graph/diagram → callers → test plan |
 
 ## VS Code extension
 
@@ -97,7 +99,8 @@ Copy the sample and adjust the workspace path:
 }
 ```
 
-**Function resource keys:** encode `file.py:function:name` as `file.py__function__name` in URIs.
+**Function resource keys:** encode `file.py:function:name` as `file.py__function__name` in URIs.  
+**Impact targets:** bare symbol (`leaf`), file (`lib.py`), or encoded path (`pkg__path__mod.py`).
 
 ## Legacy IDE
 

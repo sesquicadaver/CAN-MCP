@@ -39,6 +39,8 @@ export function listMcpResourceUris(): string {
     "codimension://diagram/call",
     "codimension://diagram/control_flow/{function_key}",
     "codimension://graph/control_flow/{function_key}",
+    "codimension://graph/impact/{target_key}",
+    "codimension://diagram/impact/{target_key}",
     "codimension://cache/stats",
   ].join("\n");
 }

@@ -7,6 +7,8 @@ from collections.abc import Callable
 
 from mcp.server.fastmcp import FastMCP
 
+from .resources import encode_impact_key
+
 
 def build_refactor_symbol_prompt(symbol: str) -> str:
     """Return workflow text for safe symbol refactoring."""
@@ -66,12 +68,26 @@ def build_audit_dependencies_prompt() -> str:
     )
 
 
+def build_assess_change_impact_prompt(target: str) -> str:
+    """Return workflow text for blast-radius review before a change."""
+    key = encode_impact_key(target)
+    return (
+        f"Assess change impact for `{target}` before editing.\n"
+        f"1. Read `codimension://graph/impact/{key}` or call `impact_analysis`.\n"
+        f"2. Open `codimension://diagram/impact/{key}` for a visual blast-radius view.\n"
+        "3. Call `find_callers` and `get_import_graph` to cross-check static edges.\n"
+        "4. For functions, read `codimension://graph/control_flow/{{function_key}}` if control flow matters.\n"
+        "5. List affected files, tests to run, and rollback risks."
+    )
+
+
 PROMPT_BUILDERS: dict[str, Callable[..., str]] = {
     "refactor_symbol": build_refactor_symbol_prompt,
     "review_dead_code": build_review_dead_code_prompt,
     "review_imports": build_review_imports_prompt,
     "analyze_module": build_analyze_module_prompt,
     "audit_dependencies": build_audit_dependencies_prompt,
+    "assess_change_impact": build_assess_change_impact_prompt,
 }
 
 
@@ -112,3 +128,10 @@ def register_prompts(mcp: FastMCP) -> None:
     )
     def audit_dependencies() -> str:
         return build_audit_dependencies_prompt()
+
+    @mcp.prompt(
+        name="assess_change_impact",
+        description="Review blast radius before changing a symbol or file.",
+    )
+    def assess_change_impact(target: str) -> str:
+        return build_assess_change_impact_prompt(target)

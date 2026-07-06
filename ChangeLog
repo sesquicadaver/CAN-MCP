@@ -1,5 +1,11 @@
 2026 Jul 06
 
+* Impact MCP resources + assess_change_impact prompt (etapa 28):
+  - codimension://graph/impact/{target_key}, diagram/impact/{target_key}
+  - prompt assess_change_impact; codimension_mcp 0.18.0
+
+2026 Jul 06
+
 * CFG MCP resources + Cursor MCP sample config (etapa 27):
   - codimension://graph/control_flow/{function_key}, diagram/control_flow/{function_key}
   - .cursor/mcp.json.example, scripts/install-cursor-mcp.sh

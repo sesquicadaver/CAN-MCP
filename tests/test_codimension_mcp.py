@@ -187,6 +187,7 @@ def test_mcp_prompt_builders():
         "review_imports",
         "analyze_module",
         "audit_dependencies",
+        "assess_change_impact",
     }
 
 
