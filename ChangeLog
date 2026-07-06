@@ -1,5 +1,12 @@
 2026 Jul 06
 
+* Extract venvutils to codimension_core (etapa 35):
+  - codimension_core/venvutils.py; IDE thin wrapper; project.py dedup
+  - tests: test_codimension_core_venvutils.py, test_codimension_core_astutils.py
+  - core 0.20.0
+
+2026 Jul 06
+
 * Root README MCP summary generated from catalog (etapa 34):
   - discovery, tool/resource/prompt counts, key URIs via marker block
 

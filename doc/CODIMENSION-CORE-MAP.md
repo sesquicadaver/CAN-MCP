@@ -31,7 +31,7 @@ codimension_core/
 | Codimension файл | Класи / функції | PyQt / GlobalData | Дія |
 | ---------------- | --------------- | ----------------- | --- |
 | `codimension/utils/project.py` | `CodimensionProject`, `getProjectProperties`, `__scanDir`, `getImportDirsAsAbsolutePaths`, `getExcludeFromAnalysisAsAbsolutePaths`, `isProjectFile` | QObject, pyqtSignal, Watcher | **Split:** core dataclass без signals/watcher |
-| `codimension/utils/venvutils.py` | `resolveVenvToPython`, `getProjectVenvDir` | — | **Copy as-is** |
+| `codimension/utils/venvutils.py` | `resolveVenvToPython`, `getProjectVenvDir` | — | ✅ 0.20.0 thin wrapper → `codimension_core.venvutils` |
 | `codimension/utils/run.py` (частково) | `getProjectPythonPath`, `getVenvSitePackages` | — | **Extract** subprocess helpers |
 | `codimension/utils/fileutils.py` (частково) | `isPythonFile`, `getFileContent`, `loadJSON`, `saveJSON` | QImageReader, Qutepart у icons | **Extract** I/O без mime/icons |
 | `codimension/utils/encoding.py` (частково) | `getCodingFromText`, `detectFileEncodingToRead`, `readEncodedFile` | editor param | **Extract** encoding без editor |
@@ -128,7 +128,7 @@ codimension_core/
 | `codimension/analysis/disasm.py` | `disassemble*`, marshal helpers | — | **Copy** |
 | `codimension/analysis/notused.py` | vulture runner | QDialog, GlobalData | ✅ thin wrapper → `analyzer` |
 | `codimension/analysis/core_bridge.py` | `core_project_from_ide` | GlobalData | ✅ IDE bridge |
-| `codimension/utils/astutils.py` | `parseSourceToAST` | — | **Copy** |
+| `codimension/utils/astutils.py` | `parseSourceToAST` | — | ✅ thin wrapper → `codimension_core.astutils` |
 | `codimension/search/searchsupport.py` | `Match`, `ItemToSearchIn`, regex search | GlobalData buffers | **Extract** text search |
 
 **Status (0.8.0):** analyzer extracted; IDE thin wrappers via `core_bridge`.
@@ -185,7 +185,7 @@ codimension_core/
 | **Graph render** | `graph_render.graph_to_html/mermaid` | ✅ 0.7.0 |
 | **Incremental cache** | `analysis_cache`, `Project.get_cache_stats` | selective import/call/reverse invalidation | ✅ 0.17.0 |
 | **MCP get_cache_stats** | cache stats tool + `codimension://cache/stats` | ✅ 0.4.0 |
-| **codimension_core disasm/astutils** | disasm.py, astutils.py | unit: tests/test_codimension_core_disasm.py |
+| **codimension_core disasm/astutils** | disasm.py, astutils.py, venvutils.py | unit: tests/test_codimension_core_disasm.py, test_codimension_core_astutils.py, test_codimension_core_venvutils.py |
 | **codimension_core reverse index** | reverse_index.lookup_symbol | unit: tests/test_codimension_core_reverse_index.py |
 | **codimension_core import diagram** | import_diagram model | unit: tests/test_codimension_core_import_diagram.py |
 | **codimension_core graph layout** | graph_layout.py | unit: tests/test_codimension_core_graph_layout.py |
