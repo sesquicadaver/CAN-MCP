@@ -1,5 +1,11 @@
 2026 Jul 06
 
+* MCP Cursor HOWTO and local mcp.json template (docs):
+  - doc/MCP-CURSOR-HOWTO.md — full setup, tools/resources/prompts examples
+  - README links to HOWTO; .cursor/mcp.json generated locally (gitignored)
+
+2026 Jul 06
+
 * Fix MCP tool names and package shadowing (etapa 40):
   - @mcp.tool(name=...) for open_project, analyze_project, get_project_tree (catalog parity)
   - Remove codimension_core/codimension_mcp from root setup.py packages; MCP via codimension_mcp pyproject

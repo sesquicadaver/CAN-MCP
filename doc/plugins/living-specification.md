@@ -49,7 +49,7 @@
 | **MCP catalog** | codimension_mcp.catalog | codimension://catalog, list_mcp_catalog | unit: tests/test_codimension_mcp_catalog.py |
 | **MCP catalog drift guard** | tests/test_codimension_mcp_catalog.py, catalog_readme.py | catalog ↔ vscode ↔ README ↔ live tool names | CI: verify-mcp-catalog.sh + generate --check |
 | **MCP assess_change_impact prompt** | codimension_mcp.prompts | blast-radius workflow | unit: tests/test_codimension_mcp.py |
-| **Cursor MCP sample** | .cursor/mcp.json.example | install-cursor-mcp.sh | Manual |
+| **Cursor MCP HOWTO** | doc/MCP-CURSOR-HOWTO.md | setup, tools/resources examples | Manual: .cursor/mcp.json |
 | **MCP symbol summary** | codimension_mcp | get_symbol_summary tool + codimension://symbols/summary | unit: tests/test_codimension_mcp.py |
 | **VS Code MCP config** | codimension-vscode/mcpConfig.ts | copyMcpConfig, showMcpResources | CI: npm run compile |
 | **Legacy IDE policy** | doc/LEGACY-IDE.md | maintenance mode for codimension/ + cdmplugins | Review on IDE changes |

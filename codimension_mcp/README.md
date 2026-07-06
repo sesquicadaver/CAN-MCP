@@ -103,7 +103,7 @@ Resources `codimension://diagram/import` and `codimension://diagram/call` return
 
 ## Cursor config
 
-Copy the sample and adjust the workspace path:
+Copy the sample and adjust the workspace path. Full guide: [doc/MCP-CURSOR-HOWTO.md](../doc/MCP-CURSOR-HOWTO.md).
 
 ```shell
 ./scripts/install-cursor-mcp.sh
