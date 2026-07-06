@@ -21,7 +21,7 @@ python3 -m venv .venv
 ./scripts/test-analysis.sh
 ```
 
-MCP-сервер: каталог `codimension_mcp/`. Розширення VS Code: `codimension-vscode/`.
+MCP-сервер: каталог `codimension_mcp/`. Розширення VS Code: `codimension-vscode/`. Legacy PyQt IDE: [doc/LEGACY-IDE.md](doc/LEGACY-IDE.md).
 
 ---
 

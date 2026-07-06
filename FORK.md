@@ -8,6 +8,10 @@
 
 **Клонувати або завантажувати з оригінального репозиторію немає сенсу** — використовуйте цей форк.
 
+## CAN-MCP (headless analysis)
+
+Активний шлях розробки — `codimension_core` + `codimension_mcp`. Legacy PyQt IDE: [doc/LEGACY-IDE.md](doc/LEGACY-IDE.md).
+
 ## Що змінено у форку
 
 - Підтримка Python 3.11+

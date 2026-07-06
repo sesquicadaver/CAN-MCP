@@ -1,5 +1,14 @@
 2026 Jul 06
 
+* MCP prompts/resources + legacy IDE docs (etapa 23):
+  - codimension_mcp/prompts.py: review_imports, analyze_module; testable builders
+  - codimension_mcp/resources.py: codimension://project/tree
+  - doc/LEGACY-IDE.md: PyQt IDE maintenance mode
+  - codimension_mcp/README.md: tools/resources/prompts catalog
+  - codimension_mcp 0.14.0
+
+2026 Jul 06
+
 * Unified pytest strategy (etapa 22):
   - pyproject.toml: pytest markers (`pyqt`)
   - tests/conftest.py: auto-skip pyqt tests without PyQt5

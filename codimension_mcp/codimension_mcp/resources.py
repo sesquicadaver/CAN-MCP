@@ -46,6 +46,12 @@ def read_cache_stats(state: WorkspaceState) -> str:
     return dumps_payload(state.project.get_cache_stats())
 
 
+def read_project_tree(state: WorkspaceState) -> str:
+    if state.project is None:
+        return dumps_payload({"status": "error", "error": "Call open_project(path) first"})
+    return dumps_payload({"files": state.project.get_project_tree()})
+
+
 def register_resources(mcp: FastMCP, get_state: Callable[[], WorkspaceState]) -> None:
     """Register codimension:// resources on the MCP server."""
 
@@ -102,3 +108,12 @@ def register_resources(mcp: FastMCP, get_state: Callable[[], WorkspaceState]) ->
     )
     def cache_stats_resource() -> str:
         return read_cache_stats(get_state())
+
+    @mcp.resource(
+        "codimension://project/tree",
+        name="project_tree",
+        description="Relative paths of Python files in the open project.",
+        mime_type="application/json",
+    )
+    def project_tree_resource() -> str:
+        return read_project_tree(get_state())

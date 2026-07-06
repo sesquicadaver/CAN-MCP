@@ -41,6 +41,8 @@
 | **MCP find_dead_code** | codimension_mcp | find_dead_code tool | Smoke: MCP tool call |
 | **codimension_core impact** | codimension_core.callgraph | impact_analysis transitive | unit: tests/test_codimension_core_impact.py |
 | **MCP resources** | codimension_mcp.resources | codimension:// URIs | unit: tests/test_codimension_mcp.py |
+| **MCP prompts** | codimension_mcp.prompts | refactor_symbol, review_imports, analyze_module | unit: tests/test_codimension_mcp.py |
+| **Legacy IDE policy** | doc/LEGACY-IDE.md | maintenance mode for codimension/ + cdmplugins | Review on IDE changes |
 | **MCP diagram WebView** | codimension_mcp.diagrams | render_diagram, codimension://diagram/* | unit: tests/test_codimension_mcp.py |
 | **codimension_core incremental cache** | codimension_core.analysis_cache | selective import/call/reverse invalidation + CFG | unit: tests/test_codimension_core_cache.py |
 | **codimension_core brief_ast** | codimension_core.brief_ast | getBriefModuleInfoFromMemory/File | unit: tests/test_codimension_core_brief_ast.py |
