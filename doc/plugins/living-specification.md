@@ -32,6 +32,7 @@
 | **Greenlet debugger** | codimension.debugger.client | threadextension_cdm_dbg.py, threadutils_cdm_dbg.py | unit: tests/test_greenlet_trace.py |
 | **Occurrences search redo** | codimension.search | occurrencesprovider.py, searchresultsviewer.py | unit: tests/test_occurrencesprovider.py |
 | **codimension_core encoding_utils** | codimension_core.encoding_utils | BOM/coding cookie/EOL/decode_content | unit: tests/test_codimension_core_encoding_utils.py |
+| **Legacy IDE briefmodinfocache wrapper** | codimension.utils.briefmodinfocache | ModuleInfoCache bridge | unit: tests/test_briefmodinfocache_wrapper.py |
 | **Legacy IDE encoding wrapper** | codimension.utils.encoding | decode/readEncodedFile delegate to core | Review on encoding changes |
 | **Legacy IDE fileutils I/O wrapper** | codimension.utils.fileutils | loadJSON/saveJSON/getFileContent | Review on file I/O changes |
 | **codimension_core astutils** | codimension_core.astutils | parse_source_to_ast | unit: tests/test_codimension_core_astutils.py |

@@ -86,7 +86,9 @@ def render_root_mcp_summary() -> str:
         "`codimension://graph/impact/{target_key}`, `codimension://cache/stats`.",
         "",
         "Full catalog: [codimension_mcp/README.md](codimension_mcp/README.md). "
-        "Cursor: `./scripts/install-cursor-mcp.sh`. VS Code: `codimension-vscode/`. "
+        "**Cursor HOWTO:** [doc/MCP-CURSOR-HOWTO.md](doc/MCP-CURSOR-HOWTO.md). "
+        "Cursor: `./scripts/install-cursor-mcp.sh` або `.cursor/mcp.json` (local). "
+        "VS Code: `codimension-vscode/`. "
         "Legacy IDE: [doc/LEGACY-IDE.md](doc/LEGACY-IDE.md).",
     ]
     return "\n".join(lines)

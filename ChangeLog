@@ -1,5 +1,11 @@
 2026 Jul 06
 
+* IDE BriefModuleInfoCache delegates to codimension_core.cache (etapa 41):
+  - briefmodinfocache.py thin wrapper; hash-aware ModuleInfoCache in core
+  - tests/test_briefmodinfocache_wrapper.py
+
+2026 Jul 06
+
 * MCP Cursor HOWTO and local mcp.json template (docs):
   - doc/MCP-CURSOR-HOWTO.md — full setup, tools/resources/prompts examples
   - README links to HOWTO; .cursor/mcp.json generated locally (gitignored)

@@ -17,54 +17,29 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+"""codimension brief module info cache — thin wrapper over codimension_core.cache."""
 
-"""codimension brief module info cache"""
-
-from os.path import exists, getmtime, realpath
-
-from cdmpyparser import getBriefModuleInfoFromFile
+from codimension_core.cache import ModuleInfoCache
 
 
 class BriefModuleInfoCache:
-    """Provides the module info cache"""
+    """Provides the module info cache for the IDE GlobalData layer."""
 
-    def __init__(self):
-        # abs file path -> (modification time, mod info)
-        self.__cache = {}
+    def __init__(self) -> None:
+        self._cache = ModuleInfoCache()
 
-    def get(self, path):
-        """Provides the required modinfo"""
-        path = realpath(path)
+    def get(self, path: str):
+        """Provides the required modinfo."""
         try:
-            modInfo = self.__cache[path]
-            if not exists(path):
-                del self.__cache[path]
-                raise Exception("Cannot open " + path)
+            return self._cache.get(path)
+        except FileNotFoundError as exc:
+            # Legacy IDE callers expect generic Exception messages.
+            raise Exception(str(exc)) from None
 
-            lastModTime = getmtime(path)
-            if lastModTime <= modInfo[0]:
-                return modInfo[1]
+    def remove(self, path: str) -> None:
+        """Removes one file from the map."""
+        self._cache.remove(path)
 
-            # update the key
-            info = getBriefModuleInfoFromFile(path)
-            self.__cache[path] = (lastModTime, info)
-            return info
-        except KeyError:
-            if not exists(path):
-                raise Exception("Cannot open " + path)
-
-            info = getBriefModuleInfoFromFile(path)
-            self.__cache[path] = (getmtime(path), info)
-            return info
-
-    def remove(self, path):
-        """Removes one file from the map"""
-        path = realpath(path)
-        try:
-            del self.__cache[path]
-        except KeyError:
-            return
-
-    def clear(self):
-        """Clears the cache"""
-        self.__cache = {}
+    def clear(self) -> None:
+        """Clears the cache."""
+        self._cache.clear()

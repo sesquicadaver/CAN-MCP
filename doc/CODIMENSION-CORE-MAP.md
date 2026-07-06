@@ -139,7 +139,7 @@ codimension_core/
 
 | Codimension файл | Класи / функції | PyQt / GlobalData | Дія |
 | ---------------- | --------------- | ----------------- | --- |
-| `codimension/utils/briefmodinfocache.py` | `BriefModuleInfoCache.get/remove/clear` | — | **Port** + hash invalidation |
+| `codimension/utils/briefmodinfocache.py` | `BriefModuleInfoCache.get/remove/clear` | — | ✅ thin wrapper → `codimension_core.cache.ModuleInfoCache` |
 
 **Не переносити:** `pixmapcache.py`, `webresourcecache.py`, `plantumlcache.py`.
 
