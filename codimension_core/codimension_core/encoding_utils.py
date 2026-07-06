@@ -7,10 +7,25 @@ import encodings
 import logging
 import re
 from codecs import BOM_UTF8, BOM_UTF16, BOM_UTF32
+from dataclasses import dataclass
+from pathlib import Path
 
 from .brief_ast import getBriefModuleInfoFromMemory
 
 DEFAULT_TEXT_ENCODING = "utf-8"
+
+
+@dataclass
+class EncodingReadOptions:
+    """Injectable fallbacks for headless encoded file reads."""
+
+    user_encoding: str | None = None
+    project_encoding: str | None = None
+    ide_encoding: str | None = None
+    default_encoding: str = DEFAULT_TEXT_ENCODING
+    check_python_source: bool = False
+    file_name: str = "<unknown>"
+
 
 STANDARD_CODECS = [
     "ascii",
@@ -257,3 +272,82 @@ def encoding_sanity_check(file_name: str, decoded_text: str, expected_encoding: 
     except Exception:
         pass
     return True
+
+
+def _try_bom_decode(raw: bytes, options: EncodingReadOptions) -> tuple[str, str] | None:
+    """Decode raw bytes when a BOM signature is present."""
+    bom = detect_bom_encoding(raw)
+    if bom == "bom-utf-8":
+        payload = raw[len(BOM_UTF8) :]
+        norm_enc = encodings.normalize_encoding("utf-8")
+        label = "bom-utf-8"
+    elif bom == "bom-utf-16":
+        payload = raw[len(BOM_UTF16) :]
+        norm_enc = encodings.normalize_encoding("utf-16")
+        label = "bom-utf-16"
+    elif bom == "bom-utf-32":
+        payload = raw[len(BOM_UTF32) :]
+        norm_enc = encodings.normalize_encoding("utf-32")
+        label = "bom-utf-32"
+    else:
+        return None
+    try:
+        decoded = payload.decode(norm_enc)
+    except (UnicodeError, LookupError) as exc:
+        logging.error("BOM signature %s found in %s but decoding failed: %s", label, options.file_name, exc)
+        return None
+    if options.check_python_source:
+        encoding_sanity_check(options.file_name, decoded, label)
+    return decoded, label
+
+
+def read_encoded_bytes(raw: bytes, options: EncodingReadOptions) -> tuple[str, str]:
+    """Decode bytes using BOM, user, cookie, project, IDE, and default fallbacks."""
+    bom_result = _try_bom_decode(raw, options)
+    if bom_result is not None:
+        return bom_result
+
+    tried: list[str] = []
+    candidates: list[str | None] = [
+        options.user_encoding,
+        get_coding_from_bytes(raw),
+        options.project_encoding,
+        options.ide_encoding,
+        options.default_encoding,
+    ]
+    for encoding in candidates:
+        if not encoding:
+            continue
+        if not is_valid_encoding(encoding):
+            logging.error("Invalid encoding %s for %s. Continue trying...", encoding, options.file_name)
+            continue
+        norm_enc = encodings.normalize_encoding(encoding)
+        if norm_enc in tried:
+            continue
+        tried.append(norm_enc)
+        try:
+            decoded = raw.decode(norm_enc)
+        except (UnicodeError, LookupError) as exc:
+            logging.error("Failed to decode %s using encoding %s: %s", options.file_name, encoding, exc)
+            continue
+        if options.check_python_source:
+            encoding_sanity_check(options.file_name, decoded, encoding)
+        return decoded, encoding
+
+    logging.warning("Last try: utf-8 decoding ignoring the errors for %s", options.file_name)
+    return raw.decode("utf-8", "ignore"), "utf-8"
+
+
+def read_encoded_file(path: str | Path, options: EncodingReadOptions) -> tuple[str, str]:
+    """Read a file from disk and decode it with the configured fallback chain."""
+    file_path = Path(path)
+    payload = file_path.read_bytes()
+    read_options = EncodingReadOptions(
+        user_encoding=options.user_encoding,
+        project_encoding=options.project_encoding,
+        ide_encoding=options.ide_encoding,
+        default_encoding=options.default_encoding,
+        check_python_source=options.check_python_source,
+        file_name=str(file_path),
+    )
+    return read_encoded_bytes(payload, read_options)

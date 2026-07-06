@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 from codimension_core.encoding_utils import (
+    EncodingReadOptions,
     convert_line_ends,
     detect_bom_encoding,
     detect_eol_string,
@@ -11,6 +12,8 @@ from codimension_core.encoding_utils import (
     get_coding_from_bytes,
     get_coding_from_text,
     is_valid_encoding,
+    read_encoded_bytes,
+    read_encoded_file,
 )
 
 
@@ -41,3 +44,29 @@ def test_detect_eol_and_convert_line_ends():
 def test_is_valid_encoding():
     assert is_valid_encoding("utf-8")
     assert not is_valid_encoding("not-a-real-encoding-name")
+
+
+def test_read_encoded_bytes_bom_utf8():
+    raw = "\xef\xbb\xbfprint('ok')\n".encode("utf-8")
+    text, enc = read_encoded_bytes(raw, EncodingReadOptions())
+    assert enc == "bom-utf-8"
+    assert "print('ok')" in text
+
+
+def test_read_encoded_bytes_coding_cookie(tmp_path):
+    path = tmp_path / "mod.py"
+    path.write_bytes(b"# -*- coding: latin-1 -*-\nprint('ok')\n")
+    text, enc = read_encoded_file(path, EncodingReadOptions(check_python_source=True))
+    assert enc == "latin-1"
+    assert "print('ok')" in text
+
+
+def test_read_encoded_bytes_user_encoding_override(tmp_path):
+    path = tmp_path / "plain.txt"
+    path.write_bytes("café".encode("latin-1"))
+    text, enc = read_encoded_bytes(
+        path.read_bytes(),
+        EncodingReadOptions(user_encoding="latin-1", file_name=str(path)),
+    )
+    assert enc == "latin-1"
+    assert text == "café"
