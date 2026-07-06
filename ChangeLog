@@ -1,5 +1,11 @@
 2026 Jul 06
 
+* Generate VS Code MCP URIs from catalog (etapa 31):
+  - scripts/generate_mcp_catalog_artifacts.py → mcpResourceUris.generated.ts
+  - README tables drift-tested against catalog.py
+
+2026 Jul 06
+
 * MCP catalog drift guard in CI (etapa 30):
   - tests: catalog ↔ PROMPT_BUILDERS ↔ vscode mcpConfig URI parity
   - scripts/verify-mcp-catalog.sh in merge gate

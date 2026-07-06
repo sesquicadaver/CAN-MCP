@@ -39,7 +39,8 @@ Start with the catalog — no need to guess URIs or tool names:
 | `get_import_graph` | Import dependency Graph IR |
 | `get_call_graph` | Static call graph |
 | `get_control_flow` | CFG for `file.py:function:name` |
-| `find_callers` / `find_callees` | Call relationships |
+| `find_callers` | Callers of a symbol |
+| `find_callees` | Callees of a symbol |
 | `find_usages` | Jedi usage search |
 | `impact_analysis` | Transitive blast radius |
 | `explain_symbol` | Structured symbol context |
@@ -70,6 +71,7 @@ Start with the catalog — no need to guess URIs or tool names:
 | `codimension://diagram/control_flow/{function_key}` | text/html | CFG HTML |
 | `codimension://graph/impact/{target_key}` | application/json | Impact Graph IR |
 | `codimension://graph/control_flow/{function_key}` | application/json | CFG Graph IR |
+| `codimension://diagram/impact/{target_key}` | text/html | Impact diagram HTML |
 | `codimension://cache/stats` | application/json | Cache hit/miss stats |
 
 ## Prompts
@@ -115,7 +117,7 @@ Copy the sample and adjust the workspace path:
 
 **Function resource keys:** encode `file.py:function:name` as `file.py__function__name` in URIs.  
 **Impact targets:** bare symbol (`leaf`), file (`lib.py`), or encoded path (`pkg__path__mod.py`).  
-**Source of truth:** `codimension_mcp/catalog.py` (VS Code URI list tested for parity).
+**Source of truth:** `codimension_mcp/catalog.py`. VS Code URIs are generated (`scripts/generate_mcp_catalog_artifacts.py`); README tables are drift-tested in CI.
 
 ## Legacy IDE
 

@@ -1,5 +1,7 @@
 import * as vscode from "vscode";
 
+import { MCP_RESOURCE_URIS } from "./mcpResourceUris.generated";
+
 export function buildMcpServerConfig(workspacePath: string): string {
   const config = {
     mcpServers: {
@@ -26,24 +28,7 @@ export async function copyMcpConfigToClipboard(): Promise<void> {
 }
 
 export function listMcpResourceUris(): string {
-  return [
-    "codimension://catalog",
-    "codimension://workspace/status",
-    "codimension://project/tree",
-    "codimension://graph/import",
-    "codimension://graph/call",
-    "codimension://deps/summary",
-    "codimension://deps/file/{path}",
-    "codimension://symbols/summary",
-    "codimension://symbols/file/{path}",
-    "codimension://diagram/import",
-    "codimension://diagram/call",
-    "codimension://diagram/control_flow/{function_key}",
-    "codimension://graph/control_flow/{function_key}",
-    "codimension://graph/impact/{target_key}",
-    "codimension://diagram/impact/{target_key}",
-    "codimension://cache/stats",
-  ].join("\n");
+  return MCP_RESOURCE_URIS.join("\n");
 }
 
 export async function showMcpResources(): Promise<void> {

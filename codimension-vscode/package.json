@@ -2,7 +2,7 @@
   "name": "codimension-vscode",
   "displayName": "Codimension Analysis",
   "description": "VS Code companion for Codimension MCP code analysis",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "publisher": "codimension",
   "engines": {
     "vscode": "^1.85.0"

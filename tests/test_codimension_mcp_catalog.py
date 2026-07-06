@@ -20,7 +20,20 @@ from codimension_mcp.catalog import (
 from codimension_mcp.prompts import PROMPT_BUILDERS
 
 ROOT = Path(__file__).resolve().parents[1]
-VSCODE_MCP_CONFIG = ROOT / "codimension-vscode" / "src" / "mcpConfig.ts"
+VSCODE_URIS_GENERATED = ROOT / "codimension-vscode" / "src" / "mcpResourceUris.generated.ts"
+MCP_README = ROOT / "codimension_mcp" / "README.md"
+
+
+def _extract_markdown_table_first_column(section: str) -> set[str]:
+    """Return first-column backtick values from a markdown table under ## section."""
+    match = re.search(rf"## {section}\n\n\|[^\n]+\n\|[^\n]+\n((?:\|[^\n]+\n)+)", MCP_README.read_text(encoding="utf-8"))
+    assert match, f"Missing ## {section} table in README"
+    names: set[str] = set()
+    for row in match.group(1).splitlines():
+        cell = re.match(r"\|\s*`([^`]+)`\s*\|", row)
+        if cell:
+            names.add(cell.group(1))
+    return names
 
 
 def test_build_mcp_catalog_structure():
@@ -47,11 +60,26 @@ def test_catalog_prompts_match_prompt_builders():
     assert set(catalog_prompt_names()) == set(PROMPT_BUILDERS)
 
 
-def test_vscode_resource_list_matches_catalog():
-    source = VSCODE_MCP_CONFIG.read_text(encoding="utf-8")
-    vscode_uris = set(re.findall(r'"(codimension://[^"]+)"', source))
+def test_generated_vscode_uris_match_catalog():
+    source = VSCODE_URIS_GENERATED.read_text(encoding="utf-8")
+    generated_uris = set(re.findall(r'"(codimension://[^"]+)"', source))
     catalog_uris = set(catalog_resource_uris())
-    assert vscode_uris == catalog_uris, f"missing={catalog_uris - vscode_uris} extra={vscode_uris - catalog_uris}"
+    assert generated_uris == catalog_uris, f"missing={catalog_uris - generated_uris} extra={generated_uris - catalog_uris}"
+
+
+def test_readme_tools_match_catalog():
+    readme_tools = _extract_markdown_table_first_column("Tools")
+    assert readme_tools == set(catalog_tool_names())
+
+
+def test_readme_resources_match_catalog():
+    readme_resources = _extract_markdown_table_first_column("Resources")
+    assert readme_resources == set(catalog_resource_uris())
+
+
+def test_readme_prompts_match_catalog():
+    readme_prompts = _extract_markdown_table_first_column("Prompts")
+    assert readme_prompts == set(catalog_prompt_names())
 
 
 def test_catalog_has_required_resource_templates():
