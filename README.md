@@ -21,7 +21,19 @@ python3 -m venv .venv
 ./scripts/test-analysis.sh
 ```
 
-MCP-сервер: каталог `codimension_mcp/`. Швидке підключення Cursor: `./scripts/install-cursor-mcp.sh` (з `.cursor/mcp.json.example`). Розширення VS Code: `codimension-vscode/`. Legacy PyQt IDE: [doc/LEGACY-IDE.md](doc/LEGACY-IDE.md).
+<!-- catalog:root-mcp -->
+**MCP discovery:** read `codimension://catalog` or call tool `list_mcp_catalog`.
+
+| Kind | Count |
+| ---- | ----- |
+| Tools | 22 |
+| Resources | 16 |
+| Prompts | 6 |
+
+Key resources: `codimension://graph/import`, `codimension://graph/call`, `codimension://graph/impact/{target_key}`, `codimension://cache/stats`.
+
+Full catalog: [codimension_mcp/README.md](codimension_mcp/README.md). Cursor: `./scripts/install-cursor-mcp.sh`. VS Code: `codimension-vscode/`. Legacy IDE: [doc/LEGACY-IDE.md](doc/LEGACY-IDE.md).
+<!-- /catalog:root-mcp -->
 
 ---
 

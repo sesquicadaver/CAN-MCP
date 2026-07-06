@@ -18,12 +18,13 @@ from codimension_mcp.catalog import (
     catalog_tool_names,
     read_mcp_catalog,
 )
-from codimension_mcp.catalog_readme import patch_readme_catalog_tables
+from codimension_mcp.catalog_readme import patch_readme_catalog_tables, patch_root_readme_mcp_section
 from codimension_mcp.prompts import PROMPT_BUILDERS
 
 ROOT = Path(__file__).resolve().parents[1]
 VSCODE_URIS_GENERATED = ROOT / "codimension-vscode" / "src" / "mcpResourceUris.generated.ts"
 MCP_README = ROOT / "codimension_mcp" / "README.md"
+ROOT_README = ROOT / "README.md"
 
 
 def test_build_mcp_catalog_structure():
@@ -65,6 +66,11 @@ def test_catalog_prompts_have_workflow():
 def test_readme_catalog_tables_are_generated():
     current = MCP_README.read_text(encoding="utf-8")
     assert current == patch_readme_catalog_tables(current)
+
+
+def test_root_readme_mcp_section_is_generated():
+    current = ROOT_README.read_text(encoding="utf-8")
+    assert current == patch_root_readme_mcp_section(current)
 
 
 def test_catalog_has_required_resource_templates():

@@ -1,5 +1,10 @@
 2026 Jul 06
 
+* Root README MCP summary generated from catalog (etapa 34):
+  - discovery, tool/resource/prompt counts, key URIs via marker block
+
+2026 Jul 06
+
 * MCP prompt `workflow` field in catalog (etapa 33):
   - README prompt table uses step summaries; `description` stays in JSON catalog
 

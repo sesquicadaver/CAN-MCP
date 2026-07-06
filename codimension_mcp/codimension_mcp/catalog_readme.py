@@ -10,6 +10,7 @@ from codimension_mcp.catalog import PROMPTS, RESOURCES, TOOLS
 TOOLS_MARKER = "catalog:tools"
 RESOURCES_MARKER = "catalog:resources"
 PROMPTS_MARKER = "catalog:prompts"
+ROOT_MCP_MARKER = "catalog:root-mcp"
 
 
 def _ordered_tools() -> list[dict[str, str | bool]]:
@@ -70,8 +71,34 @@ def _replace_marked_block(readme: str, marker: str, table: str) -> str:
     return pattern.sub(replacement, readme, count=1)
 
 
+def render_root_mcp_summary() -> str:
+    """Return compact MCP summary for repository root README."""
+    lines = [
+        "**MCP discovery:** read `codimension://catalog` or call tool `list_mcp_catalog`.",
+        "",
+        "| Kind | Count |",
+        "| ---- | ----- |",
+        f"| Tools | {len(TOOLS)} |",
+        f"| Resources | {len(RESOURCES)} |",
+        f"| Prompts | {len(PROMPTS)} |",
+        "",
+        "Key resources: `codimension://graph/import`, `codimension://graph/call`, "
+        "`codimension://graph/impact/{target_key}`, `codimension://cache/stats`.",
+        "",
+        "Full catalog: [codimension_mcp/README.md](codimension_mcp/README.md). "
+        "Cursor: `./scripts/install-cursor-mcp.sh`. VS Code: `codimension-vscode/`. "
+        "Legacy IDE: [doc/LEGACY-IDE.md](doc/LEGACY-IDE.md).",
+    ]
+    return "\n".join(lines)
+
+
 def patch_readme_catalog_tables(readme: str) -> str:
     """Inject generated catalog tables into README markdown."""
     readme = _replace_marked_block(readme, TOOLS_MARKER, render_readme_tools_table())
     readme = _replace_marked_block(readme, RESOURCES_MARKER, render_readme_resources_table())
     return _replace_marked_block(readme, PROMPTS_MARKER, render_readme_prompts_table())
+
+
+def patch_root_readme_mcp_section(readme: str) -> str:
+    """Inject generated MCP summary into repository root README."""
+    return _replace_marked_block(readme, ROOT_MCP_MARKER, render_root_mcp_summary())
