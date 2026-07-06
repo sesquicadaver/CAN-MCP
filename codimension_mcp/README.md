@@ -47,7 +47,9 @@ codimension-mcp --workspace /path/to/project
 | `codimension://workspace/status` | application/json | Open path, file counts |
 | `codimension://project/tree` | application/json | Python file list |
 | `codimension://deps/summary` | application/json | Classified import summary |
+| `codimension://deps/file/{path}` | application/json | Per-file import summary |
 | `codimension://symbols/summary` | application/json | Symbol counts by type |
+| `codimension://symbols/file/{path}` | application/json | Per-file symbol counts |
 | `codimension://graph/import` | application/json | Import Graph IR |
 | `codimension://graph/call` | application/json | Call Graph IR |
 | `codimension://diagram/import` | text/html | Import diagram HTML |

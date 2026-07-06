@@ -1,5 +1,12 @@
 2026 Jul 06
 
+* Per-file MCP resources + from-import frozen stdlib fix (etapa 26):
+  - codimension://deps/file/{path}, codimension://symbols/file/{path}
+  - imports.py: _resolve_from handles frozen stdlib (from os import ...)
+  - codimension_core 0.19.1, codimension_mcp 0.16.0
+
+2026 Jul 06
+
 * Fix stdlib import classification for frozen modules (etapa 25):
   - imports.py: resolve frozen specs (os, sys); sysconfig stdlib path detection
   - tests: stdlib frozen + stricter summary assertions

@@ -34,3 +34,17 @@ def test_collect_import_resolutions_classified_stdlib_frozen(tmp_path):
     assert len(result["unresolved"]) == 0
     names = {resolution.getVisibleName() for resolution in result["system"]}
     assert names == {"os", "json"}
+
+
+def test_collect_import_resolutions_classified_from_os_import(tmp_path):
+    project_dir = tmp_path / "proj"
+    project_dir.mkdir()
+    main = project_dir / "main.py"
+    main.write_text("from os import path\n", encoding="utf-8")
+
+    project = Project.open(str(project_dir))
+    result = collect_import_resolutions_classified(main.read_text(encoding="utf-8"), str(main), project)
+    assert result["totalCount"] == 1
+    assert len(result["system"]) == 1
+    assert result["system"][0].builtIn is True
+    assert result["system"][0].errMessage is None

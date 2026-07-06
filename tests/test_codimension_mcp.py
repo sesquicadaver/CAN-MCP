@@ -17,6 +17,8 @@ from codimension_mcp.resources import (
     read_cache_stats,
     read_call_graph,
     read_dependency_summary,
+    read_file_dependency_summary,
+    read_file_symbol_summary,
     read_import_graph,
     read_project_tree,
     read_symbol_summary,
@@ -229,3 +231,21 @@ def test_mcp_summaries_tool_and_resource(tmp_path):
 
     symbols_res = json.loads(read_symbol_summary(state))
     assert symbols_res["total_symbols"] >= 1
+
+
+def test_mcp_per_file_summary_resources(tmp_path):
+    project_dir = tmp_path / "proj"
+    project_dir.mkdir()
+    (project_dir / "main.py").write_text("import os\n\ndef api():\n    return 1\n", encoding="utf-8")
+
+    state = WorkspaceState()
+    open_project(state, str(project_dir))
+    analyze_project(state)
+
+    deps = json.loads(read_file_dependency_summary(state, "main.py"))
+    assert deps["scope"] == "file"
+    assert deps["totals"]["system"] >= 1
+
+    symbols = json.loads(read_file_symbol_summary(state, "main.py"))
+    assert symbols["scope"] == "file"
+    assert symbols["counts"]["function"] >= 1

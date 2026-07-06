@@ -286,7 +286,7 @@ def _resolve_import(
 
 
 def _resolve_from(import_obj: BriefImport, import_name: str, result: list[ImportResolution]) -> None:
-    if import_obj.name in sys.builtin_module_names:
+    if import_obj.name in sys.builtin_module_names or _is_stdlib_module_name(import_obj.name):
         result.append(
             ImportResolution(import_obj, None, True, None, [what.name for what in import_obj.what])
         )
@@ -294,30 +294,29 @@ def _resolve_from(import_obj: BriefImport, import_name: str, result: list[Import
 
     try:
         spec = importlib.util.find_spec(import_name)
-        if spec and spec.has_location:
-            result.append(
-                ImportResolution(
-                    import_obj,
-                    None,
-                    False,
-                    spec.origin,
-                    [what.name for what in import_obj.what],
+        if spec is not None:
+            if spec.origin == "frozen" or not spec.has_location:
+                result.append(
+                    ImportResolution(
+                        import_obj,
+                        None,
+                        True,
+                        None,
+                        [what.name for what in import_obj.what],
+                    )
                 )
-            )
-            return
-
-        if spec and spec.loader is not None:
-            result.append(
-                ImportResolution(
-                    import_obj,
-                    None,
-                    False,
-                    None,
-                    None,
-                    f"Could not resolve 'from {import_obj.name} import ...' at line {import_obj.line}",
+                return
+            if spec.origin:
+                result.append(
+                    ImportResolution(
+                        import_obj,
+                        None,
+                        False,
+                        spec.origin,
+                        [what.name for what in import_obj.what],
+                    )
                 )
-            )
-            return
+                return
 
         if spec and spec.submodule_search_locations:
             for index, what in enumerate(import_obj.what):
