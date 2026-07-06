@@ -8,6 +8,7 @@ import importlib.util
 import os
 import re
 import sys
+import sysconfig
 from dataclasses import dataclass, field
 from os.path import basename, dirname, realpath, sep
 from typing import TypedDict, cast
@@ -207,6 +208,41 @@ def _sys_path_base(context: ImportContext) -> list[str]:
     return list(sys.path)
 
 
+def _top_level_import_name(import_name: str) -> str | None:
+    if not import_name or import_name.startswith("."):
+        return None
+    top = import_name.split(".", 1)[0]
+    if not top or not top.isidentifier():
+        return None
+    return top
+
+
+def _stdlib_roots() -> list[str]:
+    roots: list[str] = []
+    for key in ("stdlib", "platstdlib"):
+        path = sysconfig.get_path(key)
+        if path:
+            roots.append(realpath(path))
+    return roots
+
+
+def _is_stdlib_module_name(name: str) -> bool:
+    top = _top_level_import_name(name)
+    if not top:
+        return False
+    if top in sys.builtin_module_names:
+        return True
+    return top in _STDLIB_MODULES
+
+
+def _is_stdlib_path(path: str) -> bool:
+    resolved = realpath(path)
+    for root in _stdlib_roots():
+        if resolved == root or resolved.startswith(root + sep):
+            return True
+    return False
+
+
 def _resolve_import(
     import_obj: BriefImport,
     base_and_project_paths: list[str],
@@ -221,13 +257,21 @@ def _resolve_import(
     sys.path = _sys_path_base(context) + base_and_project_paths
     try:
         spec = importlib.util.find_spec(import_obj.name)
-        if spec and spec.has_location:
-            result.append(ImportResolution(import_obj, None, False, spec.origin, None))
-            return
+        if spec is not None:
+            if spec.origin == "frozen" or not spec.has_location:
+                result.append(ImportResolution(import_obj, None, True, None, None))
+                return
+            if spec.origin:
+                result.append(ImportResolution(import_obj, None, False, spec.origin, None))
+                return
     except Exception:
         pass
     finally:
         sys.path = old_sys_path
+
+    if _is_stdlib_module_name(import_obj.name):
+        result.append(ImportResolution(import_obj, None, True, None, None))
+        return
 
     result.append(
         ImportResolution(
@@ -512,15 +556,6 @@ def _resolution_node_id(resolution: ImportResolution, graph: GraphIR) -> str:
     return node_id
 
 
-def _top_level_import_name(import_name: str) -> str | None:
-    if not import_name or import_name.startswith("."):
-        return None
-    top = import_name.split(".", 1)[0]
-    if not top or not top.isidentifier():
-        return None
-    return top
-
-
 def get_unresolved_package_names(errors: list[str]) -> set[str]:
     names: set[str] = set()
     for err in errors:
@@ -587,8 +622,12 @@ def classify_resolution(
 ) -> str:
     """Classify a resolution as system, project, other, or unresolved."""
     if not resolution.isResolved():
+        if _is_stdlib_module_name(resolution.importObj.name):
+            return "system"
         return "unresolved"
     if resolution.builtIn:
+        return "system"
+    if resolution.path and _is_stdlib_path(resolution.path):
         return "system"
     if resolution.path and project and project.is_project_path(resolution.path):
         return "project"
@@ -601,6 +640,8 @@ def classify_resolution(
         for path in sys_path:
             if path and resolved_dir.startswith(path):
                 return "system"
+    if _is_stdlib_module_name(resolution.importObj.name):
+        return "system"
     if resolution.path:
         return "other"
     return "unresolved"

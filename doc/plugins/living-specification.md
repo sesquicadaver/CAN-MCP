@@ -34,7 +34,7 @@
 | **codimension_core scaffold** | codimension_core | project.py, symbols.py, cache.py, graph_ir.py, dependency_graph.py, cfg.py | unit: tests/test_codimension_core.py |
 | **codimension_core imports** | codimension_core.imports | imports.py | unit: tests/test_codimension_core_imports.py |
 | **codimension_core callgraph** | codimension_core.callgraph | callgraph.py | unit: tests/test_codimension_core.py |
-| **codimension_core deps classification** | codimension_core.imports | collect_import_resolutions_classified | unit: tests/test_codimension_core_deps.py |
+| **codimension_core deps classification** | codimension_core.imports | collect_import_resolutions_classified + frozen stdlib | unit: tests/test_codimension_core_deps.py |
 | **codimension_core analyzer** | codimension_core.analyzer | get_buffer_errors, analyze_file_diagnostics, analyze_dead_code | unit: tests/test_codimension_core_analyzer.py |
 | **codimension_core explain** | codimension_core.explain | explain_symbol | unit: tests/test_codimension_core_explain.py |
 | **MCP get_diagnostics** | codimension_mcp | get_diagnostics tool | Smoke: MCP tool call |

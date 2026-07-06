@@ -219,13 +219,13 @@ def test_mcp_summaries_tool_and_resource(tmp_path):
     analyze_project(state)
 
     deps_tool = json.loads(get_dependency_summary_tool(state))
-    assert sum(deps_tool["totals"].values()) >= 1
+    assert deps_tool["totals"]["system"] >= 1
 
     symbols_tool = json.loads(get_symbol_summary_tool(state))
     assert symbols_tool["counts"]["function"] >= 1
 
     deps_res = json.loads(read_dependency_summary(state))
-    assert sum(deps_res["totals"].values()) >= 1
+    assert deps_res["totals"]["system"] >= 1
 
     symbols_res = json.loads(read_symbol_summary(state))
     assert symbols_res["total_symbols"] >= 1

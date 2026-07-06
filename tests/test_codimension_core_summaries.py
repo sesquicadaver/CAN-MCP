@@ -19,9 +19,10 @@ def test_build_dependency_summary_project(tmp_path):
     assert summary["status"] == "ok"
     assert summary["scope"] == "project"
     assert summary["totals"]["project"] == 1
+    assert summary["totals"]["system"] >= 1
     assert summary["files_analyzed"] == 2
-    assert sum(summary["totals"].values()) >= 2
     assert "helper" in summary["unique_modules"]["project"]
+    assert "os" in summary["unique_modules"]["system"]
 
 
 def test_build_dependency_summary_single_file(tmp_path):
@@ -34,7 +35,7 @@ def test_build_dependency_summary_single_file(tmp_path):
     summary = build_dependency_summary(project, str(main))
     assert summary["scope"] == "file"
     assert summary["files_analyzed"] == 1
-    assert sum(summary["totals"].values()) == 1
+    assert summary["totals"]["system"] == 1
 
 
 def test_build_symbol_summary_project(tmp_path):
