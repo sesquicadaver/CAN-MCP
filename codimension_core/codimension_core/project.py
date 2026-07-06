@@ -222,13 +222,13 @@ class Project:
                     join(venv_dir, "Scripts", "python.exe"),
                 ):
                     if isfile(candidate) and os.access(candidate, os.X_OK):
-                        return realpath(candidate)
+                        return os.path.abspath(candidate)
             return sys.executable
 
         if not isabs(interp):
             interp = os.path.normpath(join(self.root, interp))
         if isfile(interp) and os.access(interp, os.X_OK):
-            return realpath(interp)
+            return os.path.abspath(interp)
         if isdir(interp):
             for candidate in (
                 join(interp, "bin", "python"),
@@ -236,7 +236,7 @@ class Project:
                 join(interp, "Scripts", "python.exe"),
             ):
                 if isfile(candidate) and os.access(candidate, os.X_OK):
-                    return realpath(candidate)
+                    return os.path.abspath(candidate)
         return sys.executable
 
     def get_site_packages(self) -> str | None:
@@ -244,7 +244,7 @@ class Project:
         python_path = self.get_python_executable()
         if not python_path or python_path == sys.executable:
             return None
-        bin_dir = dirname(realpath(python_path))
+        bin_dir = dirname(os.path.abspath(python_path))
         venv_dir = dirname(bin_dir)
         if os.path.basename(bin_dir) not in ("bin", "Scripts"):
             return None

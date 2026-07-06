@@ -35,3 +35,19 @@ def test_detect_project_venv_dir_from_interpreter(tmp_path):
     venv_dir = _make_fake_venv(tmp_path)
     python = os.path.join(venv_dir, "bin", "python")
     assert detect_project_venv_dir(str(tmp_path), python) == os.path.realpath(venv_dir)
+
+
+def test_resolve_venv_python_preserves_shim_when_symlinked(tmp_path, monkeypatch):
+    """Symlinked venv python must not resolve to system interpreter (vulture/jedi need venv site-packages)."""
+    import sys
+
+    venv_dir = _make_fake_venv(tmp_path)
+    shim = os.path.join(venv_dir, "bin", "python")
+    os.remove(shim)
+    os.symlink(sys.executable, shim)
+    resolved = resolve_venv_to_python(venv_dir)
+    assert resolved is not None
+    assert resolved.endswith("/.venv/bin/python") or resolved.endswith("/bin/python")
+    assert os.path.dirname(resolved).endswith("bin")
+    assert os.path.realpath(resolved) == os.path.realpath(sys.executable)
+    assert resolved != os.path.realpath(sys.executable)

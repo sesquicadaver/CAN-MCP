@@ -87,4 +87,4 @@ __all__ = [
     "resolve_imports_for_file",
 ]
 
-__version__ = "0.19.1"
+__version__ = "0.20.5"

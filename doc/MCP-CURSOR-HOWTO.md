@@ -473,7 +473,7 @@ impact_analysis target="codimension_core/project.py"
 | `Call open_project first` | `open_project` або `--workspace` в args |
 | Diagnostics порожні | `pip install pyflakes radon` |
 | `find_usages` fail | `pip install jedi` |
-| `find_dead_code` fail | `pip install vulture` |
+| `find_dead_code` fail / `No module named vulture` | `pip install vulture` у venv; переконайтесь, що `command` вказує на venv `codimension-mcp` (не system python через symlink — fixed у core 0.20.5+) |
 | CFG invalid function_id | Формат `file.py:function:name` |
 
 ```bash

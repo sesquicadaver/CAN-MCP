@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import os
-from os.path import dirname, isabs, isdir, isfile, join, normpath, realpath
+from os.path import abspath, dirname, isabs, isdir, isfile, join, normpath, realpath
 
 _VENV_BIN_NAMES = ("bin", "Scripts")
 
@@ -19,7 +19,9 @@ def resolve_venv_to_python(venv_dir: str | None) -> str | None:
         join(venv_dir, "Scripts", "python.exe"),
     ):
         if isfile(candidate) and os.access(candidate, os.X_OK):
-            return realpath(candidate)
+            # Keep the venv shim path — realpath() would follow symlinks to system python
+            # and break ``python -m vulture`` (packages live in the venv site-packages).
+            return abspath(candidate)
     return None
 
 

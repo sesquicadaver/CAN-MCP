@@ -37,7 +37,11 @@ cat >"$TARGET" <<EOF
   "mcpServers": {
     "codimension": {
       "command": "$MCP_BIN",
-      "args": ["--workspace", "\${workspaceFolder}"]
+      "args": ["--workspace", "\${workspaceFolder}"],
+      "env": {
+        "VIRTUAL_ENV": "$VENV",
+        "PATH": "$VENV/bin:/usr/local/bin:/usr/bin:/bin"
+      }
     }
   }
 }
