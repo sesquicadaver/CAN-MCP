@@ -1,25 +1,36 @@
-# Codimension Python 3 IDE
+# CAN-MCP — Codimension headless analysis for AI agents
 
-[![CI](https://github.com/sesquicadaver/codimension/actions/workflows/ci.yml/badge.svg)](https://github.com/sesquicadaver/codimension/actions/workflows/ci.yml)
+[![CI](https://github.com/sesquicadaver/CAN-MCP/actions/workflows/ci.yml/badge.svg)](https://github.com/sesquicadaver/CAN-MCP/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-GPL%20v3-green.svg)](LICENSE)
 
-**Fork of [SergeySatskiy/codimension](https://github.com/SergeySatskiy/codimension).** Оригінальний проєкт не підтримується понад 4 роки. Цей форк — активна версія з підтримкою Python 3.10+.
+Headless Python code analysis exposed via **MCP** (Model Context Protocol) for Cursor and other AI clients.
 
-## CAN-MCP (headless analysis) — основний шлях розробки
+## Packages
 
-Стратегія еволюції: [CODIMENSION-EVO.md](CODIMENSION-EVO.md). Merge gate CI перевіряє **`codimension_core`** + **`codimension_mcp`** (ruff, mypy, pytest). Legacy PyQt IDE та VS Code extension — окремий workflow [ci-legacy-ui.yml](.github/workflows/ci-legacy-ui.yml).
+| Package | Role |
+| ------- | ---- |
+| [`codimension_core`](codimension_core/) | Headless analysis (symbols, imports, call graph, CFG, diagnostics) |
+| [`codimension_mcp`](codimension_mcp/) | MCP server — 22 tools, 16 resources, 6 prompts |
+| [`codimension-vscode`](codimension-vscode/) | VS Code extension (optional MCP UI) |
 
-```shell
-git clone https://github.com/sesquicadaver/codimension.git
-cd codimension
+Architecture map: [doc/CODIMENSION-CORE-MAP.md](doc/CODIMENSION-CORE-MAP.md)
+
+## Quick start
+
+```bash
+git clone https://github.com/sesquicadaver/CAN-MCP.git
+cd CAN-MCP
 python3 -m venv .venv
-.venv/bin/pip install --upgrade pip
-.venv/bin/pip install -e ./codimension_core -e ./codimension_mcp
-.venv/bin/pytest tests/ -m "not pyqt" -q
-# або повний локальний merge gate:
-./scripts/test-analysis.sh
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -e ./codimension_core -e ./codimension_mcp
+pip install pyflakes radon jedi vulture
+./scripts/install-cursor-mcp.sh   # writes .cursor/mcp.json
+./scripts/test-analysis.sh        # merge gate (ruff, mypy, pytest)
 ```
+
+Cursor: reload MCP server **codimension** after install. Full guide: [doc/MCP-CURSOR-HOWTO.md](doc/MCP-CURSOR-HOWTO.md).
 
 <!-- catalog:root-mcp -->
 **MCP discovery:** read `codimension://catalog` or call tool `list_mcp_catalog`.
@@ -32,79 +43,18 @@ python3 -m venv .venv
 
 Key resources: `codimension://graph/import`, `codimension://graph/call`, `codimension://graph/impact/{target_key}`, `codimension://cache/stats`.
 
-Full catalog: [codimension_mcp/README.md](codimension_mcp/README.md). **Cursor HOWTO:** [doc/MCP-CURSOR-HOWTO.md](doc/MCP-CURSOR-HOWTO.md). Cursor: `./scripts/install-cursor-mcp.sh` або `.cursor/mcp.json` (local). VS Code: `codimension-vscode/`. Legacy IDE: [doc/LEGACY-IDE.md](doc/LEGACY-IDE.md).
+Full catalog: [codimension_mcp/README.md](codimension_mcp/README.md). **Cursor HOWTO:** [doc/MCP-CURSOR-HOWTO.md](doc/MCP-CURSOR-HOWTO.md). Cursor: `./scripts/install-cursor-mcp.sh` або `.cursor/mcp.json` (local). VS Code extension: [codimension-vscode/](codimension-vscode/).
 <!-- /catalog:root-mcp -->
 
----
+## Development
 
-Експериментальна Python IDE з графічним аналізом коду (flow diagram, algorithmic tree).
-
-## Посилання
-
-- **Цей репозиторій** — активний форк для розробки та встановлення
-- [Оригінальний проєкт (архів)](https://github.com/SergeySatskiy/codimension) — історичний, не підтримується
-- [Технологія та візуалізація](http://codimension.org/documentation/visualization-technology/python-code-visualization.html)
-- [Гарячі клавіші](http://codimension.org/documentation/cheatsheet.html)
-
-**Примітка:** Сайт codimension.org та оригінальні репозиторії (cdm-pythonparser, cdm-flowparser) більше не оновлюються. Клонувати або завантажувати з upstream немає сенсу — використовуйте цей форк.
-
----
-
-**Codimension** — вільна експериментальна Python IDE під ліцензією GPL v3.
-
-Інтегрована система для:
-
-- традиційного текстового редагування коду
-- діаграмного аналізу коду (flow diagram, imports, classes тощо)
-
-Головна особливість — автоматична генерація діаграми потоку керування під час набору коду. Ліва частина — текстовий редактор, права — діаграма, що оновлюється при паузі в наборі.
-
-![Screenshot](doc/images/overview.png)
-
-## Встановлення
-
-**Потрібно:** Python 3.10+  
-**Платформи:** Linux (основна), Windows, macOS
-
-**Детальна інструкція:** [doc/INSTALL.md](doc/INSTALL.md)
-
-### Швидкий старт (з PyPI) — Linux / macOS
-
-```shell
-python3 -m venv .venv
-.venv/bin/pip install --upgrade pip
-.venv/bin/pip install codimension
-.venv/bin/codimension
+```bash
+./scripts/test-analysis.sh
+./scripts/verify-mcp-catalog.sh
 ```
 
-*Windows: використовуйте `py -3` та `.venv\Scripts\` — див. [doc/INSTALL.md](doc/INSTALL.md).*
+Living spec (TZ → module → tests): [doc/plugins/living-specification.md](doc/plugins/living-specification.md).
 
-### Розробка (з вихідного коду) — Linux / macOS
+## License
 
-```shell
-git clone https://github.com/sesquicadaver/codimension.git
-cd codimension
-python3 -m venv .venv
-.venv/bin/pip install --upgrade pip
-.venv/bin/pip install -r requirements.txt
-.venv/bin/pip install -e .
-.venv/bin/codimension
-```
-
-*Windows та інші платформи — [doc/INSTALL.md](doc/INSTALL.md).*
-
-Додаткові можливості форку: `excludeFromAnalysis` (властивості проєкту), автоматичне виключення venv з аналізу.
-
-## Ліцензія
-
-GPL v3. Див. [LICENSE](LICENSE).
-
-Модифікована версія — див. [FORK.md](FORK.md) та [doc/LICENSE_COMPLIANCE.md](doc/LICENSE_COMPLIANCE.md).
-
-## Troubleshooting
-
-Короткий список — повний опис у [doc/INSTALL.md](doc/INSTALL.md):
-
-- **Системні пакети:** `sudo apt-get install g++ python3-dev libpcre3-dev graphviz`
-- **Ubuntu 22.04:** Підтримується (Python 3.10)
-- **`.venv` з іншого комп'ютера:** Видалити і створити новий локально (`rm -rf .venv` → `python3 -m venv .venv` → встановити залежності)
+GPL v3 — see [LICENSE](LICENSE). Fork lineage from [SergeySatskiy/codimension](https://github.com/SergeySatskiy/codimension); this repository contains **only** the headless MCP stack.

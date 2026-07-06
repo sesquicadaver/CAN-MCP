@@ -31,4 +31,4 @@ Configure the analysis server in Cursor/VS Code MCP settings:
 }
 ```
 
-See [CODIMENSION-EVO.md](../CODIMENSION-EVO.md) for architecture.
+See [doc/MCP-CURSOR-HOWTO.md](../doc/MCP-CURSOR-HOWTO.md) and [doc/CODIMENSION-CORE-MAP.md](../doc/CODIMENSION-CORE-MAP.md).

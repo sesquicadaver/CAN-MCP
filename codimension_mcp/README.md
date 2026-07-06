@@ -1,6 +1,6 @@
 # codimension-mcp
 
-MCP server for Codimension code analysis. See [CODIMENSION-EVO.md](../CODIMENSION-EVO.md).
+MCP server for Codimension headless analysis (CAN-MCP).
 
 ## Install
 
@@ -124,7 +124,3 @@ Copy the sample and adjust the workspace path. Full guide: [doc/MCP-CURSOR-HOWTO
 **Function resource keys:** encode `file.py:function:name` as `file.py__function__name` in URIs.  
 **Impact targets:** bare symbol (`leaf`), file (`lib.py`), or encoded path (`pkg__path__mod.py`).  
 **Source of truth:** `codimension_mcp/catalog.py`. Run `python scripts/generate_mcp_catalog_artifacts.py` after catalog changes (VS Code URIs + README tables).
-
-## Legacy IDE
-
-PyQt GUI (`codimension/`, `cdmplugins/`) is maintenance-only. See [doc/LEGACY-IDE.md](../doc/LEGACY-IDE.md).

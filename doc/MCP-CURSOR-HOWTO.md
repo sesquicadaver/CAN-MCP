@@ -43,7 +43,7 @@ codimension_core         ← headless analysis (без PyQt)
         └─ Graph IR v1 → JSON
 ```
 
-Legacy PyQt IDE (`codimension/`) для MCP **не потрібна**.
+Legacy PyQt IDE **не входить** до CAN-MCP і для MCP **не потрібна**.
 
 ---
 
@@ -60,13 +60,17 @@ source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install --upgrade pip
 ```
 
-### 2.2. MCP-пакети (обов'язково окремо)
+### 2.2. MCP-пакети
 
 ```bash
 pip install -e ./codimension_core -e ./codimension_mcp
 ```
 
-> Не покладайтеся лише на `pip install -e .` — root setup ставить legacy IDE, але не замінює окремий MCP install.
+Або одним скриптом (venv + MCP + `.cursor/mcp.json`):
+
+```bash
+./scripts/install-cursor-mcp.sh
+```
 
 ### 2.3. Аналітичні залежності (рекомендовано)
 
@@ -467,7 +471,7 @@ impact_analysis target="codimension_core/project.py"
 
 | Симптом | Рішення |
 |---------|---------|
-| `ImportError: codimension_core` / `build_call_graph` | `bash scripts/install-cursor-mcp.sh` або `pip install -e ./codimension_core -e ./codimension_mcp`; якщо в venv є `pip install -e .` (legacy codimension) — `pip uninstall codimension` |
+| `ImportError: codimension_core` / `build_call_graph` | `bash scripts/install-cursor-mcp.sh` або `pip install -e ./codimension_core -e ./codimension_mcp` |
 | `Unknown tool: open_project` | Оновити CAN-MCP (etapa 40+) |
 | Cursor не стартує MCP | Абсолютний шлях у `command` |
 | `Call open_project first` | `open_project` або `--workspace` в args |

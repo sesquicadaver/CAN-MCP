@@ -88,8 +88,7 @@ def render_root_mcp_summary() -> str:
         "Full catalog: [codimension_mcp/README.md](codimension_mcp/README.md). "
         "**Cursor HOWTO:** [doc/MCP-CURSOR-HOWTO.md](doc/MCP-CURSOR-HOWTO.md). "
         "Cursor: `./scripts/install-cursor-mcp.sh` або `.cursor/mcp.json` (local). "
-        "VS Code: `codimension-vscode/`. "
-        "Legacy IDE: [doc/LEGACY-IDE.md](doc/LEGACY-IDE.md).",
+        "VS Code extension: [codimension-vscode/](codimension-vscode/).",
     ]
     return "\n".join(lines)
 

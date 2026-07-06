@@ -1,0 +1,11 @@
+# Dev/CI tools for CAN-MCP merge gate (not runtime deps of codimension_core).
+pytest
+ruff
+mypy
+pyflakes
+radon
+jedi
+vulture
+mistune
+pygments
+pip-audit

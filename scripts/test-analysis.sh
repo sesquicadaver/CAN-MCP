@@ -11,7 +11,7 @@ pip install -e ./codimension_core -e ./codimension_mcp
 ruff check codimension_core codimension_mcp
 ( cd codimension_core && mypy codimension_core )
 
-python -m pytest tests/ -m "not pyqt" -q
+python -m pytest tests/ -q
 ./scripts/verify-mcp-catalog.sh
 
 echo "Analysis gate OK"

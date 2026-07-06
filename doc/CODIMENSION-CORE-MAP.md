@@ -2,7 +2,7 @@
 
 **Версія:** 1.0  
 **Дата:** 2026-07-05  
-**Джерело стратегії:** [CODIMENSION-EVO.md](../CODIMENSION-EVO.md)
+**Джерело стратегії:** [README.md](../README.md) (CAN-MCP scope)
 
 Матриця відповідності «Codimension файл → codimension_core модуль → статус extraction».
 
