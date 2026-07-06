@@ -1,5 +1,11 @@
 2026 Jul 06
 
+* Extract encoding_utils to codimension_core (etapa 37):
+  - BOM/coding cookie/EOL helpers; IDE encoding.py thin imports
+  - core 0.20.2
+
+2026 Jul 06
+
 * Extract file_io JSON/text helpers to codimension_core (etapa 36):
   - codimension_core/file_io.py; IDE wrappers for loadJSON/saveJSON/getFileContent
   - core 0.20.1

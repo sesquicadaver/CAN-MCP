@@ -34,7 +34,7 @@ codimension_core/
 | `codimension/utils/venvutils.py` | `resolveVenvToPython`, `getProjectVenvDir` | — | ✅ 0.20.0 thin wrapper → `codimension_core.venvutils` |
 | `codimension/utils/run.py` (частково) | `getProjectPythonPath`, `getVenvSitePackages` | — | **Extract** subprocess helpers |
 | `codimension/utils/fileutils.py` (частково) | `getFileContent`, `loadJSON`, `saveJSON`, `saveToFile` | QImageReader, Qutepart у icons | ✅ 0.20.1 I/O → `codimension_core.file_io`; mime/icons лишаються в IDE |
-| `codimension/utils/encoding.py` (частково) | `getCodingFromText`, `detectFileEncodingToRead`, `readEncodedFile` | editor param | **Extract** encoding без editor |
+| `codimension/utils/encoding.py` (частково) | `getCodingFromText`, `detectFileEncodingToRead`, `readEncodedFile` | editor param | ✅ 0.20.2 pure helpers → `codimension_core.encoding_utils` |
 | `codimension/utils/globals.py` (частково) | `getSubdirs` | — | **Optional** |
 
 **Не переносити:** `fsenv.py`, `searchenv.py`, `flowgroups.py`, `debugenv.py`, `runparamscache.py`, `watcher.py`.
