@@ -1,5 +1,12 @@
 2026 Jul 06
 
+* decode_content in codimension_core; IDE decode() delegates (etapa 39):
+  - decode_content(bytes|str, EncodingReadOptions) for headless decode path
+  - IDE _project_and_ide_encodings() DRY; detectEncodingOnClearExplicit uses core BOM/header helpers
+  - core 0.20.4
+
+2026 Jul 06
+
 * Headless read_encoded_bytes with injectable fallbacks (etapa 38):
   - EncodingReadOptions; IDE readEncodedFile delegates to core
   - core 0.20.3

@@ -6,6 +6,7 @@ from __future__ import annotations
 from codimension_core.encoding_utils import (
     EncodingReadOptions,
     convert_line_ends,
+    decode_content,
     detect_bom_encoding,
     detect_eol_string,
     detect_read_encoding_from_header,
@@ -59,6 +60,19 @@ def test_read_encoded_bytes_coding_cookie(tmp_path):
     text, enc = read_encoded_file(path, EncodingReadOptions(check_python_source=True))
     assert enc == "latin-1"
     assert "print('ok')" in text
+
+
+def test_decode_content_passthrough_str():
+    text, enc = decode_content("already text", EncodingReadOptions(default_encoding="utf-8"))
+    assert text == "already text"
+    assert enc == "utf-8"
+
+
+def test_decode_content_bytes_use_fallback():
+    raw = b"hello"
+    text, enc = decode_content(raw, EncodingReadOptions(default_encoding="utf-8"))
+    assert text == "hello"
+    assert enc == "utf-8"
 
 
 def test_read_encoded_bytes_user_encoding_override(tmp_path):

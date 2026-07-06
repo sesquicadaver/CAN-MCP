@@ -351,3 +351,10 @@ def read_encoded_file(path: str | Path, options: EncodingReadOptions) -> tuple[s
         file_name=str(file_path),
     )
     return read_encoded_bytes(payload, read_options)
+
+
+def decode_content(content: bytes | str, options: EncodingReadOptions) -> tuple[str, str]:
+    """Decode bytes or pass through text using the configured fallback chain."""
+    if isinstance(content, str):
+        return content, options.default_encoding
+    return read_encoded_bytes(content, options)

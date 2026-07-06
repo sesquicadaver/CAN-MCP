@@ -31,6 +31,7 @@ from codimension_core.encoding_utils import (
     EncodingReadOptions,
     are_encodings_equal as areEncodingsEqual,
     convert_line_ends as convertLineEnds,
+    decode_content,
     detect_bom_encoding,
     detect_eol_string as detectEolString,
     detect_read_encoding_from_header,
@@ -49,6 +50,16 @@ from .globals import GlobalData
 from .settings import Settings
 
 
+def _project_and_ide_encodings() -> tuple[str | None, str | None]:
+    """Return project and IDE default encodings when available."""
+    project_encoding = None
+    project = GlobalData().project
+    if project.isLoaded():
+        project_encoding = project.props.get("encoding") or None
+    ide_encoding = Settings()["encoding"] or None
+    return project_encoding, ide_encoding
+
+
 def detectEncodingOnClearExplicit(fName, content):
     """Provides the reading encoding as a file would be read"""
     # The function is used in case the user reset the explicit encoding
@@ -56,36 +67,23 @@ def detectEncodingOnClearExplicit(fName, content):
     # read again
     try:
         with open(fName, "rb") as diskfile:
-            text = diskfile.read(1024)
+            header = diskfile.read(1024)
 
-        if text.startswith(BOM_UTF8):
-            return "bom-utf-8"
-        if text.startswith(BOM_UTF16):
-            return "bom-utf-16"
-        if text.startswith(BOM_UTF32):
-            return "bom-utf-32"
-
-        # The function is called when an explicit encoding is reset so
-        # there is no need to check for it
+        bom = detect_bom_encoding(header)
+        if bom:
+            return bom
 
         encFromBuffer = getCodingFromText(content)
-        if encFromBuffer:
-            if isValidEncoding(encFromBuffer):
-                return encFromBuffer
+        if encFromBuffer and isValidEncoding(encFromBuffer):
+            return encFromBuffer
 
-        project = GlobalData().project
-        if project.isLoaded():
-            projectEncoding = project.props["encoding"]
-            if projectEncoding:
-                if isValidEncoding(projectEncoding):
-                    return projectEncoding
-
-        ideEncoding = Settings()["encoding"]
-        if ideEncoding:
-            if isValidEncoding(ideEncoding):
-                return ideEncoding
-
-        return DEFAULT_ENCODING
+        project_encoding, ide_encoding = _project_and_ide_encodings()
+        return detect_read_encoding_from_header(
+            header,
+            project_encoding=project_encoding,
+            ide_encoding=ide_encoding,
+            default_encoding=DEFAULT_ENCODING,
+        )
     except Exception as exc:
         logging.warning("Error while guessing encoding for reading %s: %s", fName, str(exc))
         logging.warning("The default encoding %s will be used", DEFAULT_ENCODING)
@@ -102,11 +100,7 @@ def detectFileEncodingToRead(fName, text=None):
     if userAssignedEncoding:
         return userAssignedEncoding
 
-    project_encoding = None
-    project = GlobalData().project
-    if project.isLoaded():
-        project_encoding = project.props.get("encoding") or None
-    ide_encoding = Settings()["encoding"] or None
+    project_encoding, ide_encoding = _project_and_ide_encodings()
     return detect_read_encoding_from_header(
         text,
         project_encoding=project_encoding,
@@ -116,48 +110,25 @@ def detectFileEncodingToRead(fName, text=None):
 
 
 def decode(content):
-    """Decode bytes to (text, encoding). For VCS annotate etc.
-    content: bytes to decode (or str, returned as-is)
-    Returns: (decoded_text, encoding_name)
-    """
-    if isinstance(content, str):
-        return content, DEFAULT_ENCODING
-    bom = detect_bom_encoding(content)
-    if bom == "bom-utf-8":
-        content = content[len(BOM_UTF8) :]
-        enc = "bom-utf-8"
-    elif bom == "bom-utf-16":
-        content = content[len(BOM_UTF16) :]
-        enc = "bom-utf-16"
-    elif bom == "bom-utf-32":
-        content = content[len(BOM_UTF32) :]
-        enc = "bom-utf-32"
-    else:
-        project_encoding = None
-        project = GlobalData().project
-        if project.isLoaded():
-            project_encoding = project.props.get("encoding") or None
-        ide_encoding = Settings()["encoding"] or None
-        enc = detect_read_encoding_from_header(
-            content,
+    """Decode bytes to (text, encoding). For VCS annotate etc."""
+    project_encoding, ide_encoding = _project_and_ide_encodings()
+    return decode_content(
+        content,
+        EncodingReadOptions(
             project_encoding=project_encoding,
             ide_encoding=ide_encoding,
             default_encoding=DEFAULT_ENCODING,
-        )
-    norm_enc = encodings.normalize_encoding(enc)
-    return content.decode(norm_enc), enc
+        ),
+    )
 
 
 def readEncodedFile(fName):
     """Reads the encoded file"""
-    project_encoding = None
-    project = GlobalData().project
-    if project.isLoaded():
-        project_encoding = project.props.get("encoding") or None
+    project_encoding, ide_encoding = _project_and_ide_encodings()
     options = EncodingReadOptions(
         user_encoding=getFileEncoding(fName),
         project_encoding=project_encoding,
-        ide_encoding=Settings()["encoding"] or None,
+        ide_encoding=ide_encoding,
         default_encoding=DEFAULT_ENCODING,
         check_python_source=isPythonFile(fName),
         file_name=fName,
