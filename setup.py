@@ -172,8 +172,6 @@ def getPackages():
     """Provides packages"""
     return ['codimension',
             'codimension.parsers',
-            'codimension_core',
-            'codimension_mcp',
             'codimension.analysis',
             'codimension.autocomplete',
             'codimension.diagram',
@@ -239,6 +237,4 @@ setup(name='codimension',
       install_requires=getRequirements(),
       data_files=getDataFiles(),
       entry_points={'gui_scripts':
-                    ['codimension = codimension.codimension:main'],
-                    'console_scripts':
-                    ['codimension-mcp = codimension_mcp.server:main']})
+                    ['codimension = codimension.codimension:main']})

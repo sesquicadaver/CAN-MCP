@@ -1,5 +1,13 @@
 2026 Jul 06
 
+* Fix MCP tool names and package shadowing (etapa 40):
+  - @mcp.tool(name=...) for open_project, analyze_project, get_project_tree (catalog parity)
+  - Remove codimension_core/codimension_mcp from root setup.py packages; MCP via codimension_mcp pyproject
+  - Subproject __init__.py shims prevent namespace shadow when cwd is repo root
+  - test_live_mcp_tool_names_match_catalog; codimension_mcp 0.20.3
+
+2026 Jul 06
+
 * decode_content in codimension_core; IDE decode() delegates (etapa 39):
   - decode_content(bytes|str, EncodingReadOptions) for headless decode path
   - IDE _project_and_ide_encodings() DRY; detectEncodingOnClearExplicit uses core BOM/header helpers

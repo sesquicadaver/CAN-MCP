@@ -44,7 +44,7 @@ register_resources(mcp, lambda: _state)
 register_prompts(mcp)
 
 
-@mcp.tool()
+@mcp.tool(name="open_project")
 def open_project_tool(path: str) -> str:
     """Open a Python project directory for analysis."""
     _state.record_tool("open_project")
@@ -54,7 +54,7 @@ def open_project_tool(path: str) -> str:
         return format_tool_error(exc)
 
 
-@mcp.tool()
+@mcp.tool(name="analyze_project")
 def analyze_project_tool() -> str:
     """Analyze all Python files in the open project."""
     _state.record_tool("analyze_project")
@@ -74,7 +74,7 @@ def analyze_file(path: str) -> str:
         return format_tool_error(exc)
 
 
-@mcp.tool()
+@mcp.tool(name="get_project_tree")
 def get_project_tree_tool() -> str:
     """Return relative paths of Python files in the open project."""
     _state.record_tool("get_project_tree")

@@ -30,6 +30,8 @@
 python -m venv .venv
 .venv/bin/pip install -r requirements.txt
 .venv/bin/pip install -e .
+# CAN-MCP (окремо від IDE; merge gate):
+.venv/bin/pip install -e ./codimension_core -e ./codimension_mcp
 ```
 
 ## CI

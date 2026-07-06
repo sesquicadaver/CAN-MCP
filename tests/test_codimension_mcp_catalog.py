@@ -80,3 +80,16 @@ def test_catalog_has_required_resource_templates():
     assert any("{function_key}" in uri for uri in uris)
     assert any("{target_key}" in uri for uri in uris)
     assert len(uris) == len(RESOURCES)
+
+
+def test_live_mcp_tool_names_match_catalog():
+    """FastMCP registered tool names must match catalog.py (agent-facing contract)."""
+    import asyncio
+
+    from codimension_mcp.server import mcp
+
+    async def live_tool_names() -> set[str]:
+        tools = await mcp.list_tools()
+        return {tool.name for tool in tools}
+
+    assert asyncio.run(live_tool_names()) == set(catalog_tool_names())
