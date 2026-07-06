@@ -1,5 +1,11 @@
 2026 Jul 06
 
+* MCP catalog drift guard in CI (etapa 30):
+  - tests: catalog ↔ PROMPT_BUILDERS ↔ vscode mcpConfig URI parity
+  - scripts/verify-mcp-catalog.sh in merge gate
+
+2026 Jul 06
+
 * MCP capability catalog for agent discovery (etapa 29):
   - codimension_mcp/catalog.py: tools, resources, prompts registry
   - codimension://catalog resource + list_mcp_catalog tool

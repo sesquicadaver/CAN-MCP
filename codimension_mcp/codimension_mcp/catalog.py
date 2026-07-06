@@ -100,3 +100,18 @@ def build_mcp_catalog() -> dict[str, object]:
 def read_mcp_catalog() -> str:
     """Serialize catalog as JSON for MCP tool/resource consumers."""
     return dumps_payload(build_mcp_catalog())
+
+
+def catalog_resource_uris() -> list[str]:
+    """Return registered MCP resource URI templates."""
+    return [item["uri"] for item in RESOURCES]
+
+
+def catalog_tool_names() -> list[str]:
+    """Return registered MCP tool names."""
+    return [str(item["name"]) for item in TOOLS]
+
+
+def catalog_prompt_names() -> list[str]:
+    """Return registered MCP prompt names."""
+    return [item["name"] for item in PROMPTS]

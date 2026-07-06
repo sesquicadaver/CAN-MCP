@@ -114,7 +114,8 @@ Copy the sample and adjust the workspace path:
 ```
 
 **Function resource keys:** encode `file.py:function:name` as `file.py__function__name` in URIs.  
-**Impact targets:** bare symbol (`leaf`), file (`lib.py`), or encoded path (`pkg__path__mod.py`).
+**Impact targets:** bare symbol (`leaf`), file (`lib.py`), or encoded path (`pkg__path__mod.py`).  
+**Source of truth:** `codimension_mcp/catalog.py` (VS Code URI list tested for parity).
 
 ## Legacy IDE
 

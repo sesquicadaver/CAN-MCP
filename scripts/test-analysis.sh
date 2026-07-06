@@ -12,5 +12,6 @@ ruff check codimension_core codimension_mcp
 ( cd codimension_core && mypy codimension_core )
 
 python -m pytest tests/ -m "not pyqt" -q
+./scripts/verify-mcp-catalog.sh
 
 echo "Analysis gate OK"

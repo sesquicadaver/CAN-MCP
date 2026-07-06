@@ -34,6 +34,9 @@ jobs:
       - name: Pytest (full headless suite, skip pyqt)
         run: python -m pytest tests/ -m "not pyqt" -q
 
+      - name: Verify MCP catalog parity
+        run: ./scripts/verify-mcp-catalog.sh
+
   security:
     name: dependency audit
     runs-on: ubuntu-latest
