@@ -9,9 +9,11 @@ import sys
 from pathlib import Path
 
 from codimension_mcp.catalog import catalog_resource_uris
+from codimension_mcp.catalog_readme import patch_readme_catalog_tables
 
 ROOT = Path(__file__).resolve().parents[1]
 VSCODE_URIS_OUT = ROOT / "codimension-vscode" / "src" / "mcpResourceUris.generated.ts"
+MCP_README = ROOT / "codimension_mcp" / "README.md"
 
 
 def render_vscode_resource_uris(uris: list[str]) -> str:
@@ -40,6 +42,21 @@ def write_vscode_resource_uris(*, check: bool) -> int:
     return 0
 
 
+def write_readme_catalog_tables(*, check: bool) -> int:
+    """Write or verify README catalog table sections."""
+    current = MCP_README.read_text(encoding="utf-8")
+    updated = patch_readme_catalog_tables(current)
+    if check:
+        if current != updated:
+            print(f"Stale README tables: {MCP_README}", file=sys.stderr)
+            print("Run: python scripts/generate_mcp_catalog_artifacts.py", file=sys.stderr)
+            return 1
+        return 0
+    MCP_README.write_text(updated, encoding="utf-8")
+    print(f"Wrote {MCP_README} catalog tables")
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Generate MCP catalog artifacts.")
     parser.add_argument(
@@ -48,7 +65,11 @@ def main() -> int:
         help="Exit 1 if generated files are stale (CI drift guard).",
     )
     args = parser.parse_args()
-    return write_vscode_resource_uris(check=args.check)
+    for writer in (write_vscode_resource_uris, write_readme_catalog_tables):
+        code = writer(check=args.check)
+        if code != 0:
+            return code
+    return 0
 
 
 if __name__ == "__main__":

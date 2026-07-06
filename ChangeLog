@@ -1,5 +1,11 @@
 2026 Jul 06
 
+* Auto-generate README catalog tables from catalog.py (etapa 32):
+  - codimension_mcp/catalog_readme.py + marker blocks in README
+  - generate_mcp_catalog_artifacts.py updates VS Code URIs and README tables
+
+2026 Jul 06
+
 * Generate VS Code MCP URIs from catalog (etapa 31):
   - scripts/generate_mcp_catalog_artifacts.py → mcpResourceUris.generated.ts
   - README tables drift-tested against catalog.py
