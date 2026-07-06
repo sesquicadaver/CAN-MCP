@@ -9,7 +9,9 @@ from codimension_core import (
     analyze_dead_code,
     analyze_file,
     analyze_file_diagnostics,
+    build_dependency_summary,
     build_import_graph,
+    build_symbol_summary,
     explain_symbol,
     find_usages,
     get_control_flow,
@@ -174,6 +176,20 @@ def get_cache_stats_tool(state: WorkspaceState) -> str:
     """Return module and derived-graph cache statistics."""
     project = _require_project(state)
     return dumps_payload(project.get_cache_stats())
+
+
+def get_dependency_summary_tool(state: WorkspaceState, path: str | None = None) -> str:
+    """Return classified import summary for the project or one file."""
+    project = _require_project(state)
+    resolved = _resolve_path(project, path) if path else None
+    return dumps_payload(build_dependency_summary(project, resolved))
+
+
+def get_symbol_summary_tool(state: WorkspaceState, path: str | None = None) -> str:
+    """Return symbol counts by type for the project or one file."""
+    project = _require_project(state)
+    resolved = _resolve_path(project, path) if path else None
+    return dumps_payload(build_symbol_summary(project, resolved))
 
 
 def _require_project(state: WorkspaceState) -> Project:

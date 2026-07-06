@@ -36,6 +36,8 @@ codimension-mcp --workspace /path/to/project
 | `get_diagnostics` | pyflakes/radon per file |
 | `get_import_diagram` | Graphviz DOT + layout metadata |
 | `get_cache_stats` | Incremental cache counters |
+| `get_dependency_summary` | Classified imports (system/project/unresolved) |
+| `get_symbol_summary` | Symbol counts by type |
 | `render_diagram` | HTML/SVG for Cursor WebView |
 
 ## Resources
@@ -44,6 +46,8 @@ codimension-mcp --workspace /path/to/project
 | --- | ---- | ------- |
 | `codimension://workspace/status` | application/json | Open path, file counts |
 | `codimension://project/tree` | application/json | Python file list |
+| `codimension://deps/summary` | application/json | Classified import summary |
+| `codimension://symbols/summary` | application/json | Symbol counts by type |
 | `codimension://graph/import` | application/json | Import Graph IR |
 | `codimension://graph/call` | application/json | Call Graph IR |
 | `codimension://diagram/import` | text/html | Import diagram HTML |
@@ -58,6 +62,11 @@ codimension-mcp --workspace /path/to/project
 | `review_dead_code` | — | vulture → verify → deletion plan |
 | `review_imports` | — | import graph → cycles → fixes |
 | `analyze_module` | `path` | symbols → CFG → callers → summary |
+| `audit_dependencies` | — | deps/symbols summary → graph → fixes |
+
+## VS Code extension
+
+Commands `Codimension: Copy MCP Server Config` and `Codimension: List MCP Resource URIs` in `codimension-vscode/`.
 
 ## Cursor WebView
 

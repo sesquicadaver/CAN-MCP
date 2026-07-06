@@ -6,6 +6,7 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from codimension_core import build_call_graph, build_import_graph
+from codimension_core.summaries import build_dependency_summary, build_symbol_summary
 from mcp.server.fastmcp import FastMCP
 
 from .diagrams import read_diagram_html
@@ -50,6 +51,18 @@ def read_project_tree(state: WorkspaceState) -> str:
     if state.project is None:
         return dumps_payload({"status": "error", "error": "Call open_project(path) first"})
     return dumps_payload({"files": state.project.get_project_tree()})
+
+
+def read_dependency_summary(state: WorkspaceState) -> str:
+    if state.project is None:
+        return dumps_payload({"status": "error", "error": "Call open_project(path) first"})
+    return dumps_payload(build_dependency_summary(state.project))
+
+
+def read_symbol_summary(state: WorkspaceState) -> str:
+    if state.project is None:
+        return dumps_payload({"status": "error", "error": "Call open_project(path) first"})
+    return dumps_payload(build_symbol_summary(state.project))
 
 
 def register_resources(mcp: FastMCP, get_state: Callable[[], WorkspaceState]) -> None:
@@ -117,3 +130,21 @@ def register_resources(mcp: FastMCP, get_state: Callable[[], WorkspaceState]) ->
     )
     def project_tree_resource() -> str:
         return read_project_tree(get_state())
+
+    @mcp.resource(
+        "codimension://deps/summary",
+        name="dependency_summary",
+        description="Classified import summary (system/project/unresolved) for the open project.",
+        mime_type="application/json",
+    )
+    def dependency_summary_resource() -> str:
+        return read_dependency_summary(get_state())
+
+    @mcp.resource(
+        "codimension://symbols/summary",
+        name="symbol_summary",
+        description="Symbol counts by type for the open project.",
+        mime_type="application/json",
+    )
+    def symbol_summary_resource() -> str:
+        return read_symbol_summary(get_state())

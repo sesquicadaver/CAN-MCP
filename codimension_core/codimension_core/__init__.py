@@ -36,6 +36,7 @@ from .imports import (
 )
 from .project import Project
 from .reverse_index import lookup_symbol as lookup_symbol_definitions
+from .summaries import build_dependency_summary, build_symbol_summary
 from .symbols import analyze_file, find_usages, get_symbols
 
 __all__ = [
@@ -57,7 +58,9 @@ __all__ = [
     "build_import_diagram_graph_ir",
     "build_import_diagram_model",
     "import_diagram_model_to_graph_ir",
+    "build_dependency_summary",
     "build_import_graph",
+    "build_symbol_summary",
     "collect_import_resolutions_classified",
     "collect_unresolved_packages",
     "generate_requirements_from_project",
@@ -84,4 +87,4 @@ __all__ = [
     "resolve_imports_for_file",
 ]
 
-__version__ = "0.17.0"
+__version__ = "0.18.0"

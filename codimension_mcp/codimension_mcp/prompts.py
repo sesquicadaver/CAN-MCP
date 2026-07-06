@@ -54,11 +54,24 @@ def build_analyze_module_prompt(path: str) -> str:
     )
 
 
+def build_audit_dependencies_prompt() -> str:
+    """Return workflow text for dependency audit."""
+    return (
+        "Audit Python project dependencies.\n"
+        "1. Read resource `codimension://deps/summary` or call `get_dependency_summary`.\n"
+        "2. Read `codimension://symbols/summary` for module/function counts.\n"
+        "3. Call `get_import_graph` for structural edges.\n"
+        "4. Flag unresolved imports and unexpected third-party usage.\n"
+        "5. Propose requirements.txt updates only when evidence supports them."
+    )
+
+
 PROMPT_BUILDERS: dict[str, Callable[..., str]] = {
     "refactor_symbol": build_refactor_symbol_prompt,
     "review_dead_code": build_review_dead_code_prompt,
     "review_imports": build_review_imports_prompt,
     "analyze_module": build_analyze_module_prompt,
+    "audit_dependencies": build_audit_dependencies_prompt,
 }
 
 
@@ -92,3 +105,10 @@ def register_prompts(mcp: FastMCP) -> None:
     )
     def analyze_module(path: str) -> str:
         return build_analyze_module_prompt(path)
+
+    @mcp.prompt(
+        name="audit_dependencies",
+        description="Audit classified imports and symbol surface area.",
+    )
+    def audit_dependencies() -> str:
+        return build_audit_dependencies_prompt()

@@ -23,10 +23,12 @@ from .tools import (
     get_cache_stats_tool,
     get_call_graph_tool,
     get_control_flow_tool,
+    get_dependency_summary_tool,
     get_diagnostics_tool,
     get_import_diagram_tool,
     get_import_graph_tool,
     get_project_tree,
+    get_symbol_summary_tool,
     get_symbols_tool,
     impact_analysis_tool,
     lookup_symbol_tool,
@@ -207,6 +209,26 @@ def get_cache_stats() -> str:
     _state.record_tool("get_cache_stats")
     try:
         return get_cache_stats_tool(_state)
+    except Exception as exc:  # noqa: BLE001
+        return format_tool_error(exc)
+
+
+@mcp.tool()
+def get_dependency_summary(path: str | None = None) -> str:
+    """Return classified import summary (system/project/unresolved) for project or file."""
+    _state.record_tool("get_dependency_summary")
+    try:
+        return get_dependency_summary_tool(_state, path)
+    except Exception as exc:  # noqa: BLE001
+        return format_tool_error(exc)
+
+
+@mcp.tool()
+def get_symbol_summary(path: str | None = None) -> str:
+    """Return symbol counts by type (function/class/global/module) for project or file."""
+    _state.record_tool("get_symbol_summary")
+    try:
+        return get_symbol_summary_tool(_state, path)
     except Exception as exc:  # noqa: BLE001
         return format_tool_error(exc)
 

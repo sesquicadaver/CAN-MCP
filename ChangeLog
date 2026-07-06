@@ -1,5 +1,13 @@
 2026 Jul 06
 
+* Dependency/symbol summaries + VS Code MCP helpers (etapa 24):
+  - codimension_core/summaries.py: build_dependency_summary, build_symbol_summary
+  - MCP tools/resources: get_dependency_summary, get_symbol_summary, codimension://deps|symbols/summary
+  - prompt audit_dependencies; vscode copyMcpConfig + showMcpResources
+  - codimension_core 0.18.0, codimension_mcp 0.15.0, codimension-vscode 0.5.0
+
+2026 Jul 06
+
 * MCP prompts/resources + legacy IDE docs (etapa 23):
   - codimension_mcp/prompts.py: review_imports, analyze_module; testable builders
   - codimension_mcp/resources.py: codimension://project/tree
