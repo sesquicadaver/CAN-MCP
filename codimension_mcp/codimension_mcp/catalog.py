@@ -68,12 +68,42 @@ RESOURCES: list[dict[str, str]] = [
 ]
 
 PROMPTS: list[dict[str, str]] = [
-    {"name": "refactor_symbol", "args": "symbol", "description": "Safe refactor workflow"},
-    {"name": "review_dead_code", "args": "", "description": "Review vulture findings"},
-    {"name": "review_imports", "args": "", "description": "Audit import graph"},
-    {"name": "analyze_module", "args": "path", "description": "Deep-dive one module"},
-    {"name": "audit_dependencies", "args": "", "description": "Dependency audit workflow"},
-    {"name": "assess_change_impact", "args": "target", "description": "Blast-radius review before edits"},
+    {
+        "name": "refactor_symbol",
+        "args": "symbol",
+        "description": "Safe refactor workflow",
+        "workflow": "explain → impact → usages → plan",
+    },
+    {
+        "name": "review_dead_code",
+        "args": "",
+        "description": "Review vulture findings",
+        "workflow": "vulture → verify → deletion plan",
+    },
+    {
+        "name": "review_imports",
+        "args": "",
+        "description": "Audit import graph",
+        "workflow": "import graph → cycles → fixes",
+    },
+    {
+        "name": "analyze_module",
+        "args": "path",
+        "description": "Deep-dive one module",
+        "workflow": "symbols → CFG → callers → summary",
+    },
+    {
+        "name": "audit_dependencies",
+        "args": "",
+        "description": "Dependency audit workflow",
+        "workflow": "deps/symbols summary → graph → fixes",
+    },
+    {
+        "name": "assess_change_impact",
+        "args": "target",
+        "description": "Blast-radius review before edits",
+        "workflow": "impact graph/diagram → callers → test plan",
+    },
 ]
 
 ENCODING_NOTES = {

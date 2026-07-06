@@ -9,6 +9,7 @@ from pathlib import Path
 
 from codimension_mcp.catalog import (
     CATALOG_VERSION,
+    PROMPTS,
     RESOURCES,
     TOOLS,
     build_mcp_catalog,
@@ -54,6 +55,11 @@ def test_generated_vscode_uris_match_catalog():
     generated_uris = set(re.findall(r'"(codimension://[^"]+)"', source))
     catalog_uris = set(catalog_resource_uris())
     assert generated_uris == catalog_uris, f"missing={catalog_uris - generated_uris} extra={generated_uris - catalog_uris}"
+
+
+def test_catalog_prompts_have_workflow():
+    for prompt in PROMPTS:
+        assert prompt.get("workflow"), f"missing workflow: {prompt['name']}"
 
 
 def test_readme_catalog_tables_are_generated():

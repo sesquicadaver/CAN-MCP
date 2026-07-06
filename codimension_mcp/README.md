@@ -83,12 +83,12 @@ Start with the catalog — no need to guess URIs or tool names:
 <!-- catalog:prompts -->
 | Name | Args | Workflow |
 | ---- | ---- | -------- |
-| `refactor_symbol` | `symbol` | Safe refactor workflow |
-| `review_dead_code` | — | Review vulture findings |
-| `review_imports` | — | Audit import graph |
-| `analyze_module` | `path` | Deep-dive one module |
-| `audit_dependencies` | — | Dependency audit workflow |
-| `assess_change_impact` | `target` | Blast-radius review before edits |
+| `refactor_symbol` | `symbol` | explain → impact → usages → plan |
+| `review_dead_code` | — | vulture → verify → deletion plan |
+| `review_imports` | — | import graph → cycles → fixes |
+| `analyze_module` | `path` | symbols → CFG → callers → summary |
+| `audit_dependencies` | — | deps/symbols summary → graph → fixes |
+| `assess_change_impact` | `target` | impact graph/diagram → callers → test plan |
 <!-- /catalog:prompts -->
 
 ## VS Code extension

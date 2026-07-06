@@ -1,5 +1,10 @@
 2026 Jul 06
 
+* MCP prompt `workflow` field in catalog (etapa 33):
+  - README prompt table uses step summaries; `description` stays in JSON catalog
+
+2026 Jul 06
+
 * Auto-generate README catalog tables from catalog.py (etapa 32):
   - codimension_mcp/catalog_readme.py + marker blocks in README
   - generate_mcp_catalog_artifacts.py updates VS Code URIs and README tables

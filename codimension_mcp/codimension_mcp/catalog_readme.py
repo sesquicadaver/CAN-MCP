@@ -53,7 +53,7 @@ def render_readme_prompts_table() -> str:
     """Return markdown table body for MCP prompts."""
     header = "| Name | Args | Workflow |\n| ---- | ---- | -------- |"
     rows = [
-        f"| `{prompt['name']}` | {_prompt_args_cell(prompt['args'])} | {prompt['description']} |"
+        f"| `{prompt['name']}` | {_prompt_args_cell(prompt['args'])} | {prompt['workflow']} |"
         for prompt in PROMPTS
     ]
     return "\n".join([header, *rows])
