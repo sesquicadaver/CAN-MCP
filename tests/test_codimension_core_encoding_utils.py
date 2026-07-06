@@ -47,7 +47,7 @@ def test_is_valid_encoding():
 
 
 def test_read_encoded_bytes_bom_utf8():
-    raw = "\xef\xbb\xbfprint('ok')\n".encode("utf-8")
+    raw = b"\xef\xbb\xbfprint('ok')\n"
     text, enc = read_encoded_bytes(raw, EncodingReadOptions())
     assert enc == "bom-utf-8"
     assert "print('ok')" in text
