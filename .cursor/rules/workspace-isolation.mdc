@@ -1,0 +1,36 @@
+---
+description: Заборона виходу агента за межі workspace CAN-MCP
+alwaysApply: true
+---
+
+# Ізоляція workspace CAN-MCP
+
+Поточний workspace — **лише** корінь CAN-MCP (`${workspaceFolder}`). Це єдине джерело правди для читання, змін, тестів і commit.
+
+## Заборонено
+
+- Читати, grep-ати, змінювати або commit-ити файли **інших репозиторіїв** (UNSOMNIA, US/, сусідні `GITFOLDER/*`, `~` поза workspace).
+- Виконувати `git pull/push/commit` у чужому проєкті.
+- Виправляти помилки з логів іншого проєкту, якщо workspace не перемкнено.
+
+## Якщо запит стосується іншого репозиторію
+
+1. Повідомити: помилка/файл **не належить CAN-MCP**.
+2. Назвати потрібний workspace (наприклад UNSOMNIA).
+3. **Не** відкривати і не змінювати чужі шляхи без явного запиту перемкнути workspace.
+
+## Приклад
+
+```
+[unsomnia-lifecycle] Pulling latest sources
+fatal: ... UNSOMNIA.git
+```
+
+**Правильно:** «Це UNSOMNIA, не CAN-MCP. Відкрийте workspace UNSOMNIA для правок.»
+
+**Неправильно:** grep/редагування `/home/.../UNSOMNIA/`.
+
+## MCP codimension
+
+- `command` в `.cursor/mcp.json` — venv CAN-MCP.
+- `--workspace ${workspaceFolder}` — аналізує **відкритий** проєкт; не підміняє правило ізоляції агента.

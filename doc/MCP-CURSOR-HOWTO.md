@@ -467,7 +467,7 @@ impact_analysis target="codimension_core/project.py"
 
 | Симптом | Рішення |
 |---------|---------|
-| `ImportError: codimension_core` | `pip install -e ./codimension_core -e ./codimension_mcp` |
+| `ImportError: codimension_core` / `build_call_graph` | `bash scripts/install-cursor-mcp.sh` або `pip install -e ./codimension_core -e ./codimension_mcp`; якщо в venv є `pip install -e .` (legacy codimension) — `pip uninstall codimension` |
 | `Unknown tool: open_project` | Оновити CAN-MCP (etapa 40+) |
 | Cursor не стартує MCP | Абсолютний шлях у `command` |
 | `Call open_project first` | `open_project` або `--workspace` в args |
