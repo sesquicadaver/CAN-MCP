@@ -18,6 +18,7 @@ from .brief_ast import getBriefModuleInfoFromMemory
 from .graph_ir import GraphEdge, GraphIR, GraphNode
 from .parser_types import BriefImport, BriefModuleInfo
 from .project import Project
+from .symbols import file_node_id
 
 _STDLIB_MODULES = frozenset(
     {
@@ -537,7 +538,7 @@ def resolve_imports_for_file(project: Project, file_path: str) -> GraphIR:
     context = build_import_context(project, abs_path)
     info = cast(BriefModuleInfo, project.cache.get(abs_path))
     graph = GraphIR(meta={"kind": "resolved_imports", "file": abs_path})
-    source_id = f"file:{basename(abs_path)}"
+    source_id = file_node_id(project, abs_path)
     graph.add_node(
         GraphNode(
             id=source_id,
@@ -546,6 +547,7 @@ def resolve_imports_for_file(project: Project, file_path: str) -> GraphIR:
             file=abs_path,
             line_start=1,
             line_end=1,
+            extra={"rel_path": project.to_relative_path(abs_path)},
         )
     )
     for resolution in get_import_resolutions(context, abs_path, info.imports):

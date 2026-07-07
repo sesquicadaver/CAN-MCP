@@ -41,9 +41,9 @@
 
 ## Залишкові недоліки
 
-1. **Call graph:** nested attribute chains (`os.path.join`) — low confidence; chained instance types — борг.
+1. **Call graph:** chained instance types from nested assignments — minor борг.
 
-2. **Import graph nodes:** ще `file:{basename}` у brief mode — окремий борг (canonical file nodes).
+2. **Import graph brief mode:** stem collision для однакових basename у різних пакетах — окремий борг.
 
 4. **Graph IR v2** — default з `node.uri` і `edge.provenance`; legacy v1 через `CODIMENSION_GRAPH_IR=1`.
 
@@ -53,4 +53,4 @@
 
 Оновлена оцінка: **8/10 як архітектура, 6/10 як аналізатор, 6/10 як production tool**.
 
-До **1.0.0** залишилось: nested attribute call precision (`os.path.join`), import graph canonical file nodes.
+До **1.0.0** залишилось: import brief-mode stem collision, chained instance type inference.

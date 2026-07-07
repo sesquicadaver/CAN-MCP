@@ -11,7 +11,7 @@ from .graph_ir import GraphEdge, GraphIR, GraphNode, enrich_graph_meta, standard
 from .jedi_bridge import resolve_call_callee_jedi
 from .project import Project
 from .symbol_registry import resolve_symbol_reference
-from .symbols import symbol_id
+from .symbols import file_node_id, symbol_id
 
 
 @dataclass
@@ -274,6 +274,30 @@ def _resolve_import_attribute_callee(
     return _resolve_import_target(project, index, qualified)
 
 
+def _resolve_attribute_chain_callee(
+    project: Project,
+    index: _CallGraphIndex,
+    rel_path: str,
+    chain: list[str],
+) -> tuple[str, float]:
+    import_map = index.import_map.get(rel_path, {})
+    root = chain[0]
+    tail = ".".join(chain[1:])
+    if root in import_map:
+        imported = import_map[root]
+        if imported.startswith("."):
+            current_module = index.file_to_module.get(rel_path, "")
+            resolved_module = _resolve_relative_module(current_module, imported.lstrip("."), 1)
+            imported = resolved_module or imported.lstrip(".")
+        qualified = f"{imported}.{tail}" if imported else tail
+    else:
+        qualified = ".".join(chain)
+    resolved = _resolve_import_target(project, index, qualified)
+    if resolved:
+        return resolved, 0.75
+    return f"external:function:{'.'.join(chain)}", 0.55
+
+
 def _callee_symbol_id(
     project: Project,
     rel_path: str,
@@ -284,7 +308,9 @@ def _callee_symbol_id(
     receiver: str | None = None,
     span: _FunctionSpan | None = None,
     call_label: str = "",
+    attr_chain: list[str] | None = None,
 ) -> tuple[str | None, float, str]:
+    chain = attr_chain or []
     if receiver == "self" and span is not None:
         resolved = _resolve_method_callee(span, callee_name, index)
         if resolved:
@@ -292,7 +318,7 @@ def _callee_symbol_id(
 
     if receiver and span is not None:
         instance_types = index.instance_types.get(span.qualname, {})
-        if receiver in instance_types:
+        if len(chain) == 2 and receiver in instance_types:
             resolved = _resolve_instance_method_callee(
                 index,
                 instance_types[receiver],
@@ -301,6 +327,20 @@ def _callee_symbol_id(
             if resolved:
                 return resolved, 0.85, "ast"
 
+    if len(chain) >= 2 and span is not None:
+        root = chain[0]
+        instance_types = index.instance_types.get(span.qualname, {})
+        import_map = index.import_map.get(rel_path, {})
+        if root not in instance_types and (len(chain) >= 3 or root in import_map):
+            resolved, confidence = _resolve_attribute_chain_callee(
+                project,
+                index,
+                rel_path,
+                chain,
+            )
+            return resolved, confidence, "ast"
+
+    if receiver and span is not None:
         resolved = _resolve_import_attribute_callee(
             project,
             index,
@@ -354,7 +394,7 @@ def _extract_calls(
         if span is None:
             continue
         caller_id = symbol_id(project, abs_path, "function", span.qualname)
-        callee_name, label, receiver = _call_target_name(node)
+        callee_name, label, receiver, attr_chain = _attribute_chain_from_call(node.func)
         if not callee_name:
             continue
         callee_id, confidence, provenance = _callee_symbol_id(
@@ -366,6 +406,7 @@ def _extract_calls(
             receiver=receiver,
             span=span,
             call_label=label,
+            attr_chain=attr_chain,
         )
         if callee_id is None:
             continue
@@ -382,19 +423,23 @@ def _extract_calls(
         index.edges.append((caller_id, callee_id, node.lineno, label, confidence, provenance))
 
 
-def _call_target_name(node: ast.Call) -> tuple[str | None, str, str | None]:
-    func = node.func
+def _attribute_chain_from_call(func: ast.expr) -> tuple[str | None, str, str | None, list[str]]:
     if isinstance(func, ast.Name):
-        return func.id, func.id, None
-    if isinstance(func, ast.Attribute):
-        value_name = ""
-        receiver: str | None = None
-        if isinstance(func.value, ast.Name):
-            value_name = func.value.id
-            receiver = value_name
-        label = f"{value_name}.{func.attr}" if value_name else func.attr
-        return func.attr, label, receiver
-    return None, "", None
+        return func.id, func.id, None, [func.id]
+    if not isinstance(func, ast.Attribute):
+        return None, "", None, []
+    chain: list[str] = []
+    node: ast.expr = func
+    while isinstance(node, ast.Attribute):
+        chain.insert(0, node.attr)
+        node = node.value
+    receiver: str | None = None
+    if isinstance(node, ast.Name):
+        chain.insert(0, node.id)
+        receiver = node.id
+    if not chain:
+        return None, "", None, []
+    return chain[-1], ".".join(chain), receiver, chain
 
 
 def _build_index(project: Project) -> _CallGraphIndex:
@@ -689,7 +734,7 @@ def impact_analysis(project: Project, target: str) -> GraphIR:
         target_file = _resolve_target_file(project, target)
         if target_file:
             fallback_file = target_file
-            file_id = f"file:{basename(target_file)}"
+            file_id = file_node_id(project, target_file)
             impacted.add(file_id)
             for edge in import_graph.edges:
                 if edge.to_id == file_id:

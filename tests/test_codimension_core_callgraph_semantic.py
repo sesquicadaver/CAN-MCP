@@ -58,6 +58,22 @@ def test_callgraph_resolves_self_method_call(tmp_path):
     assert edge.extra.get("confidence", 0) >= 0.8
 
 
+def test_callgraph_nested_import_attribute_has_dotted_label(tmp_path):
+    project_dir = tmp_path / "proj"
+    project_dir.mkdir()
+    (project_dir / "main.py").write_text(
+        "import os\n\ndef main():\n    return os.path.join('a', 'b')\n",
+        encoding="utf-8",
+    )
+
+    project = Project.open(str(project_dir))
+    graph = build_call_graph(project)
+    edge = next(edge for edge in graph.edges if edge.type == "calls")
+    assert edge.label == "os.path.join:4"
+    assert edge.to_id == "external:function:os.path.join"
+    assert edge.extra.get("confidence", 0) >= 0.55
+
+
 def test_callgraph_resolves_instance_method_on_local_variable(tmp_path):
     project_dir = tmp_path / "proj"
     (project_dir / "pkg").mkdir(parents=True)

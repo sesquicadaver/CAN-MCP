@@ -24,6 +24,12 @@ def symbol_id(project: Project, file_path: str, kind: str, name: str) -> str:
     return f"{rel_path}:{kind}:{name}"
 
 
+def file_node_id(project: Project, file_path: str) -> str:
+    """Build a stable project-relative file node id for Graph IR."""
+    rel_path = project.to_relative_path(file_path)
+    return f"file:{rel_path}"
+
+
 def _symbol_id(file_path: str, kind: str, name: str) -> str:
     """Backward-compatible alias for legacy basename ids."""
     return legacy_symbol_id(file_path, kind, name)

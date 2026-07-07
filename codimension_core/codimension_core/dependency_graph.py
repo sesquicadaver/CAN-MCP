@@ -17,6 +17,7 @@ from .imports import (
 )
 from .parser_types import BriefImport, BriefModuleInfo
 from .project import Project
+from .symbols import file_node_id
 
 
 def _import_edge_kind(classification: str) -> str:
@@ -59,11 +60,11 @@ def _build_brief_import_graph(project: Project) -> GraphIR:
     for path in project.python_files:
         stem = basename(path)[:-3]
         file_by_stem[stem] = path
-        _add_file_node(graph, path)
+        _add_file_node(graph, project, path)
 
     for path in project.python_files:
         info = cast(BriefModuleInfo, project.cache.get(path))
-        source_id = f"file:{basename(path)}"
+        source_id = file_node_id(project, path)
         for import_obj in info.imports:
             module_name = _import_module_name(import_obj)
             if not module_name:
@@ -83,7 +84,7 @@ def _build_brief_import_graph(project: Project) -> GraphIR:
                     )
                 )
             else:
-                target_id = f"file:{basename(target_path)}"
+                target_id = file_node_id(project, target_path)
             graph.add_edge(
                 GraphEdge(
                     from_id=source_id,
@@ -100,13 +101,13 @@ def _build_resolved_import_graph(project: Project) -> GraphIR:
     graph = GraphIR(meta={"kind": "import_graph", "resolved": True})
     path_by_base: dict[str, str] = {}
     for path in project.python_files:
-        _add_file_node(graph, path)
+        _add_file_node(graph, project, path)
         path_by_base[basename(path)] = path
 
     for path in project.python_files:
         info = cast(BriefModuleInfo, project.cache.get(path))
         context = build_import_context(project, path)
-        source_id = f"file:{basename(path)}"
+        source_id = file_node_id(project, path)
         for resolution in get_import_resolutions(context, path, info.imports):
             bucket = classify_resolution(resolution, path, project, sys.path)
             target_bucket = "unresolved" if bucket == "other" else bucket
@@ -123,15 +124,17 @@ def _build_resolved_import_graph(project: Project) -> GraphIR:
     return enrich_graph_meta(graph, project_root=project.root)
 
 
-def _add_file_node(graph: GraphIR, path: str) -> None:
+def _add_file_node(graph: GraphIR, project: Project, path: str) -> None:
+    rel_path = project.to_relative_path(path)
     graph.add_node(
         GraphNode(
-            id=f"file:{basename(path)}",
+            id=file_node_id(project, path),
             type="file",
             name=basename(path),
             file=path,
             line_start=1,
             line_end=1,
+            extra={"rel_path": rel_path},
         )
     )
 
@@ -161,9 +164,9 @@ def _resolution_target_id(
         resolved = realpath(resolution.path)
         base = basename(resolved)
         if base.endswith(".py") and project.is_project_path(resolved):
-            node_id = f"file:{base}"
+            node_id = file_node_id(project, resolved)
             if node_id not in {node.id for node in graph.nodes}:
-                _add_file_node(graph, resolved)
+                _add_file_node(graph, project, resolved)
         else:
             node_id = f"resolved:{resolved}"
             graph.add_node(
