@@ -243,6 +243,8 @@ Install: `pip install -e "./codimension_core[analysis]"`. MCP depends on `codime
 | -------- | -------------------- | ------ |
 | `open_project(path)` | `Project.open()` | ✅ MVP |
 | `analyze_project()` | `Project.analyze_all()` | ✅ MVP |
+| `invalidate_file(path)` | `Project.invalidate_file()` | ✅ 0.22.0 MCP |
+| **Workspace lock** | `WorkspaceState.workspace_lock()` on open/analyze/invalidate | ✅ 0.22.0 single-workspace |
 | `analyze_file(path)` | `symbols.analyze_file()` | ✅ MVP |
 | `get_project_tree()` | `Project.python_files()` | ✅ MVP |
 | `get_symbols(path?)` | `symbols.get_symbols()` | ✅ MVP |

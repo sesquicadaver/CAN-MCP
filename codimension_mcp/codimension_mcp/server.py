@@ -32,6 +32,7 @@ from .tools import (
     get_symbol_summary_tool,
     get_symbols_tool,
     impact_analysis_tool,
+    invalidate_file_tool,
     lookup_symbol_tool,
     open_project,
     render_diagram_tool,
@@ -55,11 +56,21 @@ def open_project_tool(path: str) -> str:
 
 
 @mcp.tool(name="analyze_project")
-def analyze_project_tool() -> str:
+def analyze_project_tool_handler() -> str:
     """Analyze all Python files in the open project."""
     _state.record_tool("analyze_project")
     try:
         return analyze_project(_state)
+    except Exception as exc:  # noqa: BLE001
+        return format_tool_error(exc)
+
+
+@mcp.tool()
+def invalidate_file(path: str) -> str:
+    """Invalidate cached analysis for one file after external edits."""
+    _state.record_tool("invalidate_file")
+    try:
+        return invalidate_file_tool(_state, path)
     except Exception as exc:  # noqa: BLE001
         return format_tool_error(exc)
 

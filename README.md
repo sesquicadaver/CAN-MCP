@@ -37,7 +37,7 @@ Cursor: reload MCP server **codimension** after install. Full guide: [doc/MCP-CU
 
 | Kind | Count |
 | ---- | ----- |
-| Tools | 22 |
+| Tools | 23 |
 | Resources | 17 |
 | Prompts | 6 |
 

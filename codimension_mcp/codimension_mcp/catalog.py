@@ -10,6 +10,11 @@ CATALOG_VERSION = "1.0"
 TOOLS: list[dict[str, str | bool]] = [
     {"name": "open_project", "description": "Open a Python project directory for analysis.", "requires_project": False},
     {"name": "analyze_project", "description": "Warm caches for all Python files.", "requires_project": True},
+    {
+        "name": "invalidate_file",
+        "description": "Drop cached analysis for one file after external edits.",
+        "requires_project": True,
+    },
     {"name": "analyze_file", "description": "Symbol Graph IR for one file.", "requires_project": True},
     {"name": "get_project_tree", "description": "Relative Python file paths.", "requires_project": True},
     {"name": "get_symbols", "description": "Symbol Graph IR (optional path).", "requires_project": True},

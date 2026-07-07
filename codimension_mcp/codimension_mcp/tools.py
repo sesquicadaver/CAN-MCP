@@ -40,10 +40,11 @@ def _resolve_path(project: Project, path: str) -> str:
 
 def open_project(state: WorkspaceState, path: str) -> str:
     """Open a workspace directory."""
-    project = Project.open(path)
-    state.workspace = project.root
-    state.project = project
-    state.analyzed_files = 0
+    with state.workspace_lock():
+        project = Project.open(path)
+        state.workspace = project.root
+        state.project = project
+        state.analyzed_files = 0
     return dumps_payload(
         {
             "status": "ok",
@@ -55,9 +56,19 @@ def open_project(state: WorkspaceState, path: str) -> str:
 
 def analyze_project(state: WorkspaceState) -> str:
     """Warm caches for all project files."""
-    project = _require_project(state)
-    state.analyzed_files = project.analyze_all()
+    with state.workspace_lock():
+        project = _require_project(state)
+        state.analyzed_files = project.analyze_all()
     return dumps_payload({"status": "ok", "analyzed_files": state.analyzed_files})
+
+
+def invalidate_file_tool(state: WorkspaceState, path: str) -> str:
+    """Drop cached analysis for one file after external edits."""
+    project = _require_project(state)
+    abs_path = _resolve_path(project, path)
+    with state.workspace_lock():
+        project.invalidate_file(abs_path)
+    return dumps_payload({"status": "ok", "file": abs_path})
 
 
 def analyze_file_tool(state: WorkspaceState, path: str) -> str:
