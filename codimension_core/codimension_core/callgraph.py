@@ -7,7 +7,7 @@ import ast
 from dataclasses import dataclass, field
 from os.path import basename, realpath
 
-from .graph_ir import GraphEdge, GraphIR, GraphNode
+from .graph_ir import GraphEdge, GraphIR, GraphNode, enrich_graph_meta, standard_symbol_extra
 from .project import Project
 from .symbol_registry import resolve_symbol_reference
 from .symbols import symbol_id
@@ -175,6 +175,7 @@ def _index_to_graph(index: _CallGraphIndex, symbol_filter: str | None = None) ->
                 file=span.file_path,
                 line_start=span.line_start,
                 line_end=span.line_end,
+                extra=standard_symbol_extra(qualname=span.qualname, provenance="ast", confidence=0.7),
             )
         )
 
@@ -215,6 +216,7 @@ def _index_to_graph(index: _CallGraphIndex, symbol_filter: str | None = None) ->
                         to_id=callee_id,
                         type="calls",
                         label=f"{label}:{line_no}",
+                        extra={"provenance": "ast"},
                     )
                 )
     return graph
@@ -232,7 +234,8 @@ def build_call_graph(project: Project, symbol: str | None = None) -> GraphIR:
     """Build a static call graph for the open project."""
     project.require_open()
     index = _get_call_index(project)
-    return _index_to_graph(index, symbol)
+    graph = _index_to_graph(index, symbol)
+    return enrich_graph_meta(graph, project_root=project.root)
 
 
 def find_callers(project: Project, symbol: str) -> GraphIR:
@@ -259,7 +262,7 @@ def find_callers(project: Project, symbol: str) -> GraphIR:
                             line_end=span.line_end,
                         )
                     )
-    return graph
+    return enrich_graph_meta(graph, project_root=project.root)
 
 
 def find_callees(project: Project, symbol: str) -> GraphIR:
@@ -286,7 +289,7 @@ def find_callees(project: Project, symbol: str) -> GraphIR:
                             line_end=span.line_end,
                         )
                     )
-    return graph
+    return enrich_graph_meta(graph, project_root=project.root)
 
 
 def _matches_callee(callee_id: str, target: str) -> bool:
@@ -434,4 +437,4 @@ def impact_analysis(project: Project, target: str) -> GraphIR:
     graph.meta["impacted_count"] = len(impacted)
     for node_id in sorted(impacted):
         _add_impact_node(graph, node_id, call_index, fallback_file)
-    return graph
+    return enrich_graph_meta(graph, project_root=project.root)

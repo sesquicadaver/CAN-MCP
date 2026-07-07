@@ -7,7 +7,7 @@ import sys
 from os.path import basename, realpath
 from typing import cast
 
-from .graph_ir import GraphEdge, GraphIR, GraphNode
+from .graph_ir import GraphEdge, GraphIR, GraphNode, enrich_graph_meta
 from .imports import ImportResolution, build_import_context, classify_resolution, get_import_resolutions
 from .parser_types import BriefImport, BriefModuleInfo
 from .project import Project
@@ -68,7 +68,7 @@ def _build_brief_import_graph(project: Project) -> GraphIR:
                     label=_import_label(import_obj),
                 )
             )
-    return graph
+    return enrich_graph_meta(graph, project_root=project.root)
 
 
 def _build_resolved_import_graph(project: Project) -> GraphIR:
@@ -95,7 +95,7 @@ def _build_resolved_import_graph(project: Project) -> GraphIR:
                     label=resolution.getVisibleName(),
                 )
             )
-    return graph
+    return enrich_graph_meta(graph, project_root=project.root)
 
 
 def _add_file_node(graph: GraphIR, path: str) -> None:

@@ -64,6 +64,11 @@ RESOURCES: list[dict[str, str]] = [
         "mime_type": "text/html",
         "description": "Impact diagram HTML",
     },
+    {
+        "uri": "codimension://symbol/{symbol_key}",
+        "mime_type": "application/json",
+        "description": "Single symbol Graph IR node",
+    },
     {"uri": "codimension://cache/stats", "mime_type": "application/json", "description": "Cache statistics"},
 ]
 
@@ -108,8 +113,10 @@ PROMPTS: list[dict[str, str]] = [
 
 ENCODING_NOTES = {
     "function_key": "file.py:function:name → file.py__function__name; pkg/mod.py → pkg__path__mod.py__function__name",
+    "symbol_key": "same encoding as function_key for symbol ids",
     "impact_target": "pkg/mod.py → pkg__path__mod.py; symbols use function_key encoding",
     "diagram_kinds": "import, call, control_flow, impact",
+    "graph_ir_v2": "set CODIMENSION_GRAPH_IR=2 for node.uri and edge.provenance fields",
 }
 
 

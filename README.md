@@ -38,7 +38,7 @@ Cursor: reload MCP server **codimension** after install. Full guide: [doc/MCP-CU
 | Kind | Count |
 | ---- | ----- |
 | Tools | 22 |
-| Resources | 16 |
+| Resources | 17 |
 | Prompts | 6 |
 
 Key resources: `codimension://graph/import`, `codimension://graph/call`, `codimension://graph/impact/{target_key}`, `codimension://cache/stats`.

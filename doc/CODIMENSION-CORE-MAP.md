@@ -20,8 +20,47 @@ codimension_core/
   callgraph.py         — static call graph (NEW)
   dependency_graph.py  — import/deps graph → Graph IR
   cache.py             — incremental parse caches
-  graph_ir.py          — стабільний JSON IR (nodes/edges)
+  graph_ir.py          — стабільний JSON IR (nodes/edges, v1 default / v2 opt-in)
+  paths.py             — resolve_project_path policy gate
+  symbol_registry.py   — legacy symbol id aliases
   errors.py            — typed exceptions
+```
+
+---
+
+## 1.1 Graph IR versions
+
+| Version | Увімкнення | Додаткові поля |
+| ------- | ---------- | -------------- |
+| **v1** (default) | — | `meta.schema_id`, `meta.capabilities`, `meta.project_root`, `meta.generated_at`; `node.extra` з `qualname`, `language`, `provenance`, `confidence` |
+| **v2** (opt-in) | `CODIMENSION_GRAPH_IR=2` | `node.uri` (`codimension://symbol/...`), `edge.provenance` |
+
+MCP resource: `codimension://symbol/{symbol_key}` — один symbol node Graph IR.
+
+Приклад v1 meta:
+
+```json
+{
+  "graph_ir_version": 1,
+  "meta": {
+    "kind": "call_graph",
+    "schema_id": "codimension.graph.calls.v1",
+    "capabilities": ["calls"],
+    "project_root": "/path/to/project",
+    "generated_at": "2026-07-07T06:30:00+00:00"
+  }
+}
+```
+
+Приклад v2 node (opt-in):
+
+```json
+{
+  "id": "pkg/mod.py:function:run",
+  "type": "function",
+  "uri": "codimension://symbol/pkg__path__mod.py__function__run",
+  "extra": { "language": "py", "provenance": "ast", "confidence": 0.7 }
+}
 ```
 
 ---

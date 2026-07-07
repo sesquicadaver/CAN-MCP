@@ -5,8 +5,9 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from codimension_core import build_call_graph, build_import_graph
+from codimension_core import build_call_graph, build_import_graph, get_symbols
 from codimension_core.errors import AnalysisError, PathOutsideProjectError
+from codimension_core.graph_ir import GraphIR, decode_symbol_key, enrich_graph_meta
 from codimension_core.paths import resolve_project_path
 from codimension_core.project import Project
 from codimension_core.summaries import build_dependency_summary, build_symbol_summary
@@ -93,6 +94,23 @@ def read_file_symbol_summary(state: WorkspaceState, path: str) -> str:
         return dumps_payload(build_symbol_summary(state.project, abs_path))
     except PathOutsideProjectError as exc:
         return dumps_payload({"status": "error", "error": str(exc), "error_code": "path_outside_project"})
+    except ValueError as exc:
+        return dumps_payload({"status": "error", "error": str(exc)})
+
+
+def read_symbol_node(state: WorkspaceState, symbol_key: str) -> str:
+    """Return one symbol node Graph IR by encoded symbol key."""
+    if state.project is None:
+        return dumps_payload({"status": "error", "error": "Call open_project(path) first"})
+    try:
+        symbol_id = decode_symbol_key(symbol_key)
+        graph = get_symbols(state.project)
+        for node in graph.nodes:
+            if node.id == symbol_id:
+                result = GraphIR(meta={"kind": "symbol", "symbol_id": symbol_id})
+                result.add_node(node)
+                return dumps_graph(enrich_graph_meta(result, project_root=state.project.root))
+        return dumps_payload({"status": "error", "error": f"Symbol not found: {symbol_id}"})
     except ValueError as exc:
         return dumps_payload({"status": "error", "error": str(exc)})
 
@@ -289,6 +307,15 @@ def register_resources(mcp: FastMCP, get_state: Callable[[], WorkspaceState]) ->
     )
     def symbol_file_resource(path: str) -> str:
         return read_file_symbol_summary(get_state(), path)
+
+    @mcp.resource(
+        "codimension://symbol/{symbol_key}",
+        name="symbol_node",
+        description="Single symbol Graph IR node (key uses symbol_key encoding).",
+        mime_type="application/json",
+    )
+    def symbol_resource(symbol_key: str) -> str:
+        return read_symbol_node(get_state(), symbol_key)
 
     @mcp.resource(
         "codimension://graph/control_flow/{function_key}",

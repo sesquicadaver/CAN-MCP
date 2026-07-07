@@ -11,7 +11,7 @@ from os.path import basename, dirname, isdir, isfile, join, realpath
 from subprocess import PIPE, Popen
 from typing import Any
 
-from .graph_ir import GraphIR, GraphNode
+from .graph_ir import GraphIR, GraphNode, enrich_graph_meta
 from .project import Project
 
 IGNORE_REGEXP = re.compile(r"analysis:\s*(off|disable|ignore)", re.IGNORECASE)
@@ -85,8 +85,8 @@ def analyze_file_diagnostics(project: Project, path: str) -> GraphIR:
                 line_end=item.lineno,
                 extra={"rank": item.letter, "complexity": item.complexity},
             )
-        )
-    return graph
+            )
+    return enrich_graph_meta(graph, project_root=project.root)
 
 
 def build_vulture_exclude_patterns(project: Project) -> str:

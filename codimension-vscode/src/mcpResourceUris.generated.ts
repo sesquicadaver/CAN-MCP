@@ -15,5 +15,6 @@ export const MCP_RESOURCE_URIS: readonly string[] = [
   "codimension://diagram/call",
   "codimension://diagram/control_flow/{function_key}",
   "codimension://diagram/impact/{target_key}",
+  "codimension://symbol/{symbol_key}",
   "codimension://cache/stats",
 ];

@@ -34,3 +34,22 @@ def test_graph_ir_contract_fields():
     assert edge["from"] == "a"
     assert edge["to"] == "b"
     assert edge["type"] == "calls"
+
+
+def test_symbol_graph_meta_contract(tmp_path):
+    from codimension_core import Project, get_symbols
+
+    project_dir = tmp_path / "proj"
+    project_dir.mkdir()
+    (project_dir / "main.py").write_text("def run():\n    pass\n", encoding="utf-8")
+    project = Project.open(str(project_dir))
+    payload = get_symbols(project).to_dict()
+
+    assert payload["meta"]["schema_id"] == "codimension.graph.symbols.v1"
+    assert "symbols" in payload["meta"]["capabilities"]
+    function_nodes = [node for node in payload["nodes"] if node["type"] == "function"]
+    assert function_nodes
+    extra = function_nodes[0].get("extra", {})
+    assert extra.get("language") == "py"
+    assert extra.get("provenance") == "brief_ast"
+    assert "qualname" in extra

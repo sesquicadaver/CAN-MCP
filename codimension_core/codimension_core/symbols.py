@@ -7,7 +7,7 @@ import sys
 from os.path import basename, realpath
 
 from .brief_ast import getBriefModuleInfoFromFile, getBriefModuleInfoFromMemory
-from .graph_ir import GraphEdge, GraphIR, GraphNode
+from .graph_ir import GraphEdge, GraphIR, GraphNode, enrich_graph_meta, standard_symbol_extra
 from .project import Project
 
 
@@ -35,7 +35,8 @@ def analyze_file(project: Project, path: str) -> GraphIR:
     if not project.is_project_path(abs_path):
         raise ValueError(f"Path is outside project: {path}")
     info = project.cache.get(abs_path)
-    return _symbols_from_brief_info(project, abs_path, info)
+    graph = _symbols_from_brief_info(project, abs_path, info)
+    return enrich_graph_meta(graph, project_root=project.root)
 
 
 def get_symbols(project: Project, path: str | None = None) -> GraphIR:
@@ -44,11 +45,11 @@ def get_symbols(project: Project, path: str | None = None) -> GraphIR:
     graph = GraphIR(meta={"kind": "symbols"})
     if path:
         graph.nodes.extend(analyze_file(project, path).nodes)
-        return graph
+        return enrich_graph_meta(graph, project_root=project.root)
     for file_path in project.python_files:
         info = project.cache.get(file_path)
         graph.nodes.extend(_symbols_from_brief_info(project, file_path, info).nodes)
-    return graph
+    return enrich_graph_meta(graph, project_root=project.root)
 
 
 def _symbols_from_brief_info(project: Project | None, file_path: str, info: object) -> GraphIR:
@@ -90,6 +91,7 @@ def _symbols_from_brief_info(project: Project | None, file_path: str, info: obje
                 line_end=getattr(fn, "colonLine", fn.line),
                 extra={
                     "is_async": getattr(fn, "isAsync", False),
+                    **standard_symbol_extra(qualname=fn.name, provenance="brief_ast"),
                     **_legacy_extra(project, file_path, "function", fn.name),
                 },
             )
@@ -104,7 +106,10 @@ def _symbols_from_brief_info(project: Project | None, file_path: str, info: obje
                 file=file_path,
                 line_start=cls.line,
                 line_end=getattr(cls, "colonLine", cls.line),
-                extra=_legacy_extra(project, file_path, "class", cls.name),
+                extra={
+                    **standard_symbol_extra(qualname=cls.name, provenance="brief_ast"),
+                    **_legacy_extra(project, file_path, "class", cls.name),
+                },
             )
         )
 
