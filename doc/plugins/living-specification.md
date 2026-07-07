@@ -38,7 +38,7 @@
 | Перевірка | Команда |
 | --------- | ------- |
 | Ruff | `ruff check codimension_core codimension_mcp` |
-| Mypy | `mypy codimension_core` (in codimension_core/) |
+| Mypy | `mypy codimension_core` (`ignore_missing_imports=false`, stubs in `codimension_core/stubs/`) |
 | Pytest | `pytest tests/` |
 | MCP catalog | `./scripts/verify-mcp-catalog.sh` |
 | pip-audit | `pip-audit -r requirements-dev.txt` |

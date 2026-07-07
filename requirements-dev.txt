@@ -2,6 +2,7 @@
 pytest
 ruff
 mypy
+types-pyflakes
 pyflakes
 radon
 jedi

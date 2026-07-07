@@ -5,7 +5,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 python -m pip install --upgrade pip
-pip install pytest ruff mypy pyflakes radon jedi vulture mistune pygments
+pip install pytest ruff mypy types-pyflakes pyflakes radon jedi vulture mistune pygments
 pip install -e "./codimension_core[analysis]" -e ./codimension_mcp
 
 ruff check codimension_core codimension_mcp

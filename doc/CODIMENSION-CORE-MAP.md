@@ -100,6 +100,8 @@ MCP resource: `codimension://symbol/{symbol_key}` — один symbol node Graph
 
 Install: `pip install -e "./codimension_core[analysis]"`. MCP depends on `codimension-core[analysis]`.
 
+**Mypy (ROAD-5.3):** `ignore_missing_imports = false`; local stubs in `codimension_core/stubs/` for `jedi` and `radon`; `types-pyflakes` in `[analysis]` extra.
+
 ---
 
 ## 2. project.py
