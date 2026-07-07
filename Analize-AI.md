@@ -26,6 +26,8 @@
 | Living spec drift | ROAD-1.8, 6.1 | **done** | Цей tracker + `living-specification.md` |
 | Prompt canonical IDs | ROAD-6.2 | **done** | Prompts v2 (`pkg/mod.py:function:name`) |
 | Fresh-clone DX | ROAD-6.3 | **done** | `./scripts/dev-setup.sh` |
+| VS Code extension CI | ROAD-6.4 | **done** | CI job `vscode`: npm compile + catalog parity |
+| Anti-stub grep | ROAD-6.5 | **done** | `scripts/check-anti-stub.sh` (warning; `ENFORCE=1` later) |
 
 ## Сильні рішення
 
@@ -45,7 +47,7 @@
 
 3. **Graph IR v2 не default** — потрібен період opt-in перед flip default.
 
-4. **VS Code extension CI** — ROAD-6.4 (npm compile smoke) ще не в merge gate.
+4. **VS Code extension CI** — ROAD-6.4 (npm compile smoke) у merge gate CI job `vscode`.
 
 ## Вердикт
 
@@ -53,4 +55,4 @@
 
 Оновлена оцінка: **8/10 як архітектура, 6/10 як аналізатор, 6/10 як production tool**.
 
-До **1.0.0** залишилось: ROAD-6.4 (VS Code CI), attribute-call precision, Graph IR v2 default flip.
+До **1.0.0** залишилось: attribute-call precision, Graph IR v2 default flip, anti-stub enforce (`ENFORCE=1`).

@@ -29,7 +29,7 @@
 | **codimension_mcp tools/resources** | test_codimension_mcp.py, test_codimension_mcp_workspace.py, test_codimension_mcp_path_security.py, test_codimension_mcp_symbol_resource.py, test_codimension_mcp_cfg_resources.py, test_codimension_mcp_impact_resources.py |
 | **codimension_mcp prompts** | test_codimension_mcp.py, test_codimension_mcp_prompts_v2.py |
 | **codimension_mcp catalog** | test_codimension_mcp_catalog.py + scripts/verify-mcp-catalog.sh |
-| **Bootstrap / CI scripts** | scripts/dev-setup.sh, scripts/test-analysis.sh, scripts/verify-mcp-catalog.sh |
+| **Bootstrap / CI scripts** | scripts/dev-setup.sh, scripts/test-analysis.sh, scripts/verify-mcp-catalog.sh, scripts/verify-vscode.sh, scripts/check-anti-stub.sh |
 | **Cursor MCP HOWTO** | doc/MCP-CURSOR-HOWTO.md |
 | **VS Code extension** | codimension-vscode (npm run compile) |
 
@@ -43,6 +43,8 @@
 | Mypy | `mypy codimension_core` (`ignore_missing_imports=false`, stubs in `codimension_core/stubs/`) |
 | Pytest | `pytest tests/` |
 | MCP catalog | `./scripts/verify-mcp-catalog.sh` |
+| VS Code compile | `./scripts/verify-vscode.sh` |
+| Anti-stub grep | `./scripts/check-anti-stub.sh` (warning; `ENFORCE=1` to fail) |
 | pip-audit | `pip-audit -r requirements-dev.txt` |
 | Local gate | `./scripts/test-analysis.sh` |
 

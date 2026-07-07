@@ -37,6 +37,37 @@ jobs:
       - name: Verify MCP catalog parity
         run: ./scripts/verify-mcp-catalog.sh
 
+      - name: Anti-stub grep (warning)
+        run: ./scripts/check-anti-stub.sh
+
+  vscode:
+    name: codimension-vscode
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: codimension-vscode/package-lock.json
+
+      - name: npm ci + compile
+        working-directory: codimension-vscode
+        run: |
+          npm ci
+          npm run compile
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: MCP catalog URI parity (generated TS)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e "./codimension_core[analysis]" -e ./codimension_mcp
+          ./scripts/verify-mcp-catalog.sh
+
   security:
     name: dependency audit
     runs-on: ubuntu-latest
