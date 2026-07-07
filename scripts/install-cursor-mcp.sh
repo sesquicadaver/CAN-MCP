@@ -17,8 +17,8 @@ fi
 # shellcheck disable=SC1091
 source "$VENV/bin/activate"
 pip install --upgrade pip -q
-pip install -e "$ROOT/codimension_core" -e "$ROOT/codimension_mcp" -q
-pip install pyflakes radon jedi vulture -q
+pip install -e "$ROOT/codimension_core[analysis]" -e "$ROOT/codimension_mcp" -q
+pip install pyflakes radon jedi vulture types-pyflakes -q
 
 # Legacy root editable install shadows codimension_core via namespace — breaks MCP CLI.
 if pip show codimension >/dev/null 2>&1; then

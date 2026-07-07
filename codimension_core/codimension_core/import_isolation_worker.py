@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import json
 import sys
-
 from typing import cast
 
 from .import_isolation import brief_import_from_dict, resolution_to_dict

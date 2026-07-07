@@ -21,11 +21,17 @@ Architecture map: [doc/CODIMENSION-CORE-MAP.md](doc/CODIMENSION-CORE-MAP.md)
 ```bash
 git clone https://github.com/sesquicadaver/CAN-MCP.git
 cd CAN-MCP
+./scripts/dev-setup.sh   # venv, editable install, Cursor MCP, merge gate
+```
+
+Manual setup:
+
+```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install --upgrade pip
-pip install -e ./codimension_core -e ./codimension_mcp
-pip install pyflakes radon jedi vulture
+pip install -e "./codimension_core[analysis]" -e ./codimension_mcp
+pip install -r requirements-dev.txt
 ./scripts/install-cursor-mcp.sh   # writes .cursor/mcp.json
 ./scripts/test-analysis.sh        # merge gate (ruff, mypy, pytest)
 ```
@@ -49,6 +55,7 @@ Full catalog: [codimension_mcp/README.md](codimension_mcp/README.md). **Cursor H
 ## Development
 
 ```bash
+./scripts/dev-setup.sh          # fresh clone bootstrap
 ./scripts/test-analysis.sh
 ./scripts/verify-mcp-catalog.sh
 ```

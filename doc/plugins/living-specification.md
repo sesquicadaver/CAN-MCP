@@ -27,7 +27,9 @@
 | **codimension_core.import_diagram** | test_codimension_core_import_diagram.py |
 | **codimension_core.summaries / explain / reverse_index / usages** | test_codimension_core_summaries.py, test_codimension_core_explain.py, test_codimension_core_reverse_index.py, test_codimension_core_usages.py |
 | **codimension_mcp tools/resources** | test_codimension_mcp.py, test_codimension_mcp_workspace.py, test_codimension_mcp_path_security.py, test_codimension_mcp_symbol_resource.py, test_codimension_mcp_cfg_resources.py, test_codimension_mcp_impact_resources.py |
+| **codimension_mcp prompts** | test_codimension_mcp.py, test_codimension_mcp_prompts_v2.py |
 | **codimension_mcp catalog** | test_codimension_mcp_catalog.py + scripts/verify-mcp-catalog.sh |
+| **Bootstrap / CI scripts** | scripts/dev-setup.sh, scripts/test-analysis.sh, scripts/verify-mcp-catalog.sh |
 | **Cursor MCP HOWTO** | doc/MCP-CURSOR-HOWTO.md |
 | **VS Code extension** | codimension-vscode (npm run compile) |
 
