@@ -34,6 +34,7 @@ Start with the catalog — no need to guess URIs or tool names:
 | `list_mcp_catalog` | Return MCP catalog. |
 | `open_project` | Open a Python project directory for analysis. |
 | `analyze_project` | Warm caches for all Python files. |
+| `invalidate_file` | Drop cached analysis for one file after external edits. |
 | `analyze_file` | Symbol Graph IR for one file. |
 | `get_project_tree` | Relative Python file paths. |
 | `get_symbols` | Symbol Graph IR (optional path). |
@@ -75,6 +76,7 @@ Start with the catalog — no need to guess URIs or tool names:
 | `codimension://diagram/call` | text/html | Call graph HTML |
 | `codimension://diagram/control_flow/{function_key}` | text/html | CFG HTML |
 | `codimension://diagram/impact/{target_key}` | text/html | Impact diagram HTML |
+| `codimension://symbol/{symbol_key}` | application/json | Single symbol Graph IR node |
 | `codimension://cache/stats` | application/json | Cache statistics |
 <!-- /catalog:resources -->
 

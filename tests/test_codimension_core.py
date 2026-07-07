@@ -33,7 +33,7 @@ def test_graph_ir_roundtrip():
         )
     )
     payload = graph.to_dict()
-    assert payload["graph_ir_version"] == 1
+    assert payload["graph_ir_version"] == 2
     assert payload["nodes"][0]["id"] == "a.py:function:foo"
 
 

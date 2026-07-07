@@ -10,6 +10,11 @@ CATALOG_VERSION = "1.0"
 TOOLS: list[dict[str, str | bool]] = [
     {"name": "open_project", "description": "Open a Python project directory for analysis.", "requires_project": False},
     {"name": "analyze_project", "description": "Warm caches for all Python files.", "requires_project": True},
+    {
+        "name": "invalidate_file",
+        "description": "Drop cached analysis for one file after external edits.",
+        "requires_project": True,
+    },
     {"name": "analyze_file", "description": "Symbol Graph IR for one file.", "requires_project": True},
     {"name": "get_project_tree", "description": "Relative Python file paths.", "requires_project": True},
     {"name": "get_symbols", "description": "Symbol Graph IR (optional path).", "requires_project": True},
@@ -64,6 +69,11 @@ RESOURCES: list[dict[str, str]] = [
         "mime_type": "text/html",
         "description": "Impact diagram HTML",
     },
+    {
+        "uri": "codimension://symbol/{symbol_key}",
+        "mime_type": "application/json",
+        "description": "Single symbol Graph IR node",
+    },
     {"uri": "codimension://cache/stats", "mime_type": "application/json", "description": "Cache statistics"},
 ]
 
@@ -107,9 +117,11 @@ PROMPTS: list[dict[str, str]] = [
 ]
 
 ENCODING_NOTES = {
-    "function_key": "file.py:function:name → file.py__function__name",
+    "function_key": "file.py:function:name → file.py__function__name; pkg/mod.py → pkg__path__mod.py__function__name",
+    "symbol_key": "same encoding as function_key for symbol ids",
     "impact_target": "pkg/mod.py → pkg__path__mod.py; symbols use function_key encoding",
     "diagram_kinds": "import, call, control_flow, impact",
+    "graph_ir_v2": "Graph IR v2 is default (node.uri, edge.provenance); set CODIMENSION_GRAPH_IR=1 for legacy v1",
 }
 
 

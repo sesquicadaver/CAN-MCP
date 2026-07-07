@@ -11,7 +11,8 @@ from os.path import basename, dirname, isdir, isfile, join, realpath
 from subprocess import PIPE, Popen
 from typing import Any
 
-from .graph_ir import GraphIR, GraphNode
+from .capabilities import attach_capability_status, missing_for_feature
+from .graph_ir import GraphIR, GraphNode, enrich_graph_meta
 from .project import Project
 
 IGNORE_REGEXP = re.compile(r"analysis:\s*(off|disable|ignore)", re.IGNORECASE)
@@ -55,10 +56,14 @@ def analyze_file_diagnostics(project: Project, path: str) -> GraphIR:
     """Return lint/complexity findings as Graph IR nodes."""
     project.require_open()
     abs_path = realpath(path) if path.startswith("/") else realpath(join(project.root, path))
+    graph = GraphIR(meta={"kind": "diagnostics", "file": abs_path})
+    missing = missing_for_feature("diagnostics")
+    if missing:
+        attach_capability_status(graph.meta, "diagnostics")
+        return enrich_graph_meta(graph, project_root=project.root)
     with open(abs_path, encoding="utf-8", errors="replace") as handle:
         source = handle.read()
     errors, complexity = get_buffer_errors(source, abs_path)
-    graph = GraphIR(meta={"kind": "diagnostics", "file": abs_path})
     for line_no, messages in errors.items():
         for index, message in enumerate(messages):
             node_id = f"{basename(abs_path)}:lint:{line_no}:{index}"
@@ -85,8 +90,9 @@ def analyze_file_diagnostics(project: Project, path: str) -> GraphIR:
                 line_end=item.lineno,
                 extra={"rank": item.letter, "complexity": item.complexity},
             )
-        )
-    return graph
+            )
+    attach_capability_status(graph.meta, "diagnostics")
+    return enrich_graph_meta(graph, project_root=project.root)
 
 
 def build_vulture_exclude_patterns(project: Project) -> str:
@@ -158,6 +164,11 @@ def analyze_dead_code(project: Project, path: str | None = None) -> GraphIR:
     """Run vulture on project root or one path; return findings as Graph IR."""
     project.require_open()
     target = realpath(path) if path else project.root
+    graph = GraphIR(meta={"kind": "dead_code", "target": target})
+    missing = missing_for_feature("dead_code")
+    if missing:
+        attach_capability_status(graph.meta, "dead_code")
+        return graph
     exclude = build_vulture_exclude_patterns(project) if isdir(target) else None
     config_path = find_pyproject_vulture_config(project)
     lines, stderr = run_vulture(
@@ -166,7 +177,7 @@ def analyze_dead_code(project: Project, path: str | None = None) -> GraphIR:
         config_path=config_path,
         python_executable=project.get_python_executable(),
     )
-    graph = GraphIR(meta={"kind": "dead_code", "target": target, "stderr": stderr})
+    graph.meta["stderr"] = stderr
     for index, line in enumerate(lines):
         parsed = _parse_vulture_line(line)
         if parsed is None:
@@ -184,4 +195,5 @@ def analyze_dead_code(project: Project, path: str | None = None) -> GraphIR:
                 extra={"source": "vulture"},
             )
         )
+    attach_capability_status(graph.meta, "dead_code")
     return graph

@@ -4,13 +4,16 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "codimension-core"
-version = "0.20.5"
+version = "1.0.0"
 description = "Headless Python code analysis core extracted from Codimension IDE"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "GPL-3.0-or-later" }
 authors = [{ name = "Codimension fork contributors" }]
 dependencies = []
+
+[project.optional-dependencies]
+analysis = ["pyflakes>=3.0", "radon>=6.0", "jedi>=0.19", "vulture>=2.0", "types-pyflakes>=3.0"]
 
 [project.urls]
 Repository = "https://github.com/sesquicadaver/codimension"
@@ -29,4 +32,5 @@ select = ["E", "F", "W", "I"]
 [tool.mypy]
 python_version = "3.11"
 warn_return_any = true
-ignore_missing_imports = true
+ignore_missing_imports = false
+mypy_path = "stubs"

@@ -9,12 +9,23 @@ from mcp.server.fastmcp import FastMCP
 
 from .resources import encode_impact_key
 
+CANONICAL_SYMBOL_EXAMPLE = "pkg/mod.py:function:run"
+CANONICAL_CLASS_EXAMPLE = "pkg/mod.py:class:Worker"
+CANONICAL_MODULE_EXAMPLE = "pkg/mod.py"
+
+_SYMBOL_ID_RULE = (
+    "Use project-relative canonical symbol ids: `pkg/mod.py:function:name` or "
+    "`pkg/mod.py:class:Name` (not basename-only `mod.py:function:name`)."
+)
+
 
 def build_refactor_symbol_prompt(symbol: str) -> str:
     """Return workflow text for safe symbol refactoring."""
     return (
         f"You are refactoring `{symbol}` in an open Python project.\n"
-        "1. Call `explain_symbol` with the full symbol id (e.g. file.py:function:name).\n"
+        f"{_SYMBOL_ID_RULE}\n"
+        f"Example canonical id: `{CANONICAL_SYMBOL_EXAMPLE}`.\n"
+        "1. Call `explain_symbol` with the full canonical symbol id.\n"
         "2. Call `impact_analysis` for the same target to list transitive callers and import dependents.\n"
         "3. Call `find_usages` and `find_callers` to confirm references.\n"
         "4. Propose minimal edits and list tests to run before merging."
@@ -25,10 +36,11 @@ def build_review_dead_code_prompt() -> str:
     """Return workflow text for reviewing vulture findings."""
     return (
         "Review dead code candidates for the open project.\n"
+        f"{_SYMBOL_ID_RULE}\n"
         "1. Call `find_dead_code` on the project root.\n"
-        "2. For each finding, call `find_usages` and `impact_analysis` to avoid false positives.\n"
+        "2. For each finding, call `find_usages` and `impact_analysis` with canonical symbol ids.\n"
         "3. Group safe removals vs items kept for API/public surface.\n"
-        "4. Output a deletion plan with file:line references only."
+        "4. Output a deletion plan with project-relative file:line references only."
     )
 
 
@@ -40,7 +52,7 @@ def build_review_imports_prompt() -> str:
         "2. Read resource `codimension://graph/import` or call `get_import_graph`.\n"
         "3. Call `get_import_diagram` for Graphviz layout metadata.\n"
         "4. Flag circular imports, stdlib vs third-party mixing, and unused modules.\n"
-        "5. Suggest minimal dependency fixes with file-level rationale."
+        "5. Suggest minimal dependency fixes using project-relative module paths."
     )
 
 
@@ -48,9 +60,11 @@ def build_analyze_module_prompt(path: str) -> str:
     """Return workflow text for deep-diving one module."""
     return (
         f"Analyze module `{path}` in the open project.\n"
+        f"{_SYMBOL_ID_RULE}\n"
+        f"Example CFG id: `{CANONICAL_SYMBOL_EXAMPLE}`.\n"
         "1. Call `analyze_file` for symbol Graph IR.\n"
         "2. Call `get_diagnostics` for lint/complexity issues.\n"
-        "3. For each public function, call `get_control_flow` with file.py:function:name ids.\n"
+        "3. For each public function, call `get_control_flow` with canonical function ids.\n"
         "4. Call `find_callers` and `find_callees` for entry points and side effects.\n"
         "5. Summarize responsibilities, risks, and suggested tests."
     )
@@ -73,10 +87,12 @@ def build_assess_change_impact_prompt(target: str) -> str:
     key = encode_impact_key(target)
     return (
         f"Assess change impact for `{target}` before editing.\n"
+        f"{_SYMBOL_ID_RULE}\n"
+        f"Prefer targets like `{CANONICAL_SYMBOL_EXAMPLE}` or `{CANONICAL_MODULE_EXAMPLE}`.\n"
         f"1. Read `codimension://graph/impact/{key}` or call `impact_analysis`.\n"
         f"2. Open `codimension://diagram/impact/{key}` for a visual blast-radius view.\n"
         "3. Call `find_callers` and `get_import_graph` to cross-check static edges.\n"
-        "4. For functions, read `codimension://graph/control_flow/{{function_key}}` if control flow matters.\n"
+        "4. For functions, read `codimension://graph/control_flow/{{function_key}}` with canonical ids.\n"
         "5. List affected files, tests to run, and rollback risks."
     )
 

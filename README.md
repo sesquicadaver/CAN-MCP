@@ -6,6 +6,8 @@
 
 Headless Python code analysis exposed via **MCP** (Model Context Protocol) for Cursor and other AI clients.
 
+**Release:** `codimension-core` 1.0.0 · `codimension-mcp` 1.0.0 ([CHANGELOG](CHANGELOG.md))
+
 ## Packages
 
 | Package | Role |
@@ -21,11 +23,17 @@ Architecture map: [doc/CODIMENSION-CORE-MAP.md](doc/CODIMENSION-CORE-MAP.md)
 ```bash
 git clone https://github.com/sesquicadaver/CAN-MCP.git
 cd CAN-MCP
+./scripts/dev-setup.sh   # venv, editable install, Cursor MCP, merge gate
+```
+
+Manual setup:
+
+```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install --upgrade pip
-pip install -e ./codimension_core -e ./codimension_mcp
-pip install pyflakes radon jedi vulture
+pip install -e "./codimension_core[analysis]" -e ./codimension_mcp
+pip install -r requirements-dev.txt
 ./scripts/install-cursor-mcp.sh   # writes .cursor/mcp.json
 ./scripts/test-analysis.sh        # merge gate (ruff, mypy, pytest)
 ```
@@ -37,8 +45,8 @@ Cursor: reload MCP server **codimension** after install. Full guide: [doc/MCP-CU
 
 | Kind | Count |
 | ---- | ----- |
-| Tools | 22 |
-| Resources | 16 |
+| Tools | 23 |
+| Resources | 17 |
 | Prompts | 6 |
 
 Key resources: `codimension://graph/import`, `codimension://graph/call`, `codimension://graph/impact/{target_key}`, `codimension://cache/stats`.
@@ -49,6 +57,7 @@ Full catalog: [codimension_mcp/README.md](codimension_mcp/README.md). **Cursor H
 ## Development
 
 ```bash
+./scripts/dev-setup.sh          # fresh clone bootstrap
 ./scripts/test-analysis.sh
 ./scripts/verify-mcp-catalog.sh
 ```

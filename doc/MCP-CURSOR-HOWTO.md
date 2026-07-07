@@ -205,13 +205,13 @@ codimension-mcp --help
 
 ## 6. Формати даних
 
-### 6.1. Graph IR v1
+### 6.1. Graph IR v2 (default)
 
-Більшість tools повертають Graph IR:
+Більшість tools повертають Graph IR v2 (`node.uri`, `edge.provenance`). Legacy v1: `CODIMENSION_GRAPH_IR=1`.
 
 ```json
 {
-  "graph_ir_version": 1,
+  "graph_ir_version": 2,
   "meta": {
     "kind": "symbols"
   },
@@ -222,7 +222,8 @@ codimension-mcp --help
       "name": "open",
       "file": "codimension_core/project.py",
       "line_start": 52,
-      "line_end": 60
+      "line_end": 60,
+      "uri": "codimension://symbol/codimension_core__path__project.py__function__open"
     }
   ],
   "edges": []

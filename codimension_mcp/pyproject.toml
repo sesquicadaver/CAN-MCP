@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "codimension-mcp"
-version = "0.20.3"
+version = "1.0.0"
 description = "MCP server exposing Codimension code analysis to AI clients"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -12,6 +12,7 @@ license = { text = "GPL-3.0-or-later" }
 authors = [{ name = "Codimension fork contributors" }]
 dependencies = [
     "mcp>=1.0.0",
+    "codimension-core[analysis]",
 ]
 
 [project.urls]

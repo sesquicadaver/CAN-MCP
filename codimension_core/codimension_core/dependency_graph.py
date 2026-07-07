@@ -7,10 +7,35 @@ import sys
 from os.path import basename, realpath
 from typing import cast
 
-from .graph_ir import GraphEdge, GraphIR, GraphNode
-from .imports import ImportResolution, build_import_context, classify_resolution, get_import_resolutions
+from .graph_ir import GraphEdge, GraphIR, GraphNode, enrich_graph_meta
+from .imports import (
+    ImportResolution,
+    _is_stdlib_module_name,
+    build_import_context,
+    classify_resolution,
+    get_import_resolutions,
+)
 from .parser_types import BriefImport, BriefModuleInfo
 from .project import Project
+from .symbols import build_module_to_file, file_node_id, resolve_module_to_file
+
+
+def _import_edge_kind(classification: str) -> str:
+    return {
+        "system": "stdlib",
+        "project": "project",
+        "other": "third_party",
+        "unresolved": "unresolved",
+    }.get(classification, "unresolved")
+
+
+def _brief_import_kind(module_name: str, target_path: str | None) -> str:
+    if target_path:
+        return "project"
+    top_level = module_name.split(".")[0]
+    if top_level in sys.builtin_module_names or _is_stdlib_module_name(module_name):
+        return "stdlib"
+    return "third_party"
 
 
 def build_import_graph(project: Project, *, resolved: bool = True) -> GraphIR:
@@ -31,82 +56,83 @@ def build_import_graph(project: Project, *, resolved: bool = True) -> GraphIR:
 
 def _build_brief_import_graph(project: Project) -> GraphIR:
     graph = GraphIR(meta={"kind": "import_graph", "resolved": False})
-    file_by_stem: dict[str, str] = {}
+    module_to_file = build_module_to_file(project)
     for path in project.python_files:
-        stem = basename(path)[:-3]
-        file_by_stem[stem] = path
-        _add_file_node(graph, path)
+        _add_file_node(graph, project, path)
 
     for path in project.python_files:
         info = cast(BriefModuleInfo, project.cache.get(path))
-        source_id = f"file:{basename(path)}"
+        source_id = file_node_id(project, path)
         for import_obj in info.imports:
             module_name = _import_module_name(import_obj)
             if not module_name:
                 continue
-            top_level = module_name.split(".")[0]
-            target_path = file_by_stem.get(top_level)
+            normalized = module_name.lstrip(".")
+            target_path = resolve_module_to_file(normalized, module_to_file)
             if target_path is None:
-                target_id = f"module:{module_name}"
+                target_id = f"module:{normalized}"
                 graph.add_node(
                     GraphNode(
                         id=target_id,
                         type="external_module",
-                        name=module_name,
+                        name=normalized,
                         file="",
                         line_start=0,
                         line_end=0,
                     )
                 )
             else:
-                target_id = f"file:{basename(target_path)}"
+                target_id = file_node_id(project, target_path)
             graph.add_edge(
                 GraphEdge(
                     from_id=source_id,
                     to_id=target_id,
                     type="imports",
                     label=_import_label(import_obj),
+                    extra={"kind": _brief_import_kind(module_name, target_path)},
                 )
             )
-    return graph
+    return enrich_graph_meta(graph, project_root=project.root)
 
 
 def _build_resolved_import_graph(project: Project) -> GraphIR:
     graph = GraphIR(meta={"kind": "import_graph", "resolved": True})
     path_by_base: dict[str, str] = {}
     for path in project.python_files:
-        _add_file_node(graph, path)
+        _add_file_node(graph, project, path)
         path_by_base[basename(path)] = path
 
     for path in project.python_files:
         info = cast(BriefModuleInfo, project.cache.get(path))
         context = build_import_context(project, path)
-        source_id = f"file:{basename(path)}"
+        source_id = file_node_id(project, path)
         for resolution in get_import_resolutions(context, path, info.imports):
             bucket = classify_resolution(resolution, path, project, sys.path)
-            if bucket == "other":
-                bucket = "unresolved"
-            target_id = _resolution_target_id(resolution, project, path_by_base, graph, bucket)
+            target_bucket = "unresolved" if bucket == "other" else bucket
+            target_id = _resolution_target_id(resolution, project, path_by_base, graph, target_bucket)
             graph.add_edge(
                 GraphEdge(
                     from_id=source_id,
                     to_id=target_id,
                     type="imports",
                     label=resolution.getVisibleName(),
+                    extra={"kind": _import_edge_kind(bucket)},
                 )
             )
-    return graph
+    return enrich_graph_meta(graph, project_root=project.root)
 
 
-def _add_file_node(graph: GraphIR, path: str) -> None:
+def _add_file_node(graph: GraphIR, project: Project, path: str) -> None:
+    rel_path = project.to_relative_path(path)
     graph.add_node(
         GraphNode(
-            id=f"file:{basename(path)}",
+            id=file_node_id(project, path),
             type="file",
             name=basename(path),
             file=path,
             line_start=1,
             line_end=1,
+            extra={"rel_path": rel_path},
         )
     )
 
@@ -136,9 +162,9 @@ def _resolution_target_id(
         resolved = realpath(resolution.path)
         base = basename(resolved)
         if base.endswith(".py") and project.is_project_path(resolved):
-            node_id = f"file:{base}"
+            node_id = file_node_id(project, resolved)
             if node_id not in {node.id for node in graph.nodes}:
-                _add_file_node(graph, resolved)
+                _add_file_node(graph, project, resolved)
         else:
             node_id = f"resolved:{resolved}"
             graph.add_node(

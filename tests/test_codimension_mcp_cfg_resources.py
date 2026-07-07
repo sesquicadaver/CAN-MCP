@@ -22,6 +22,13 @@ def test_function_key_roundtrip():
     assert decode_function_key(key) == function_id
 
 
+def test_function_key_roundtrip_nested_path():
+    function_id = "pkg/mod.py:function:run"
+    key = encode_function_key(function_id)
+    assert key == "pkg__path__mod.py__function__run"
+    assert decode_function_key(key) == function_id
+
+
 def test_control_flow_mcp_resources(tmp_path):
     project_dir = tmp_path / "proj"
     project_dir.mkdir()
@@ -36,7 +43,7 @@ def test_control_flow_mcp_resources(tmp_path):
 
     key = encode_function_key("main.py:function:run")
     graph = json.loads(read_control_flow_graph(state, key))
-    assert graph["graph_ir_version"] == 1
+    assert graph["graph_ir_version"] == 2
     assert graph["nodes"]
 
     html = read_control_flow_diagram(state, key)

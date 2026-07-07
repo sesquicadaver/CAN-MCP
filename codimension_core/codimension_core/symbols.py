@@ -7,13 +7,65 @@ import sys
 from os.path import basename, realpath
 
 from .brief_ast import getBriefModuleInfoFromFile, getBriefModuleInfoFromMemory
-from .graph_ir import GraphEdge, GraphIR, GraphNode
+from .capabilities import attach_capability_status, missing_for_feature
+from .graph_ir import GraphEdge, GraphIR, GraphNode, enrich_graph_meta, standard_symbol_extra
 from .project import Project
 
 
-def _symbol_id(file_path: str, kind: str, name: str) -> str:
+def legacy_symbol_id(file_path: str, kind: str, name: str) -> str:
+    """Build a basename-based symbol id (legacy, collision-prone)."""
     rel_name = basename(file_path)
     return f"{rel_name}:{kind}:{name}"
+
+
+def symbol_id(project: Project, file_path: str, kind: str, name: str) -> str:
+    """Build a stable project-relative symbol id."""
+    rel_path = project.to_relative_path(file_path)
+    return f"{rel_path}:{kind}:{name}"
+
+
+def file_node_id(project: Project, file_path: str) -> str:
+    """Build a stable project-relative file node id for Graph IR."""
+    rel_path = project.to_relative_path(file_path)
+    return f"file:{rel_path}"
+
+
+def file_to_module_name(rel_file: str) -> str:
+    """Map a project-relative file path to a Python module name."""
+    path = rel_file.replace("\\", "/")
+    if path.endswith("/__init__.py"):
+        return path[: -len("/__init__.py")].replace("/", ".")
+    if path.endswith("__init__.py"):
+        return path[: -len("__init__.py")].rstrip("/.").replace("/", ".")
+    if path.endswith(".py"):
+        return path[:-3].replace("/", ".")
+    return path.replace("/", ".")
+
+
+def build_module_to_file(project: Project) -> dict[str, str]:
+    """Map fully-qualified module names to absolute file paths."""
+    module_to_file: dict[str, str] = {}
+    for abs_path in project.python_files:
+        rel = project.to_relative_path(abs_path)
+        module = file_to_module_name(rel)
+        module_to_file.setdefault(module, abs_path)
+    return module_to_file
+
+
+def resolve_module_to_file(module_name: str, module_to_file: dict[str, str]) -> str | None:
+    """Resolve an imported module name to a project file path."""
+    parts = module_name.split(".")
+    for split_at in range(len(parts), 0, -1):
+        candidate = ".".join(parts[:split_at])
+        abs_path = module_to_file.get(candidate)
+        if abs_path is not None:
+            return abs_path
+    return None
+
+
+def _symbol_id(file_path: str, kind: str, name: str) -> str:
+    """Backward-compatible alias for legacy basename ids."""
+    return legacy_symbol_id(file_path, kind, name)
 
 
 def analyze_file(project: Project, path: str) -> GraphIR:
@@ -23,7 +75,8 @@ def analyze_file(project: Project, path: str) -> GraphIR:
     if not project.is_project_path(abs_path):
         raise ValueError(f"Path is outside project: {path}")
     info = project.cache.get(abs_path)
-    return _symbols_from_brief_info(abs_path, info)
+    graph = _symbols_from_brief_info(project, abs_path, info)
+    return enrich_graph_meta(graph, project_root=project.root)
 
 
 def get_symbols(project: Project, path: str | None = None) -> GraphIR:
@@ -32,14 +85,14 @@ def get_symbols(project: Project, path: str | None = None) -> GraphIR:
     graph = GraphIR(meta={"kind": "symbols"})
     if path:
         graph.nodes.extend(analyze_file(project, path).nodes)
-        return graph
+        return enrich_graph_meta(graph, project_root=project.root)
     for file_path in project.python_files:
         info = project.cache.get(file_path)
-        graph.nodes.extend(_symbols_from_brief_info(file_path, info).nodes)
-    return graph
+        graph.nodes.extend(_symbols_from_brief_info(project, file_path, info).nodes)
+    return enrich_graph_meta(graph, project_root=project.root)
 
 
-def _symbols_from_brief_info(file_path: str, info: object) -> GraphIR:
+def _symbols_from_brief_info(project: Project | None, file_path: str, info: object) -> GraphIR:
     graph = GraphIR(meta={"file": file_path, "kind": "symbols"})
     module_name = basename(file_path)
     max_line = 1
@@ -50,66 +103,91 @@ def _symbols_from_brief_info(file_path: str, info: object) -> GraphIR:
     for glob in getattr(info, "globals", []):
         max_line = max(max_line, glob.line)
 
+    def _node_id(kind: str, name: str) -> str:
+        if project is not None:
+            return symbol_id(project, file_path, kind, name)
+        return legacy_symbol_id(file_path, kind, name)
+
     graph.add_node(
         GraphNode(
-            id=_symbol_id(file_path, "module", module_name),
+            id=_node_id("module", module_name),
             type="module",
             name=module_name,
             file=file_path,
             line_start=1,
             line_end=max_line,
+            extra=_legacy_extra(project, file_path, "module", module_name),
         )
     )
 
     for fn in getattr(info, "functions", []):
         graph.add_node(
             GraphNode(
-                id=_symbol_id(file_path, "function", fn.name),
+                id=_node_id("function", fn.name),
                 type="function",
                 name=fn.name,
                 file=file_path,
                 line_start=fn.line,
                 line_end=getattr(fn, "colonLine", fn.line),
-                extra={"is_async": getattr(fn, "isAsync", False)},
+                extra={
+                    "is_async": getattr(fn, "isAsync", False),
+                    **standard_symbol_extra(qualname=fn.name, provenance="brief_ast"),
+                    **_legacy_extra(project, file_path, "function", fn.name),
+                },
             )
         )
 
     for cls in getattr(info, "classes", []):
         graph.add_node(
             GraphNode(
-                id=_symbol_id(file_path, "class", cls.name),
+                id=_node_id("class", cls.name),
                 type="class",
                 name=cls.name,
                 file=file_path,
                 line_start=cls.line,
                 line_end=getattr(cls, "colonLine", cls.line),
+                extra={
+                    **standard_symbol_extra(qualname=cls.name, provenance="brief_ast"),
+                    **_legacy_extra(project, file_path, "class", cls.name),
+                },
             )
         )
 
     for glob in getattr(info, "globals", []):
         graph.add_node(
             GraphNode(
-                id=_symbol_id(file_path, "global", glob.name),
+                id=_node_id("global", glob.name),
                 type="global",
                 name=glob.name,
                 file=file_path,
                 line_start=glob.line,
                 line_end=glob.line,
+                extra=_legacy_extra(project, file_path, "global", glob.name),
             )
         )
     return graph
 
 
+def _legacy_extra(project: Project | None, file_path: str, kind: str, name: str) -> dict[str, str]:
+    if project is None:
+        return {}
+    canonical = symbol_id(project, file_path, kind, name)
+    legacy = legacy_symbol_id(file_path, kind, name)
+    if legacy == canonical:
+        return {}
+    return {"legacy_id": legacy}
+
+
 def analyze_source(source: str, file_name: str = "<memory>") -> GraphIR:
     """Analyze in-memory source (used in tests)."""
     info = getBriefModuleInfoFromMemory(source, file_name)
-    return _symbols_from_brief_info(file_name, info)
+    return _symbols_from_brief_info(None, file_name, info)
 
 
 def analyze_file_direct(path: str) -> GraphIR:
     """Analyze a standalone file without a project context."""
     info = getBriefModuleInfoFromFile(path)
-    return _symbols_from_brief_info(realpath(path), info)
+    return _symbols_from_brief_info(None, realpath(path), info)
 
 
 def parse_symbol_query(symbol: str) -> tuple[str | None, str]:
@@ -145,16 +223,19 @@ def _definition_sites(project: Project, file_hint: str | None, name: str) -> lis
 def find_usages(project: Project, symbol: str) -> GraphIR:
     """Find references to a symbol using jedi (headless)."""
     project.require_open()
-    try:
-        import jedi
-        from jedi.api.project import Project as JediProject
-    except ImportError as exc:
-        raise RuntimeError("find_usages requires the jedi package") from exc
+    graph = GraphIR(meta={"kind": "usages", "symbol": symbol})
+    missing = missing_for_feature("find_usages")
+    if missing:
+        attach_capability_status(graph.meta, "find_usages")
+        return graph
+
+    import jedi
+    from jedi.api.project import Project as JediProject
 
     file_hint, name = parse_symbol_query(symbol)
     sites = _definition_sites(project, file_hint, name)
-    graph = GraphIR(meta={"kind": "usages", "symbol": symbol})
     if not sites:
+        attach_capability_status(graph.meta, "find_usages")
         return graph
 
     jedi_project = JediProject(
@@ -201,10 +282,10 @@ def find_usages(project: Project, symbol: str) -> GraphIR:
             )
             graph.add_edge(
                 GraphEdge(
-                    from_id=_symbol_id(def_path, "function", name),
+                    from_id=symbol_id(project, def_path, "function", name),
                     to_id=node_id,
                     type="usage",
                 )
             )
+    attach_capability_status(graph.meta, "find_usages")
     return graph
-

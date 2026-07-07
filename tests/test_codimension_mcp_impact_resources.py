@@ -37,7 +37,7 @@ def test_impact_mcp_resources(tmp_path):
     analyze_project(state)
 
     graph = json.loads(read_impact_graph(state, "leaf"))
-    assert graph["graph_ir_version"] == 1
+    assert graph["graph_ir_version"] == 2
     assert graph["meta"]["kind"] == "impact_analysis"
     assert graph["meta"]["impacted_count"] >= 2
 

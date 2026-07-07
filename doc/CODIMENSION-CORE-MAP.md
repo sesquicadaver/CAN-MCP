@@ -20,9 +20,87 @@ codimension_core/
   callgraph.py         — static call graph (NEW)
   dependency_graph.py  — import/deps graph → Graph IR
   cache.py             — incremental parse caches
-  graph_ir.py          — стабільний JSON IR (nodes/edges)
+  graph_ir.py          — стабільний JSON IR (nodes/edges, v2 default / v1 opt-out)
+  paths.py             — resolve_project_path policy gate
+  symbol_registry.py   — legacy symbol id aliases
   errors.py            — typed exceptions
 ```
+
+---
+
+## 1.1 Graph IR versions
+
+| Version | Увімкнення | Додаткові поля |
+| ------- | ---------- | -------------- |
+| **v2** (default) | — | `node.uri` (`codimension://symbol/...`), `edge.provenance` |
+| **v1** (legacy) | `CODIMENSION_GRAPH_IR=1` | без top-level `uri` / `provenance`; лише `node.extra` |
+
+MCP resource: `codimension://symbol/{symbol_key}` — один symbol node Graph IR.
+
+Приклад v1 meta:
+
+```json
+{
+  "graph_ir_version": 2,
+  "meta": {
+    "kind": "call_graph",
+    "schema_id": "codimension.graph.calls.v1",
+    "capabilities": ["calls"],
+    "project_root": "/path/to/project",
+    "generated_at": "2026-07-07T06:30:00+00:00"
+  }
+}
+```
+
+Приклад v2 node (opt-in):
+
+```json
+{
+  "id": "pkg/mod.py:function:run",
+  "type": "function",
+  "uri": "codimension://symbol/pkg__path__mod.py__function__run",
+  "extra": { "language": "py", "provenance": "ast", "confidence": 0.7 }
+}
+```
+
+---
+
+## 1.2 Import resolution isolation
+
+`ImportResolver` (`imports.py`) — context manager + `threading.RLock` для ізоляції побічних ефектів `importlib.util.find_spec`:
+
+| Стан | Дія на `__enter__` | Дія на `__exit__` |
+| ---- | ------------------ | ----------------- |
+| `sys.path` | save → override | restore |
+| `sys.path_importer_cache` | snapshot keys | delete new keys |
+| `sys.modules` | snapshot keys | delete new keys |
+
+### Call sites (→ `get_import_resolutions` / `resolve_imports`)
+
+| Модуль | Функція | Призначення |
+| ------ | ------- | ----------- |
+| `imports.py` | `get_import_resolutions` | core resolver |
+| `imports.py` | `resolve_imports`, `resolve_imports_for_file` | legacy tuple / Graph IR |
+| `imports.py` | `collect_import_resolutions_classified` | classified buckets |
+| `imports.py` | `collect_unresolved_packages` | requirements scan |
+| `dependency_graph.py` | `_build_resolved_import_graph` | import graph edges |
+| `import_diagram.py` | diagram builder | IDE-less import diagram |
+| `explain.py` | file explain | imports section |
+| `summaries.py` | `build_symbol_summary` | classified imports in summary |
+
+**Subprocess isolation (ROAD-4.3):** `CODIMENSION_IMPORT_ISOLATION=subprocess` runs resolution in project venv via `import_isolation_worker`; default is in-process `ImportResolver`.
+
+### Optional analysis dependencies (`capabilities.py`)
+
+| Feature | Packages | Missing response |
+| ------- | -------- | ---------------- |
+| `diagnostics` | pyflakes, radon | Graph IR `meta.status=partial`, `meta.missing=[...]` |
+| `find_usages` | jedi | Graph IR partial meta |
+| `dead_code` | vulture | Graph IR partial meta |
+
+Install: `pip install -e "./codimension_core[analysis]"`. MCP depends on `codimension-core[analysis]`.
+
+**Mypy (ROAD-5.3):** `ignore_missing_imports = false`; local stubs in `codimension_core/stubs/` for `jedi` and `radon`; `types-pyflakes` in `[analysis]` extra.
 
 ---
 
@@ -167,6 +245,8 @@ codimension_core/
 | -------- | -------------------- | ------ |
 | `open_project(path)` | `Project.open()` | ✅ MVP |
 | `analyze_project()` | `Project.analyze_all()` | ✅ MVP |
+| `invalidate_file(path)` | `Project.invalidate_file()` | ✅ 0.22.0 MCP |
+| **Workspace lock** | `WorkspaceState.workspace_lock()` on open/analyze/invalidate | ✅ 0.22.0 single-workspace |
 | `analyze_file(path)` | `symbols.analyze_file()` | ✅ MVP |
 | `get_project_tree()` | `Project.python_files()` | ✅ MVP |
 | `get_symbols(path?)` | `symbols.get_symbols()` | ✅ MVP |

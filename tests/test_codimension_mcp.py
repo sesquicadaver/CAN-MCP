@@ -67,7 +67,7 @@ def test_mcp_tools_return_graph_ir(tmp_path):
     analyze_project(state)
 
     symbols = json.loads(get_symbols_tool(state))
-    assert symbols["graph_ir_version"] == 1
+    assert symbols["graph_ir_version"] == 2
     assert symbols["nodes"]
 
     imports = json.loads(get_import_graph_tool(state))
@@ -177,7 +177,8 @@ def test_mcp_lookup_symbol_and_import_diagram(tmp_path):
 
 
 def test_mcp_prompt_builders():
-    assert "explain_symbol" in build_refactor_symbol_prompt("main.py:function:foo")
+    assert "explain_symbol" in build_refactor_symbol_prompt("pkg/mod.py:function:foo")
+    assert "project-relative canonical" in build_refactor_symbol_prompt("pkg/mod.py:function:foo")
     assert "find_dead_code" in PROMPT_BUILDERS["review_dead_code"]()
     assert "get_import_graph" in build_review_imports_prompt()
     assert "analyze_file" in build_analyze_module_prompt("pkg/mod.py")

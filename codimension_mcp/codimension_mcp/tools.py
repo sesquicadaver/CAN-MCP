@@ -3,8 +3,6 @@
 
 from __future__ import annotations
 
-import os
-
 from codimension_core import (
     analyze_dead_code,
     analyze_file,
@@ -19,9 +17,16 @@ from codimension_core import (
     lookup_symbol_definitions,
 )
 from codimension_core.callgraph import build_call_graph, find_callees, find_callers, impact_analysis
-from codimension_core.errors import AnalysisError, NotImplementedYetError, ProjectNotOpenError
+from codimension_core.errors import (
+    AnalysisError,
+    MissingOptionalDependencyError,
+    NotImplementedYetError,
+    PathOutsideProjectError,
+    ProjectNotOpenError,
+)
 from codimension_core.graph_layout import layout_graph_from_dot
 from codimension_core.import_diagram import build_import_diagram_model
+from codimension_core.paths import resolve_project_path
 from codimension_core.project import Project
 
 from .diagrams import render_diagram
@@ -30,17 +35,16 @@ from .serializers import dumps_graph, dumps_payload
 
 
 def _resolve_path(project: Project, path: str) -> str:
-    if os.path.isabs(path):
-        return os.path.realpath(path)
-    return os.path.realpath(os.path.join(project.root, path))
+    return resolve_project_path(project, path)
 
 
 def open_project(state: WorkspaceState, path: str) -> str:
     """Open a workspace directory."""
-    project = Project.open(path)
-    state.workspace = project.root
-    state.project = project
-    state.analyzed_files = 0
+    with state.workspace_lock():
+        project = Project.open(path)
+        state.workspace = project.root
+        state.project = project
+        state.analyzed_files = 0
     return dumps_payload(
         {
             "status": "ok",
@@ -52,9 +56,19 @@ def open_project(state: WorkspaceState, path: str) -> str:
 
 def analyze_project(state: WorkspaceState) -> str:
     """Warm caches for all project files."""
-    project = _require_project(state)
-    state.analyzed_files = project.analyze_all()
+    with state.workspace_lock():
+        project = _require_project(state)
+        state.analyzed_files = project.analyze_all()
     return dumps_payload({"status": "ok", "analyzed_files": state.analyzed_files})
+
+
+def invalidate_file_tool(state: WorkspaceState, path: str) -> str:
+    """Drop cached analysis for one file after external edits."""
+    project = _require_project(state)
+    abs_path = _resolve_path(project, path)
+    with state.workspace_lock():
+        project.invalidate_file(abs_path)
+    return dumps_payload({"status": "ok", "file": abs_path})
 
 
 def analyze_file_tool(state: WorkspaceState, path: str) -> str:
@@ -200,8 +214,20 @@ def _require_project(state: WorkspaceState) -> Project:
 
 def format_tool_error(exc: Exception) -> str:
     """Convert core exceptions into MCP-friendly JSON errors."""
+    if isinstance(exc, MissingOptionalDependencyError):
+        return dumps_payload(
+            {
+                "status": "partial",
+                "missing": exc.missing,
+                "feature": exc.feature,
+                "error": str(exc),
+            }
+        )
     if isinstance(exc, NotImplementedYetError):
         return dumps_payload({"status": "not_implemented", "error": str(exc)})
     if isinstance(exc, AnalysisError):
-        return dumps_payload({"status": "error", "error": str(exc)})
+        payload: dict[str, object] = {"status": "error", "error": str(exc)}
+        if isinstance(exc, PathOutsideProjectError):
+            payload["error_code"] = "path_outside_project"
+        return dumps_payload(payload)
     return dumps_payload({"status": "error", "error": f"{type(exc).__name__}: {exc}"})
