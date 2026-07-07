@@ -1,36 +1,24 @@
 ---
-description: Заборона виходу агента за межі workspace CAN-MCP
+description: CAN-MCP workspace isolation for agents (EN + UK)
 alwaysApply: true
 ---
 
-# Ізоляція workspace CAN-MCP
+# CAN-MCP workspace isolation / Ізоляція workspace
 
-Поточний workspace — **лише** корінь CAN-MCP (`${workspaceFolder}`). Це єдине джерело правди для читання, змін, тестів і commit.
+> **Docs:** [doc/README.md](../../doc/README.md) · [English](../../doc/en/MCP-CURSOR-HOWTO.md) · [Українська](../../doc/uk/MCP-CURSOR-HOWTO.md)
 
-## Заборонено
+## English
 
-- Читати, grep-ати, змінювати або commit-ити файли **інших репозиторіїв** (UNSOMNIA, US/, сусідні `GITFOLDER/*`, `~` поза workspace).
-- Виконувати `git pull/push/commit` у чужому проєкті.
-- Виправляти помилки з логів іншого проєкту, якщо workspace не перемкнено.
+The open workspace is **only** the CAN-MCP repository root. It is the single source of truth for reads, edits, tests, and commits.
 
-## Якщо запит стосується іншого репозиторію
+**Do not** read, grep, edit, or commit files from other repositories (UNSOMNIA, sibling `GITFOLDER/*`, etc.) unless the user explicitly switches workspace.
 
-1. Повідомити: помилка/файл **не належить CAN-MCP**.
-2. Назвати потрібний workspace (наприклад UNSOMNIA).
-3. **Не** відкривати і не змінювати чужі шляхи без явного запиту перемкнути workspace.
+**MCP codimension:** `command` in `.cursor/mcp.json` points to the CAN-MCP venv. Workspace auto-open uses `CODIMENSION_WORKSPACE` / env — it does not override agent isolation rules.
 
-## Приклад
+## Українська
 
-```
-[unsomnia-lifecycle] Pulling latest sources
-fatal: ... UNSOMNIA.git
-```
+Поточний workspace — **лише** корінь CAN-MCP. Це єдине джерело правди для читання, змін, тестів і commit.
 
-**Правильно:** «Це UNSOMNIA, не CAN-MCP. Відкрийте workspace UNSOMNIA для правок.»
+**Заборонено** читати, grep-ати, змінювати або commit-ити файли **інших репозиторіїв** без явного перемикання workspace.
 
-**Неправильно:** grep/редагування `/home/.../UNSOMNIA/`.
-
-## MCP codimension
-
-- `command` в `.cursor/mcp.json` — venv CAN-MCP.
-- `--workspace ${workspaceFolder}` — аналізує **відкритий** проєкт; не підміняє правило ізоляції агента.
+**MCP codimension:** `command` у `.cursor/mcp.json` — venv CAN-MCP. Auto-open workspace через env; не підміняє правило ізоляції агента.

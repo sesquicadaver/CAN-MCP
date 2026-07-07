@@ -1,5 +1,7 @@
 # codimension-vscode
 
+> **Languages:** [English](README.md) · [Українська](README.uk.md)
+
 VS Code / Cursor companion extension scaffold for [Codimension MCP](../codimension_mcp/README.md).
 
 ## Scope (0.4.0)
@@ -18,17 +20,8 @@ npm run compile
 
 ## MCP integration
 
-Configure the analysis server in Cursor/VS Code MCP settings:
+Configure the analysis server in Cursor/VS Code MCP settings. See:
 
-```json
-{
-  "mcpServers": {
-    "codimension": {
-      "command": "codimension-mcp",
-      "args": ["--workspace", "${workspaceFolder}"]
-    }
-  }
-}
-```
-
-See [doc/MCP-CURSOR-HOWTO.md](../doc/MCP-CURSOR-HOWTO.md) and [doc/CODIMENSION-CORE-MAP.md](../doc/CODIMENSION-CORE-MAP.md).
+- [doc/en/MCP-CURSOR-HOWTO.md](../doc/en/MCP-CURSOR-HOWTO.md)
+- [doc/uk/MCP-CURSOR-HOWTO.md](../doc/uk/MCP-CURSOR-HOWTO.md)
+- [doc/en/CODIMENSION-CORE-MAP.md](../doc/en/CODIMENSION-CORE-MAP.md)

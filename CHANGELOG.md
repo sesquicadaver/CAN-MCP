@@ -1,5 +1,7 @@
 # Changelog
 
+> **Languages:** [English](CHANGELOG.md) · [Українська](CHANGELOG.uk.md)
+
 All notable changes to CAN-MCP (headless Codimension stack) are documented here.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).

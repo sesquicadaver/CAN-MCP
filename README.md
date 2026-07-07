@@ -1,4 +1,6 @@
-# CAN-MCP — Codimension headless analysis for AI agents
+# CAN-MCP — headless Codimension analysis for AI agents
+
+> **Languages:** [English](README.md) · [Українська](README.uk.md) · [Documentation index](doc/README.md)
 
 [![CI](https://github.com/sesquicadaver/CAN-MCP/actions/workflows/ci.yml/badge.svg)](https://github.com/sesquicadaver/CAN-MCP/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
@@ -6,17 +8,17 @@
 
 Headless Python code analysis exposed via **MCP** (Model Context Protocol) for Cursor and other AI clients.
 
-**Release:** `codimension-core` 1.0.0 · `codimension-mcp` 1.0.0 ([CHANGELOG](CHANGELOG.md))
+**Release:** `codimension-core` 1.0.0 · `codimension-mcp` 1.0.0 ([CHANGELOG](CHANGELOG.md) · [CHANGELOG.uk.md](CHANGELOG.uk.md))
 
 ## Packages
 
 | Package | Role |
 | ------- | ---- |
 | [`codimension_core`](codimension_core/) | Headless analysis (symbols, imports, call graph, CFG, diagnostics) |
-| [`codimension_mcp`](codimension_mcp/) | MCP server — 22 tools, 16 resources, 6 prompts |
+| [`codimension_mcp`](codimension_mcp/) | MCP server — 23 tools, 17 resources, 6 prompts |
 | [`codimension-vscode`](codimension-vscode/) | VS Code extension (optional MCP UI) |
 
-Architecture map: [doc/CODIMENSION-CORE-MAP.md](doc/CODIMENSION-CORE-MAP.md)
+Architecture map: [doc/en/CODIMENSION-CORE-MAP.md](doc/en/CODIMENSION-CORE-MAP.md) · [doc/uk/CODIMENSION-CORE-MAP.md](doc/uk/CODIMENSION-CORE-MAP.md)
 
 ## Quick start
 
@@ -38,7 +40,10 @@ pip install -r requirements-dev.txt
 ./scripts/test-analysis.sh        # merge gate (ruff, mypy, pytest)
 ```
 
-Cursor: reload MCP server **codimension** after install. Full guide: [doc/MCP-CURSOR-HOWTO.md](doc/MCP-CURSOR-HOWTO.md).
+Cursor: reload MCP server **codimension** after install.
+
+- **English HOWTO:** [doc/en/MCP-CURSOR-HOWTO.md](doc/en/MCP-CURSOR-HOWTO.md)
+- **Українська:** [doc/uk/MCP-CURSOR-HOWTO.md](doc/uk/MCP-CURSOR-HOWTO.md)
 
 <!-- catalog:root-mcp -->
 **MCP discovery:** read `codimension://catalog` or call tool `list_mcp_catalog`.
@@ -51,7 +56,7 @@ Cursor: reload MCP server **codimension** after install. Full guide: [doc/MCP-CU
 
 Key resources: `codimension://graph/import`, `codimension://graph/call`, `codimension://graph/impact/{target_key}`, `codimension://cache/stats`.
 
-Full catalog: [codimension_mcp/README.md](codimension_mcp/README.md). **Cursor HOWTO:** [doc/MCP-CURSOR-HOWTO.md](doc/MCP-CURSOR-HOWTO.md). Cursor: `./scripts/install-cursor-mcp.sh` або `.cursor/mcp.json` (local). VS Code extension: [codimension-vscode/](codimension-vscode/).
+Full catalog: [codimension_mcp/README.md](codimension_mcp/README.md). **Cursor HOWTO:** [doc/en/MCP-CURSOR-HOWTO.md](doc/en/MCP-CURSOR-HOWTO.md) · [doc/uk/MCP-CURSOR-HOWTO.md](doc/uk/MCP-CURSOR-HOWTO.md). Cursor: `./scripts/install-cursor-mcp.sh` or project `.cursor/mcp.json`. VS Code extension: [codimension-vscode/](codimension-vscode/).
 <!-- /catalog:root-mcp -->
 
 ## Development
@@ -62,7 +67,10 @@ Full catalog: [codimension_mcp/README.md](codimension_mcp/README.md). **Cursor H
 ./scripts/verify-mcp-catalog.sh
 ```
 
-Living spec (TZ → module → tests): [doc/plugins/living-specification.md](doc/plugins/living-specification.md).
+Living spec (TZ → module → tests):
+
+- [doc/en/plugins/living-specification.md](doc/en/plugins/living-specification.md)
+- [doc/uk/plugins/living-specification.md](doc/uk/plugins/living-specification.md)
 
 ## License
 
@@ -77,7 +85,7 @@ Donations are optional and do not provide ownership, equity, tokens, governance 
 ### USDT donations
 
 | Network | Address |
-|---|---|
+| --- | --- |
 | USDT ERC-20 / Ethereum | 0xfa9821efd142228d53e1418fe335bb1cd8ff3c39 |
 | USDT TRC-20 / Tron | TNnhueeGqujf6AAUhcgissoEkL7tdzmqQv |
 

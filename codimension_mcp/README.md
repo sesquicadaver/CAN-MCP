@@ -1,5 +1,7 @@
 # codimension-mcp
 
+> **Languages:** [English](README.md) · [Українська](README.uk.md)
+
 MCP server for Codimension headless analysis (CAN-MCP).
 
 ## Install
@@ -105,7 +107,10 @@ Resources `codimension://diagram/import` and `codimension://diagram/call` return
 
 ## Cursor config
 
-Copy the sample and adjust the workspace path. Full guide: [doc/MCP-CURSOR-HOWTO.md](../doc/MCP-CURSOR-HOWTO.md).
+Copy the sample and adjust paths. Full guides:
+
+- [doc/en/MCP-CURSOR-HOWTO.md](../doc/en/MCP-CURSOR-HOWTO.md)
+- [doc/uk/MCP-CURSOR-HOWTO.md](../doc/uk/MCP-CURSOR-HOWTO.md)
 
 ```shell
 ./scripts/install-cursor-mcp.sh
@@ -116,8 +121,12 @@ Copy the sample and adjust the workspace path. Full guide: [doc/MCP-CURSOR-HOWTO
 {
   "mcpServers": {
     "codimension": {
-      "command": "codimension-mcp",
-      "args": ["--workspace", "${workspaceFolder}"]
+      "command": "/path/to/CAN-MCP/.venv/bin/codimension-mcp",
+      "env": {
+        "CODIMENSION_WORKSPACE": "${workspaceFolder}",
+        "VIRTUAL_ENV": "/path/to/CAN-MCP/.venv",
+        "PATH": "/path/to/CAN-MCP/.venv/bin:/usr/local/bin:/usr/bin:/bin"
+      }
     }
   }
 }

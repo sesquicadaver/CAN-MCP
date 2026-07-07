@@ -1,5 +1,7 @@
 # Contributing to CAN-MCP
 
+> **Languages:** [English](CONTRIBUTING.md) · [Українська](CONTRIBUTING.uk.md)
+
 ## Workflow
 
 1. Fork and branch: `git checkout -b feature/your-feature`
@@ -14,8 +16,9 @@ pip install -e ./codimension_core -e ./codimension_mcp
 ```
 
 3. Run merge gate: `./scripts/test-analysis.sh`
-4. Update [doc/plugins/living-specification.md](doc/plugins/living-specification.md) when adding extracted modules
-5. Open a Pull Request
+4. Update [doc/en/plugins/living-specification.md](doc/en/plugins/living-specification.md) and [doc/uk/plugins/living-specification.md](doc/uk/plugins/living-specification.md) when adding extracted modules
+5. Keep documentation bilingual (EN + UK) under `doc/en/` and `doc/uk/`
+6. Open a Pull Request
 
 ## CI
 
@@ -27,3 +30,4 @@ pip install -e ./codimension_core -e ./codimension_mcp
 - **Lint:** ruff (E, F, W, I) on core + mcp
 - **Types:** mypy on `codimension_core`
 - **License:** GPL v3
+- **Docs:** update both language copies when changing user-facing documentation
