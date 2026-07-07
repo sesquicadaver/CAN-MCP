@@ -49,6 +49,27 @@ def test_semantic_fixture_main_reaches_app_run():
     )
 
 
+def test_semantic_fixture_main_worker_run_resolves_to_worker_class():
+    project = _open_fixture()
+    graph = build_call_graph(project)
+    pairs = _call_edge_pairs(graph)
+    assert any(
+        from_id.endswith("main.py:function:main")
+        and to_id.endswith("pkg/sibling/worker.py:function:Worker.run")
+        for from_id, to_id in pairs
+    )
+    worker_run_edges = [
+        edge
+        for edge in graph.edges
+        if edge.type == "calls"
+        and edge.from_id.endswith("main.py:function:main")
+        and edge.label.startswith("worker.run:")
+    ]
+    assert worker_run_edges
+    assert worker_run_edges[0].to_id.endswith("pkg/sibling/worker.py:function:Worker.run")
+    assert worker_run_edges[0].extra.get("confidence", 0) >= 0.8
+
+
 def test_semantic_fixture_import_helper_via_package():
     project = _open_fixture()
     graph = build_call_graph(project)

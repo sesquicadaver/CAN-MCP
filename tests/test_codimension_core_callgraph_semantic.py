@@ -58,6 +58,30 @@ def test_callgraph_resolves_self_method_call(tmp_path):
     assert edge.extra.get("confidence", 0) >= 0.8
 
 
+def test_callgraph_resolves_instance_method_on_local_variable(tmp_path):
+    project_dir = tmp_path / "proj"
+    (project_dir / "pkg").mkdir(parents=True)
+    (project_dir / "pkg" / "worker.py").write_text(
+        "class Worker:\n    def run(self):\n        return self.process()\n\n    def process(self):\n        return 1\n",
+        encoding="utf-8",
+    )
+    (project_dir / "main.py").write_text(
+        "from pkg.app import run\nfrom pkg.worker import Worker\n\ndef main():\n    worker = Worker()\n    worker.run()\n    return run()\n",
+        encoding="utf-8",
+    )
+    (project_dir / "pkg" / "app.py").write_text("def run():\n    return 0\n", encoding="utf-8")
+
+    project = Project.open(str(project_dir))
+    graph = build_call_graph(project)
+    worker_run = next(
+        edge
+        for edge in graph.edges
+        if edge.type == "calls" and edge.label.startswith("worker.run:")
+    )
+    assert worker_run.to_id.endswith("pkg/worker.py:function:Worker.run")
+    assert worker_run.extra.get("confidence", 0) >= 0.8
+
+
 def test_callgraph_external_call_has_low_confidence(tmp_path):
     project_dir = tmp_path / "proj"
     project_dir.mkdir()

@@ -28,6 +28,7 @@ class _CallGraphIndex:
     local_names: dict[str, dict[str, str]] = field(default_factory=dict)
     import_map: dict[str, dict[str, str]] = field(default_factory=dict)
     class_methods: dict[str, dict[str, str]] = field(default_factory=dict)
+    instance_types: dict[str, dict[str, str]] = field(default_factory=dict)
     file_to_module: dict[str, str] = field(default_factory=dict)
     module_to_file: dict[str, str] = field(default_factory=dict)
     edges: list[tuple[str, str, int, str, float, str]] = field(default_factory=list)
@@ -200,6 +201,79 @@ def _resolve_method_callee(
     return None
 
 
+def _class_name_from_call(value: ast.expr) -> str | None:
+    if isinstance(value, ast.Call):
+        if isinstance(value.func, ast.Name):
+            return value.func.id
+        if isinstance(value.func, ast.Attribute):
+            return value.func.attr
+    if isinstance(value, ast.Name):
+        return value.id
+    return None
+
+
+def _collect_instance_types(
+    tree: ast.AST,
+    spans: list[_FunctionSpan],
+    import_map: dict[str, str],
+) -> dict[str, dict[str, str]]:
+    """Map function qualname -> {local_var: fully.qualified.ClassName}."""
+    result: dict[str, dict[str, str]] = {}
+    for span in spans:
+        types: dict[str, str] = {}
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Assign):
+                continue
+            if not (span.line_start <= node.lineno <= span.line_end):
+                continue
+            class_local = _class_name_from_call(node.value)
+            if not class_local:
+                continue
+            qualified = import_map.get(class_local, class_local)
+            for target in node.targets:
+                if isinstance(target, ast.Name):
+                    types[target.id] = qualified
+        if types:
+            result[span.qualname] = types
+    return result
+
+
+def _resolve_instance_method_callee(
+    index: _CallGraphIndex,
+    class_qualified: str,
+    method_name: str,
+) -> str | None:
+    class_name = class_qualified.rsplit(".", 1)[-1]
+    method_qual = f"{class_name}.{method_name}"
+    module_name = class_qualified.rsplit(".", 1)[0] if "." in class_qualified else ""
+    target_file = index.module_to_file.get(module_name)
+    for fn_id, fn_span in index.functions.items():
+        if fn_span.qualname != method_qual:
+            continue
+        if target_file is None or fn_span.file_path == target_file:
+            return fn_id
+    return None
+
+
+def _resolve_import_attribute_callee(
+    project: Project,
+    index: _CallGraphIndex,
+    module_local: str,
+    attr_name: str,
+    rel_path: str,
+) -> str | None:
+    import_map = index.import_map.get(rel_path, {})
+    if module_local not in import_map:
+        return None
+    imported = import_map[module_local]
+    if imported.startswith("."):
+        current_module = index.file_to_module.get(rel_path, "")
+        resolved_module = _resolve_relative_module(current_module, imported.lstrip("."), 1)
+        imported = resolved_module or imported.lstrip(".")
+    qualified = f"{imported}.{attr_name}" if imported else attr_name
+    return _resolve_import_target(project, index, qualified)
+
+
 def _callee_symbol_id(
     project: Project,
     rel_path: str,
@@ -209,11 +283,36 @@ def _callee_symbol_id(
     *,
     receiver: str | None = None,
     span: _FunctionSpan | None = None,
+    call_label: str = "",
 ) -> tuple[str | None, float, str]:
     if receiver == "self" and span is not None:
         resolved = _resolve_method_callee(span, callee_name, index)
         if resolved:
             return resolved, 0.85, "ast"
+
+    if receiver and span is not None:
+        instance_types = index.instance_types.get(span.qualname, {})
+        if receiver in instance_types:
+            resolved = _resolve_instance_method_callee(
+                index,
+                instance_types[receiver],
+                callee_name,
+            )
+            if resolved:
+                return resolved, 0.85, "ast"
+
+        resolved = _resolve_import_attribute_callee(
+            project,
+            index,
+            receiver,
+            callee_name,
+            rel_path,
+        )
+        if resolved:
+            return resolved, 0.75, "ast"
+
+        label = call_label or f"{receiver}.{callee_name}"
+        return f"external:function:{label}", 0.35, "ast"
 
     local = index.local_names.get(rel_path, {})
     if callee_name in local:
@@ -266,6 +365,7 @@ def _extract_calls(
             index,
             receiver=receiver,
             span=span,
+            call_label=label,
         )
         if callee_id is None:
             continue
@@ -303,6 +403,8 @@ def _build_index(project: Project) -> _CallGraphIndex:
     index.file_to_module = file_to_module
     index.module_to_file = module_to_file
 
+    file_payloads: list[tuple[str, str, str, ast.Module | None, list[_FunctionSpan]]] = []
+
     for file_path in project.python_files:
         rel_path = _rel_file(project, file_path)
         info = project.cache.get(file_path)
@@ -318,9 +420,16 @@ def _build_index(project: Project) -> _CallGraphIndex:
         brief_map = _build_import_map_brief(info)
         ast_map = _build_import_map_ast(project, rel_path, tree, file_to_module) if tree is not None else {}
         index.import_map[rel_path] = _merge_import_maps(brief_map, ast_map)
+        if tree is not None:
+            index.instance_types.update(
+                _collect_instance_types(tree, spans, index.import_map[rel_path])
+            )
         for span in spans:
             symbol = symbol_id(project, file_path, "function", span.qualname)
             index.functions[symbol] = span
+        file_payloads.append((rel_path, file_path, source, tree, spans))
+
+    for rel_path, file_path, source, tree, spans in file_payloads:
         if tree is not None:
             _extract_calls(tree, spans, rel_path, file_path, source, project, index)
     return index

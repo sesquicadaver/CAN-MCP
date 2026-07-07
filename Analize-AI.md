@@ -18,7 +18,7 @@
 | ------- | ---- | ------ | -------- |
 | Graph IR примітивний | ROAD-2.1–2.6 | **done** | Graph IR v2 opt-in (`CODIMENSION_GRAPH_IR=2`), `node.uri`, `edge.provenance` |
 | Symbol IDs нестабільні | ROAD-1.1–1.3, 1.5–1.6 | **done** | Project-relative IDs + legacy aliases |
-| Call graph поверхневий | ROAD-3.1–3.7 | **partial** | Semantic imports, jedi refinement, fixtures; attribute-call resolution — борг |
+| Call graph поверхневий | ROAD-3.1–3.7 | **partial** | Instance `obj.method()` via assignment types; attribute-call vs import collision fixed |
 | Import `sys.path` мутація | ROAD-4.1–4.4 | **done** | `ImportResolver`, subprocess opt-in, concurrent tests |
 | Path security неповна | ROAD-1.4, 1.7 | **done** | `resolve_project_path` у всіх MCP tools |
 | Dev-зрілість / optional deps | ROAD-5.1–5.3, 5.6 | **done** | `[analysis]` extra, capabilities matrix, mypy strict + stubs |
@@ -41,7 +41,7 @@
 
 ## Залишкові недоліки
 
-1. **Call graph:** `worker.run()` vs imported `run` — хибне зіставлення; потрібен attribute-aware resolution (post ROAD-3.7).
+1. **Call graph:** nested attribute chains (`os.path.join`) — low confidence; chained instance types — борг.
 
 2. **Import graph nodes:** ще `file:{basename}` у brief mode — окремий борг (canonical file nodes).
 
@@ -55,4 +55,4 @@
 
 Оновлена оцінка: **8/10 як архітектура, 6/10 як аналізатор, 6/10 як production tool**.
 
-До **1.0.0** залишилось: attribute-call precision, Graph IR v2 default flip, anti-stub enforce (`ENFORCE=1`).
+До **1.0.0** залишилось: Graph IR v2 default flip, anti-stub enforce (`ENFORCE=1`), nested attribute call precision.
