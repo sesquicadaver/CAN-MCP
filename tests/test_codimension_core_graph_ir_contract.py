@@ -21,19 +21,16 @@ def test_graph_ir_contract_fields():
     graph.add_edge(graph_ir.GraphEdge(from_id="a", to_id="b", type="calls", label="run:3"))
     payload = graph.to_dict()
 
-    assert payload["graph_ir_version"] == 1
-    assert "meta" in payload
-    assert "nodes" in payload
-    assert "edges" in payload
-
+    assert payload["graph_ir_version"] == graph_ir.GRAPH_IR_VERSION
     node = payload["nodes"][0]
-    for key in ("id", "type", "name", "file", "line_start", "line_end"):
+    for key in ("id", "type", "name", "file", "line_start", "line_end", "uri"):
         assert key in node
 
     edge = payload["edges"][0]
     assert edge["from"] == "a"
     assert edge["to"] == "b"
     assert edge["type"] == "calls"
+    assert "provenance" in edge
 
 
 def test_symbol_graph_meta_contract(tmp_path):

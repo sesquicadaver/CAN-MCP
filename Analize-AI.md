@@ -16,7 +16,7 @@
 
 | Недолік | ROAD | Статус | Примітка |
 | ------- | ---- | ------ | -------- |
-| Graph IR примітивний | ROAD-2.1–2.6 | **done** | Graph IR v2 opt-in (`CODIMENSION_GRAPH_IR=2`), `node.uri`, `edge.provenance` |
+| Graph IR примітивний | ROAD-2.1–2.6 | **done** | Graph IR v2 default; `CODIMENSION_GRAPH_IR=1` legacy opt-out |
 | Symbol IDs нестабільні | ROAD-1.1–1.3, 1.5–1.6 | **done** | Project-relative IDs + legacy aliases |
 | Call graph поверхневий | ROAD-3.1–3.7 | **partial** | Instance `obj.method()` via assignment types; attribute-call vs import collision fixed |
 | Import `sys.path` мутація | ROAD-4.1–4.4 | **done** | `ImportResolver`, subprocess opt-in, concurrent tests |
@@ -27,7 +27,7 @@
 | Prompt canonical IDs | ROAD-6.2 | **done** | Prompts v2 (`pkg/mod.py:function:name`) |
 | Fresh-clone DX | ROAD-6.3 | **done** | `./scripts/dev-setup.sh` |
 | VS Code extension CI | ROAD-6.4 | **done** | CI job `vscode`: npm compile + catalog parity |
-| Anti-stub grep | ROAD-6.5 | **done** | `scripts/check-anti-stub.sh` (warning; `ENFORCE=1` later) |
+| Anti-stub grep | ROAD-6.5 | **done** | `scripts/check-anti-stub.sh` (`ENFORCE=1` у CI) |
 
 ## Сильні рішення
 
@@ -37,7 +37,7 @@
 
 3. **Є машинний catalog.** `catalog.py` — source of truth для tools/resources/prompts; parity з VS Code URI list.
 
-4. **Graph IR версіонований.** `GraphIR` v1 default, v2 opt-in; MCP resource `codimension://symbol/{symbol_key}`.
+4. **Graph IR версіонований.** `GraphIR` v2 default (`node.uri`, `edge.provenance`); legacy v1 через `CODIMENSION_GRAPH_IR=1`.
 
 ## Залишкові недоліки
 
@@ -45,9 +45,7 @@
 
 2. **Import graph nodes:** ще `file:{basename}` у brief mode — окремий борг (canonical file nodes).
 
-3. **Graph IR v2 не default** — потрібен період opt-in перед flip default.
-
-4. **VS Code extension CI** — ROAD-6.4 (npm compile smoke) у merge gate CI job `vscode`.
+4. **Graph IR v2** — default з `node.uri` і `edge.provenance`; legacy v1 через `CODIMENSION_GRAPH_IR=1`.
 
 ## Вердикт
 
@@ -55,4 +53,4 @@
 
 Оновлена оцінка: **8/10 як архітектура, 6/10 як аналізатор, 6/10 як production tool**.
 
-До **1.0.0** залишилось: Graph IR v2 default flip, anti-stub enforce (`ENFORCE=1`), nested attribute call precision.
+До **1.0.0** залишилось: nested attribute call precision (`os.path.join`), import graph canonical file nodes.

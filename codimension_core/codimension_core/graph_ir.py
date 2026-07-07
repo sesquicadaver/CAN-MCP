@@ -8,7 +8,8 @@ from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 
-GRAPH_IR_VERSION = 1
+GRAPH_IR_VERSION_V1 = 1
+GRAPH_IR_VERSION = 2
 GRAPH_IR_VERSION_V2 = 2
 
 SCHEMA_BY_KIND: dict[str, str] = {
@@ -43,8 +44,11 @@ CAPABILITIES_BY_KIND: dict[str, list[str]] = {
 
 
 def effective_graph_ir_version() -> int:
-    """Return active Graph IR version (default v1; opt-in v2 via CODIMENSION_GRAPH_IR=2)."""
-    return GRAPH_IR_VERSION_V2 if os.environ.get("CODIMENSION_GRAPH_IR", "1").strip() == "2" else GRAPH_IR_VERSION
+    """Return active Graph IR version (default v2; opt-out v1 via CODIMENSION_GRAPH_IR=1)."""
+    env = os.environ.get("CODIMENSION_GRAPH_IR", "2").strip()
+    if env == "1":
+        return GRAPH_IR_VERSION_V1
+    return GRAPH_IR_VERSION_V2
 
 
 def encode_symbol_key(symbol_id: str) -> str:
@@ -152,7 +156,7 @@ class GraphIR:
 
     nodes: list[GraphNode] = field(default_factory=list)
     edges: list[GraphEdge] = field(default_factory=list)
-    version: int = GRAPH_IR_VERSION
+    version: int = GRAPH_IR_VERSION_V2
     meta: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:

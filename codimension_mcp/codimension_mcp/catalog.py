@@ -121,7 +121,7 @@ ENCODING_NOTES = {
     "symbol_key": "same encoding as function_key for symbol ids",
     "impact_target": "pkg/mod.py → pkg__path__mod.py; symbols use function_key encoding",
     "diagram_kinds": "import, call, control_flow, impact",
-    "graph_ir_v2": "set CODIMENSION_GRAPH_IR=2 for node.uri and edge.provenance fields",
+    "graph_ir_v2": "Graph IR v2 is default (node.uri, edge.provenance); set CODIMENSION_GRAPH_IR=1 for legacy v1",
 }
 
 

@@ -20,7 +20,7 @@ codimension_core/
   callgraph.py         — static call graph (NEW)
   dependency_graph.py  — import/deps graph → Graph IR
   cache.py             — incremental parse caches
-  graph_ir.py          — стабільний JSON IR (nodes/edges, v1 default / v2 opt-in)
+  graph_ir.py          — стабільний JSON IR (nodes/edges, v2 default / v1 opt-out)
   paths.py             — resolve_project_path policy gate
   symbol_registry.py   — legacy symbol id aliases
   errors.py            — typed exceptions
@@ -32,8 +32,8 @@ codimension_core/
 
 | Version | Увімкнення | Додаткові поля |
 | ------- | ---------- | -------------- |
-| **v1** (default) | — | `meta.schema_id`, `meta.capabilities`, `meta.project_root`, `meta.generated_at`; `node.extra` з `qualname`, `language`, `provenance`, `confidence` |
-| **v2** (opt-in) | `CODIMENSION_GRAPH_IR=2` | `node.uri` (`codimension://symbol/...`), `edge.provenance` |
+| **v2** (default) | — | `node.uri` (`codimension://symbol/...`), `edge.provenance` |
+| **v1** (legacy) | `CODIMENSION_GRAPH_IR=1` | без top-level `uri` / `provenance`; лише `node.extra` |
 
 MCP resource: `codimension://symbol/{symbol_key}` — один symbol node Graph IR.
 
@@ -41,7 +41,7 @@ MCP resource: `codimension://symbol/{symbol_key}` — один symbol node Graph
 
 ```json
 {
-  "graph_ir_version": 1,
+  "graph_ir_version": 2,
   "meta": {
     "kind": "call_graph",
     "schema_id": "codimension.graph.calls.v1",

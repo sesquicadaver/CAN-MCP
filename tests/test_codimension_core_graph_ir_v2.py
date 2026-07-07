@@ -7,6 +7,7 @@ from codimension_core import Project, get_symbols
 from codimension_core.callgraph import build_call_graph
 from codimension_core.graph_ir import (
     GRAPH_IR_VERSION,
+    GRAPH_IR_VERSION_V1,
     GRAPH_IR_VERSION_V2,
     GraphIR,
     decode_symbol_key,
@@ -16,20 +17,20 @@ from codimension_core.graph_ir import (
 )
 
 
-def test_graph_ir_v1_default_no_uri(tmp_path, monkeypatch):
-    monkeypatch.delenv("CODIMENSION_GRAPH_IR", raising=False)
+def test_graph_ir_v1_opt_out_no_uri(tmp_path, monkeypatch):
+    monkeypatch.setenv("CODIMENSION_GRAPH_IR", "1")
     project_dir = tmp_path / "proj"
     project_dir.mkdir()
     (project_dir / "main.py").write_text("def run():\n    pass\n", encoding="utf-8")
     project = Project.open(str(project_dir))
 
     payload = get_symbols(project).to_dict()
-    assert payload["graph_ir_version"] == GRAPH_IR_VERSION
+    assert payload["graph_ir_version"] == GRAPH_IR_VERSION_V1
     assert "uri" not in payload["nodes"][0]
 
 
-def test_graph_ir_v2_opt_in_uri_and_provenance(tmp_path, monkeypatch):
-    monkeypatch.setenv("CODIMENSION_GRAPH_IR", "2")
+def test_graph_ir_v2_default_uri_and_provenance(tmp_path, monkeypatch):
+    monkeypatch.delenv("CODIMENSION_GRAPH_IR", raising=False)
     project_dir = tmp_path / "proj"
     project_dir.mkdir()
     (project_dir / "main.py").write_text(

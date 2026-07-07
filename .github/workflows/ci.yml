@@ -37,8 +37,8 @@ jobs:
       - name: Verify MCP catalog parity
         run: ./scripts/verify-mcp-catalog.sh
 
-      - name: Anti-stub grep (warning)
-        run: ./scripts/check-anti-stub.sh
+      - name: Anti-stub grep (enforce)
+        run: ENFORCE=1 ./scripts/check-anti-stub.sh
 
   vscode:
     name: codimension-vscode

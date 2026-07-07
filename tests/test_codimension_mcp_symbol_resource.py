@@ -22,7 +22,7 @@ def test_symbol_resource_returns_matching_node(tmp_path):
 
     symbol_key = encode_symbol_key("main.py:function:run")
     payload = json.loads(read_symbol_node(state, symbol_key))
-    assert payload["graph_ir_version"] == 1
+    assert payload["graph_ir_version"] == 2
     assert payload["meta"]["kind"] == "symbol"
     assert len(payload["nodes"]) == 1
     assert payload["nodes"][0]["id"] == "main.py:function:run"

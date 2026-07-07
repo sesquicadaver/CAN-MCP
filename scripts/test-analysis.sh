@@ -22,5 +22,6 @@ ruff check codimension_core codimension_mcp
 "$PYTHON" -m pytest tests/ -q
 "$PYTHON" scripts/generate_mcp_catalog_artifacts.py --check
 "$PYTHON" -m pytest tests/test_codimension_mcp_catalog.py -q
+ENFORCE=1 ./scripts/check-anti-stub.sh
 
 echo "Analysis gate OK"

@@ -67,7 +67,7 @@ def test_mcp_tools_return_graph_ir(tmp_path):
     analyze_project(state)
 
     symbols = json.loads(get_symbols_tool(state))
-    assert symbols["graph_ir_version"] == 1
+    assert symbols["graph_ir_version"] == 2
     assert symbols["nodes"]
 
     imports = json.loads(get_import_graph_tool(state))

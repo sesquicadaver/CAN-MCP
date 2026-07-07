@@ -44,7 +44,7 @@
 | Pytest | `pytest tests/` |
 | MCP catalog | `./scripts/verify-mcp-catalog.sh` |
 | VS Code compile | `./scripts/verify-vscode.sh` |
-| Anti-stub grep | `./scripts/check-anti-stub.sh` (warning; `ENFORCE=1` to fail) |
+| Anti-stub grep | `./scripts/check-anti-stub.sh` (`ENFORCE=1` in CI / local gate) |
 | pip-audit | `pip-audit -r requirements-dev.txt` |
 | Local gate | `./scripts/test-analysis.sh` |
 
