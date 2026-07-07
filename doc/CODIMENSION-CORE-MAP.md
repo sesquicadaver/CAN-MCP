@@ -65,6 +65,33 @@ MCP resource: `codimension://symbol/{symbol_key}` — один symbol node Graph
 
 ---
 
+## 1.2 Import resolution isolation
+
+`ImportResolver` (`imports.py`) — context manager + `threading.RLock` для ізоляції побічних ефектів `importlib.util.find_spec`:
+
+| Стан | Дія на `__enter__` | Дія на `__exit__` |
+| ---- | ------------------ | ----------------- |
+| `sys.path` | save → override | restore |
+| `sys.path_importer_cache` | snapshot keys | delete new keys |
+| `sys.modules` | snapshot keys | delete new keys |
+
+### Call sites (→ `get_import_resolutions` / `resolve_imports`)
+
+| Модуль | Функція | Призначення |
+| ------ | ------- | ----------- |
+| `imports.py` | `get_import_resolutions` | core resolver |
+| `imports.py` | `resolve_imports`, `resolve_imports_for_file` | legacy tuple / Graph IR |
+| `imports.py` | `collect_import_resolutions_classified` | classified buckets |
+| `imports.py` | `collect_unresolved_packages` | requirements scan |
+| `dependency_graph.py` | `_build_resolved_import_graph` | import graph edges |
+| `import_diagram.py` | diagram builder | IDE-less import diagram |
+| `explain.py` | file explain | imports section |
+| `summaries.py` | `build_symbol_summary` | classified imports in summary |
+
+**Майбутнє (ROAD-4.3):** `CODIMENSION_IMPORT_ISOLATION=subprocess` — subprocess resolver (opt-in).
+
+---
+
 ## 2. project.py
 
 | Codimension файл | Класи / функції | PyQt / GlobalData | Дія |

@@ -34,6 +34,7 @@ from .import_diagram import (
     import_diagram_model_to_graph_ir,
 )
 from .imports import (
+    ImportResolver,
     build_import_context,
     collect_import_resolutions_classified,
     collect_unresolved_packages,
@@ -65,6 +66,7 @@ __all__ = [
     "analyze_dead_code",
     "analyze_file_diagnostics",
     "build_call_graph",
+    "ImportResolver",
     "build_import_context",
     "build_import_diagram_graph_ir",
     "build_import_diagram_model",
@@ -103,4 +105,4 @@ __all__ = [
     "symbol_id",
 ]
 
-__version__ = "0.24.0"
+__version__ = "0.25.0"

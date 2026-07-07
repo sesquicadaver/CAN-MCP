@@ -14,7 +14,7 @@
 | **codimension_core.project** | tests/test_codimension_core.py, test_codimension_core_cache.py |
 | **codimension_core.symbols / brief_ast** | test_codimension_core_brief_ast.py, test_codimension_core_symbol_ids.py |
 | **codimension_core.paths / symbol_registry** | test_codimension_core_paths.py, test_codimension_core_symbol_ids.py |
-| **codimension_core.imports / deps** | test_codimension_core_imports.py, test_codimension_core_deps.py |
+| **codimension_core.imports / deps / ImportResolver** | test_codimension_core_imports.py, test_codimension_core_imports_concurrent.py, test_codimension_core_deps.py |
 | **codimension_core.dependency_graph (import kind)** | test_codimension_core.py, test_codimension_core_dependency_import_kind.py |
 | **codimension_core.callgraph / impact / jedi_bridge** | test_codimension_core.py, test_codimension_core_impact.py, test_codimension_core_callgraph_semantic.py, test_codimension_core_jedi_callgraph.py, test_codimension_core_semantic_fixtures.py |
 | **codimension_core.cfg / flow_ast** | test_codimension_core_flow_ast.py |

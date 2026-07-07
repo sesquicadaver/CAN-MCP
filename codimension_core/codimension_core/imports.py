@@ -9,6 +9,7 @@ import os
 import re
 import sys
 import sysconfig
+import threading
 from dataclasses import dataclass, field
 from os.path import basename, dirname, realpath, sep
 from typing import TypedDict, cast
@@ -79,6 +80,49 @@ class ImportContext:
     file_name: str | None = None
     search_paths: list[str] = field(default_factory=list)
     sys_path_base: list[str] | None = None
+
+
+_RESOLUTION_LOCK = threading.RLock()
+
+
+class ImportResolver:
+    """Context manager isolating import resolution side effects."""
+
+    def __init__(self, paths: list[str]) -> None:
+        self._paths = list(paths)
+        self._saved_sys_path: list[str] = []
+        self._orig_importer_cache_keys: set[str] = set()
+        self._orig_sys_modules_keys: set[str] = set()
+
+    def __enter__(self) -> ImportResolver:
+        _RESOLUTION_LOCK.acquire()
+        self._saved_sys_path = list(sys.path)
+        self._orig_importer_cache_keys = set(sys.path_importer_cache.keys())
+        self._orig_sys_modules_keys = set(sys.modules.keys())
+        sys.path = self._paths
+        return self
+
+    def __exit__(self, exc_type: object, exc: object, tb: object) -> None:
+        try:
+            sys.path = self._saved_sys_path
+            _cleanup_import_side_effects(self._orig_importer_cache_keys, self._orig_sys_modules_keys)
+        finally:
+            _RESOLUTION_LOCK.release()
+
+    @classmethod
+    def for_context(cls, context: ImportContext, base_and_project_paths: list[str]) -> ImportResolver:
+        return cls(_sys_path_base(context) + base_and_project_paths)
+
+
+def _cleanup_import_side_effects(
+    orig_importer_cache_keys: set[str],
+    orig_sys_modules_keys: set[str],
+) -> None:
+    importlib.invalidate_caches()
+    for key in set(sys.path_importer_cache.keys()) - orig_importer_cache_keys:
+        del sys.path_importer_cache[key]
+    for key in set(sys.modules.keys()) - orig_sys_modules_keys:
+        del sys.modules[key]
 
 
 class ImportResolution:
@@ -253,21 +297,18 @@ def _resolve_import(
         result.append(ImportResolution(import_obj, None, True, None, None))
         return
 
-    old_sys_path = sys.path
-    sys.path = _sys_path_base(context) + base_and_project_paths
-    try:
-        spec = importlib.util.find_spec(import_obj.name)
-        if spec is not None:
-            if spec.origin == "frozen" or not spec.has_location:
-                result.append(ImportResolution(import_obj, None, True, None, None))
-                return
-            if spec.origin:
-                result.append(ImportResolution(import_obj, None, False, spec.origin, None))
-                return
-    except Exception:
-        pass
-    finally:
-        sys.path = old_sys_path
+    with ImportResolver.for_context(context, base_and_project_paths):
+        try:
+            spec = importlib.util.find_spec(import_obj.name)
+            if spec is not None:
+                if spec.origin == "frozen" or not spec.has_location:
+                    result.append(ImportResolution(import_obj, None, True, None, None))
+                    return
+                if spec.origin:
+                    result.append(ImportResolution(import_obj, None, False, spec.origin, None))
+                    return
+        except Exception:
+            pass
 
     if _is_stdlib_module_name(import_obj.name):
         result.append(ImportResolution(import_obj, None, True, None, None))
@@ -364,10 +405,8 @@ def _resolve_from_import(
     result: list[ImportResolution],
     context: ImportContext,
 ) -> None:
-    old_sys_path = sys.path
-    sys.path = _sys_path_base(context) + base_and_project_paths
-    _resolve_from(import_obj, import_obj.name, result)
-    sys.path = old_sys_path
+    with ImportResolver.for_context(context, base_and_project_paths):
+        _resolve_from(import_obj, import_obj.name, result)
 
 
 def _resolve_relative_import(
@@ -414,10 +453,8 @@ def _resolve_relative_import(
     if not path:
         path = sep
 
-    old_sys_path = sys.path
-    sys.path = [path]
-    _resolve_from(import_obj, current, result)
-    sys.path = old_sys_path
+    with ImportResolver([path]):
+        _resolve_from(import_obj, current, result)
 
 
 def get_import_resolutions(
@@ -427,8 +464,6 @@ def get_import_resolutions(
 ) -> list[ImportResolution]:
     """Resolve import objects using the provided search context."""
     result: list[ImportResolution] = []
-    orig_importer_cache_keys = set(sys.path_importer_cache.keys())
-    orig_sys_modules_keys = set(sys.modules.keys())
 
     if file_name:
         base_path = dirname(file_name)
@@ -449,11 +484,6 @@ def get_import_resolutions(
         else:
             _resolve_relative_import(import_obj, base_path, result)
 
-    importlib.invalidate_caches()
-    for key in set(sys.path_importer_cache.keys()) - orig_importer_cache_keys:
-        del sys.path_importer_cache[key]
-    for key in set(sys.modules.keys()) - orig_sys_modules_keys:
-        del sys.modules[key]
     return result
 
 
