@@ -14,5 +14,13 @@ class SymbolNotFoundError(AnalysisError):
     """Raised when a symbol id cannot be resolved."""
 
 
+class PathOutsideProjectError(AnalysisError):
+    """Raised when a path escapes the open project root."""
+
+
+class AmbiguousSymbolIdError(AnalysisError):
+    """Raised when a legacy symbol id maps to multiple definitions."""
+
+
 class NotImplementedYetError(AnalysisError):
     """Raised for planned but not yet extracted features."""

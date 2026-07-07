@@ -22,6 +22,13 @@ def test_function_key_roundtrip():
     assert decode_function_key(key) == function_id
 
 
+def test_function_key_roundtrip_nested_path():
+    function_id = "pkg/mod.py:function:run"
+    key = encode_function_key(function_id)
+    assert key == "pkg__path__mod.py__function__run"
+    assert decode_function_key(key) == function_id
+
+
 def test_control_flow_mcp_resources(tmp_path):
     project_dir = tmp_path / "proj"
     project_dir.mkdir()

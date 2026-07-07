@@ -11,9 +11,21 @@ from .graph_ir import GraphEdge, GraphIR, GraphNode
 from .project import Project
 
 
-def _symbol_id(file_path: str, kind: str, name: str) -> str:
+def legacy_symbol_id(file_path: str, kind: str, name: str) -> str:
+    """Build a basename-based symbol id (legacy, collision-prone)."""
     rel_name = basename(file_path)
     return f"{rel_name}:{kind}:{name}"
+
+
+def symbol_id(project: Project, file_path: str, kind: str, name: str) -> str:
+    """Build a stable project-relative symbol id."""
+    rel_path = project.to_relative_path(file_path)
+    return f"{rel_path}:{kind}:{name}"
+
+
+def _symbol_id(file_path: str, kind: str, name: str) -> str:
+    """Backward-compatible alias for legacy basename ids."""
+    return legacy_symbol_id(file_path, kind, name)
 
 
 def analyze_file(project: Project, path: str) -> GraphIR:
@@ -23,7 +35,7 @@ def analyze_file(project: Project, path: str) -> GraphIR:
     if not project.is_project_path(abs_path):
         raise ValueError(f"Path is outside project: {path}")
     info = project.cache.get(abs_path)
-    return _symbols_from_brief_info(abs_path, info)
+    return _symbols_from_brief_info(project, abs_path, info)
 
 
 def get_symbols(project: Project, path: str | None = None) -> GraphIR:
@@ -35,11 +47,11 @@ def get_symbols(project: Project, path: str | None = None) -> GraphIR:
         return graph
     for file_path in project.python_files:
         info = project.cache.get(file_path)
-        graph.nodes.extend(_symbols_from_brief_info(file_path, info).nodes)
+        graph.nodes.extend(_symbols_from_brief_info(project, file_path, info).nodes)
     return graph
 
 
-def _symbols_from_brief_info(file_path: str, info: object) -> GraphIR:
+def _symbols_from_brief_info(project: Project | None, file_path: str, info: object) -> GraphIR:
     graph = GraphIR(meta={"file": file_path, "kind": "symbols"})
     module_name = basename(file_path)
     max_line = 1
@@ -50,66 +62,87 @@ def _symbols_from_brief_info(file_path: str, info: object) -> GraphIR:
     for glob in getattr(info, "globals", []):
         max_line = max(max_line, glob.line)
 
+    def _node_id(kind: str, name: str) -> str:
+        if project is not None:
+            return symbol_id(project, file_path, kind, name)
+        return legacy_symbol_id(file_path, kind, name)
+
     graph.add_node(
         GraphNode(
-            id=_symbol_id(file_path, "module", module_name),
+            id=_node_id("module", module_name),
             type="module",
             name=module_name,
             file=file_path,
             line_start=1,
             line_end=max_line,
+            extra=_legacy_extra(project, file_path, "module", module_name),
         )
     )
 
     for fn in getattr(info, "functions", []):
         graph.add_node(
             GraphNode(
-                id=_symbol_id(file_path, "function", fn.name),
+                id=_node_id("function", fn.name),
                 type="function",
                 name=fn.name,
                 file=file_path,
                 line_start=fn.line,
                 line_end=getattr(fn, "colonLine", fn.line),
-                extra={"is_async": getattr(fn, "isAsync", False)},
+                extra={
+                    "is_async": getattr(fn, "isAsync", False),
+                    **_legacy_extra(project, file_path, "function", fn.name),
+                },
             )
         )
 
     for cls in getattr(info, "classes", []):
         graph.add_node(
             GraphNode(
-                id=_symbol_id(file_path, "class", cls.name),
+                id=_node_id("class", cls.name),
                 type="class",
                 name=cls.name,
                 file=file_path,
                 line_start=cls.line,
                 line_end=getattr(cls, "colonLine", cls.line),
+                extra=_legacy_extra(project, file_path, "class", cls.name),
             )
         )
 
     for glob in getattr(info, "globals", []):
         graph.add_node(
             GraphNode(
-                id=_symbol_id(file_path, "global", glob.name),
+                id=_node_id("global", glob.name),
                 type="global",
                 name=glob.name,
                 file=file_path,
                 line_start=glob.line,
                 line_end=glob.line,
+                extra=_legacy_extra(project, file_path, "global", glob.name),
             )
         )
     return graph
 
 
+def _legacy_extra(project: Project | None, file_path: str, kind: str, name: str) -> dict[str, str]:
+    if project is None:
+        return {}
+    canonical = symbol_id(project, file_path, kind, name)
+    legacy = legacy_symbol_id(file_path, kind, name)
+    if legacy == canonical:
+        return {}
+    return {"legacy_id": legacy}
+
+
 def analyze_source(source: str, file_name: str = "<memory>") -> GraphIR:
     """Analyze in-memory source (used in tests)."""
     info = getBriefModuleInfoFromMemory(source, file_name)
-    return _symbols_from_brief_info(file_name, info)
+    return _symbols_from_brief_info(None, file_name, info)
 
 
 def analyze_file_direct(path: str) -> GraphIR:
     """Analyze a standalone file without a project context."""
     info = getBriefModuleInfoFromFile(path)
-    return _symbols_from_brief_info(realpath(path), info)
+    return _symbols_from_brief_info(None, realpath(path), info)
 
 
 def parse_symbol_query(symbol: str) -> tuple[str | None, str]:
@@ -201,10 +234,9 @@ def find_usages(project: Project, symbol: str) -> GraphIR:
             )
             graph.add_edge(
                 GraphEdge(
-                    from_id=_symbol_id(def_path, "function", name),
+                    from_id=symbol_id(project, def_path, "function", name),
                     to_id=node_id,
                     type="usage",
                 )
             )
     return graph
-

@@ -148,6 +148,16 @@ class Project:
         cand_real = realpath(path).rstrip(sep) + sep
         return cand_real.startswith(root_real)
 
+    def to_relative_path(self, path: str) -> str:
+        """Return a normalized project-relative POSIX path for an absolute file path."""
+        self.require_open()
+        abs_path = realpath(path)
+        root_prefix = realpath(self.root).rstrip(sep) + sep
+        if not abs_path.startswith(root_prefix):
+            raise ValueError(f"Path is outside project: {path}")
+        rel = abs_path[len(root_prefix) :]
+        return rel.replace("\\", "/")
+
     def require_open(self) -> None:
         if not self.root:
             raise ProjectNotOpenError("No project is open")

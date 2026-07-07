@@ -12,7 +12,8 @@
 | Модуль | Тести |
 | ------ | ----- |
 | **codimension_core.project** | tests/test_codimension_core.py, test_codimension_core_cache.py |
-| **codimension_core.symbols / brief_ast** | test_codimension_core_brief_ast.py |
+| **codimension_core.symbols / brief_ast** | test_codimension_core_brief_ast.py, test_codimension_core_symbol_ids.py |
+| **codimension_core.paths / symbol_registry** | test_codimension_core_paths.py, test_codimension_core_symbol_ids.py |
 | **codimension_core.imports / deps** | test_codimension_core_imports.py, test_codimension_core_deps.py |
 | **codimension_core.callgraph / impact** | test_codimension_core.py, test_codimension_core_impact.py |
 | **codimension_core.cfg / flow_ast** | test_codimension_core_flow_ast.py |
@@ -23,7 +24,7 @@
 | **codimension_core.graph_*** | test_codimension_core_graph_layout.py, test_codimension_core_graph_render.py |
 | **codimension_core.import_diagram** | test_codimension_core_import_diagram.py |
 | **codimension_core.summaries / explain / reverse_index / usages** | test_codimension_core_summaries.py, test_codimension_core_explain.py, test_codimension_core_reverse_index.py, test_codimension_core_usages.py |
-| **codimension_mcp tools/resources** | test_codimension_mcp.py, test_codimension_mcp_cfg_resources.py, test_codimension_mcp_impact_resources.py |
+| **codimension_mcp tools/resources** | test_codimension_mcp.py, test_codimension_mcp_path_security.py, test_codimension_mcp_cfg_resources.py, test_codimension_mcp_impact_resources.py |
 | **codimension_mcp catalog** | test_codimension_mcp_catalog.py + scripts/verify-mcp-catalog.sh |
 | **Cursor MCP HOWTO** | doc/MCP-CURSOR-HOWTO.md |
 | **VS Code extension** | codimension-vscode (npm run compile) |

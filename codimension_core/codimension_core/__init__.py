@@ -16,7 +16,13 @@ from .disasm import (
     get_buffer_disassembled,
     get_file_disassembled,
 )
-from .errors import AnalysisError, ProjectNotOpenError
+from .errors import (
+    AmbiguousSymbolIdError,
+    AnalysisError,
+    PathOutsideProjectError,
+    ProjectNotOpenError,
+    SymbolNotFoundError,
+)
 from .explain import explain_symbol
 from .graph_layout import Graph, layout_graph_from_dot
 from .graph_render import graph_to_html, graph_to_mermaid
@@ -34,17 +40,22 @@ from .imports import (
     generate_requirements_from_project,
     resolve_imports_for_file,
 )
+from .paths import resolve_project_path
 from .project import Project
 from .reverse_index import lookup_symbol as lookup_symbol_definitions
 from .summaries import build_dependency_summary, build_symbol_summary
-from .symbols import analyze_file, find_usages, get_symbols
+from .symbol_registry import build_legacy_alias_map, resolve_symbol_reference
+from .symbols import analyze_file, find_usages, get_symbols, legacy_symbol_id, symbol_id
 
 __all__ = [
     "AnalysisError",
+    "AmbiguousSymbolIdError",
     "ModuleInfoCache",
+    "PathOutsideProjectError",
     "Project",
     "ProjectAnalysisCache",
     "ProjectNotOpenError",
+    "SymbolNotFoundError",
     "ImportDiagramModel",
     "ImportDiagramOptions",
     "OPT_NO_OPTIMIZATION",
@@ -83,8 +94,13 @@ __all__ = [
     "layout_graph_from_dot",
     "impact_analysis",
     "lookup_symbol_definitions",
+    "legacy_symbol_id",
     "parse_source_to_ast",
     "resolve_imports_for_file",
+    "resolve_project_path",
+    "resolve_symbol_reference",
+    "build_legacy_alias_map",
+    "symbol_id",
 ]
 
-__version__ = "0.20.5"
+__version__ = "0.21.0"

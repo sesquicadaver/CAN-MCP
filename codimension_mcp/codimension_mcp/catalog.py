@@ -107,7 +107,7 @@ PROMPTS: list[dict[str, str]] = [
 ]
 
 ENCODING_NOTES = {
-    "function_key": "file.py:function:name → file.py__function__name",
+    "function_key": "file.py:function:name → file.py__function__name; pkg/mod.py → pkg__path__mod.py__function__name",
     "impact_target": "pkg/mod.py → pkg__path__mod.py; symbols use function_key encoding",
     "diagram_kinds": "import, call, control_flow, impact",
 }

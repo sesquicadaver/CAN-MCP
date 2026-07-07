@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 from .graph_ir import GraphIR, GraphNode
 from .project import Project
-from .symbols import _symbol_id, get_symbols
+from .symbols import get_symbols
 
 
 @dataclass(frozen=True)
@@ -60,7 +60,7 @@ def lookup_symbol(project: Project, name: str) -> GraphIR:
     for item in matches:
         graph.add_node(
             GraphNode(
-                id=item.symbol_id or _symbol_id(item.file, item.kind, item.name),
+                id=item.symbol_id,
                 type=item.kind,
                 name=item.name,
                 file=item.file,

@@ -9,7 +9,8 @@ from os.path import basename, realpath
 
 from .graph_ir import GraphEdge, GraphIR, GraphNode
 from .project import Project
-from .symbols import _symbol_id
+from .symbol_registry import resolve_symbol_reference
+from .symbols import symbol_id
 
 
 @dataclass
@@ -88,7 +89,7 @@ def _callee_symbol_id(project: Project, caller_file: str, callee_name: str, inde
     local = index.local_names.get(caller_file, {})
     if callee_name in local:
         target = local[callee_name]
-        return _symbol_id(caller_file, "function", target)
+        return symbol_id(project, caller_file, "function", target)
 
     import_map = index.import_map.get(caller_file, {})
     if callee_name in import_map:
@@ -96,12 +97,12 @@ def _callee_symbol_id(project: Project, caller_file: str, callee_name: str, inde
         top = imported.split(".")[0]
         for path in project.python_files:
             if basename(path) == f"{top}.py":
-                return _symbol_id(path, "function", imported.split(".")[-1])
+                return symbol_id(project, path, "function", imported.split(".")[-1])
         return f"external:function:{imported}"
 
     for path in project.python_files:
         if basename(path) == f"{callee_name}.py":
-            return _symbol_id(path, "module", callee_name)
+            return symbol_id(project, path, "module", callee_name)
     return f"external:function:{callee_name}"
 
 
@@ -118,7 +119,7 @@ def _extract_calls(
         span = _function_for_line(spans, node.lineno)
         if span is None:
             continue
-        caller_id = _symbol_id(caller_file, "function", span.qualname)
+        caller_id = symbol_id(project, caller_file, "function", span.qualname)
         callee_name, label = _call_target_name(node)
         if not callee_name:
             continue
@@ -149,7 +150,7 @@ def _build_index(project: Project) -> _CallGraphIndex:
         index.local_names[file_path] = {span.qualname.split(".")[-1]: span.qualname for span in spans}
         index.import_map[file_path] = _build_import_map(info)
         for span in spans:
-            symbol = _symbol_id(file_path, "function", span.qualname)
+            symbol = symbol_id(project, file_path, "function", span.qualname)
             index.functions[symbol] = span
         with open(file_path, encoding="utf-8", errors="replace") as handle:
             source = handle.read()
@@ -237,10 +238,11 @@ def build_call_graph(project: Project, symbol: str | None = None) -> GraphIR:
 def find_callers(project: Project, symbol: str) -> GraphIR:
     """Return call edges where the given symbol is the callee."""
     project.require_open()
+    resolved = resolve_symbol_reference(project, symbol)
     index = _get_call_index(project)
-    graph = GraphIR(meta={"kind": "callers", "symbol": symbol})
+    graph = GraphIR(meta={"kind": "callers", "symbol": symbol, "resolved_symbol": resolved})
     for caller_id, callee_id, line_no, label in index.edges:
-        if symbol in callee_id or callee_id.endswith(f":function:{symbol}"):
+        if resolved in callee_id or callee_id.endswith(f":function:{resolved}"):
             graph.add_edge(
                 GraphEdge(from_id=caller_id, to_id=callee_id, type="calls", label=f"{label}:{line_no}")
             )
@@ -263,10 +265,11 @@ def find_callers(project: Project, symbol: str) -> GraphIR:
 def find_callees(project: Project, symbol: str) -> GraphIR:
     """Return call edges where the given symbol is the caller."""
     project.require_open()
+    resolved = resolve_symbol_reference(project, symbol)
     index = _get_call_index(project)
-    graph = GraphIR(meta={"kind": "callees", "symbol": symbol})
+    graph = GraphIR(meta={"kind": "callees", "symbol": symbol, "resolved_symbol": resolved})
     for caller_id, callee_id, line_no, label in index.edges:
-        if symbol in caller_id or caller_id.endswith(f":function:{symbol}"):
+        if resolved in caller_id or caller_id.endswith(f":function:{resolved}"):
             graph.add_edge(
                 GraphEdge(from_id=caller_id, to_id=callee_id, type="calls", label=f"{label}:{line_no}")
             )
