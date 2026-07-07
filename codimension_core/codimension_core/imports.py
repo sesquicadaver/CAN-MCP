@@ -80,6 +80,7 @@ class ImportContext:
     file_name: str | None = None
     search_paths: list[str] = field(default_factory=list)
     sys_path_base: list[str] | None = None
+    python_executable: str | None = None
 
 
 _RESOLUTION_LOCK = threading.RLock()
@@ -457,12 +458,12 @@ def _resolve_relative_import(
         _resolve_from(import_obj, current, result)
 
 
-def get_import_resolutions(
+def resolve_imports_inprocess(
     context: ImportContext,
     file_name: str | None,
     imports: list[BriefImport],
 ) -> list[ImportResolution]:
-    """Resolve import objects using the provided search context."""
+    """Resolve import objects in the current interpreter."""
     result: list[ImportResolution] = []
 
     if file_name:
@@ -487,6 +488,19 @@ def get_import_resolutions(
     return result
 
 
+def get_import_resolutions(
+    context: ImportContext,
+    file_name: str | None,
+    imports: list[BriefImport],
+) -> list[ImportResolution]:
+    """Resolve import objects using the configured isolation mode."""
+    from .import_isolation import resolve_imports_subprocess, use_subprocess_isolation
+
+    if use_subprocess_isolation():
+        return resolve_imports_subprocess(context, file_name, imports)
+    return resolve_imports_inprocess(context, file_name, imports)
+
+
 def resolve_imports(
     context: ImportContext,
     file_name: str | None,
@@ -509,7 +523,11 @@ def build_import_context(project: Project, file_path: str | None = None) -> Impo
     """Build import resolution context from a headless project."""
     project.require_open()
     search_paths = project.build_import_search_paths(file_path)
-    return ImportContext(file_name=file_path, search_paths=search_paths)
+    return ImportContext(
+        file_name=file_path,
+        search_paths=search_paths,
+        python_executable=project.get_python_executable(),
+    )
 
 
 def resolve_imports_for_file(project: Project, file_path: str) -> GraphIR:

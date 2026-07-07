@@ -88,7 +88,7 @@ MCP resource: `codimension://symbol/{symbol_key}` — один symbol node Graph
 | `explain.py` | file explain | imports section |
 | `summaries.py` | `build_symbol_summary` | classified imports in summary |
 
-**Майбутнє (ROAD-4.3):** `CODIMENSION_IMPORT_ISOLATION=subprocess` — subprocess resolver (opt-in).
+**Subprocess isolation (ROAD-4.3):** `CODIMENSION_IMPORT_ISOLATION=subprocess` runs resolution in project venv via `import_isolation_worker`; default is in-process `ImportResolver`.
 
 ### Optional analysis dependencies (`capabilities.py`)
 
