@@ -90,6 +90,16 @@ MCP resource: `codimension://symbol/{symbol_key}` — один symbol node Graph
 
 **Майбутнє (ROAD-4.3):** `CODIMENSION_IMPORT_ISOLATION=subprocess` — subprocess resolver (opt-in).
 
+### Optional analysis dependencies (`capabilities.py`)
+
+| Feature | Packages | Missing response |
+| ------- | -------- | ---------------- |
+| `diagnostics` | pyflakes, radon | Graph IR `meta.status=partial`, `meta.missing=[...]` |
+| `find_usages` | jedi | Graph IR partial meta |
+| `dead_code` | vulture | Graph IR partial meta |
+
+Install: `pip install -e "./codimension_core[analysis]"`. MCP depends on `codimension-core[analysis]`.
+
 ---
 
 ## 2. project.py

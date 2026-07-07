@@ -24,3 +24,13 @@ class AmbiguousSymbolIdError(AnalysisError):
 
 class NotImplementedYetError(AnalysisError):
     """Raised for planned but not yet extracted features."""
+
+
+class MissingOptionalDependencyError(AnalysisError):
+    """Raised when a feature requires optional packages that are not installed."""
+
+    def __init__(self, feature: str, missing: list[str]) -> None:
+        self.feature = feature
+        self.missing = list(missing)
+        packages = ", ".join(missing)
+        super().__init__(f"Feature '{feature}' requires optional packages: {packages}")

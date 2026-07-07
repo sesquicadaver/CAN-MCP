@@ -7,6 +7,7 @@ import sys
 from os.path import basename, realpath
 
 from .brief_ast import getBriefModuleInfoFromFile, getBriefModuleInfoFromMemory
+from .capabilities import attach_capability_status, missing_for_feature
 from .graph_ir import GraphEdge, GraphIR, GraphNode, enrich_graph_meta, standard_symbol_extra
 from .project import Project
 
@@ -183,16 +184,19 @@ def _definition_sites(project: Project, file_hint: str | None, name: str) -> lis
 def find_usages(project: Project, symbol: str) -> GraphIR:
     """Find references to a symbol using jedi (headless)."""
     project.require_open()
-    try:
-        import jedi
-        from jedi.api.project import Project as JediProject
-    except ImportError as exc:
-        raise RuntimeError("find_usages requires the jedi package") from exc
+    graph = GraphIR(meta={"kind": "usages", "symbol": symbol})
+    missing = missing_for_feature("find_usages")
+    if missing:
+        attach_capability_status(graph.meta, "find_usages")
+        return graph
+
+    import jedi
+    from jedi.api.project import Project as JediProject
 
     file_hint, name = parse_symbol_query(symbol)
     sites = _definition_sites(project, file_hint, name)
-    graph = GraphIR(meta={"kind": "usages", "symbol": symbol})
     if not sites:
+        attach_capability_status(graph.meta, "find_usages")
         return graph
 
     jedi_project = JediProject(
@@ -244,4 +248,5 @@ def find_usages(project: Project, symbol: str) -> GraphIR:
                     type="usage",
                 )
             )
+    attach_capability_status(graph.meta, "find_usages")
     return graph

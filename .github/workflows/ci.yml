@@ -22,7 +22,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install pytest ruff mypy pyflakes radon jedi vulture mistune pygments
-          pip install -e ./codimension_core -e ./codimension_mcp
+          pip install -e "./codimension_core[analysis]" -e ./codimension_mcp
 
       - name: Ruff (core + mcp)
         run: ruff check codimension_core codimension_mcp

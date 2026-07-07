@@ -17,7 +17,13 @@ from codimension_core import (
     lookup_symbol_definitions,
 )
 from codimension_core.callgraph import build_call_graph, find_callees, find_callers, impact_analysis
-from codimension_core.errors import AnalysisError, NotImplementedYetError, PathOutsideProjectError, ProjectNotOpenError
+from codimension_core.errors import (
+    AnalysisError,
+    MissingOptionalDependencyError,
+    NotImplementedYetError,
+    PathOutsideProjectError,
+    ProjectNotOpenError,
+)
 from codimension_core.graph_layout import layout_graph_from_dot
 from codimension_core.import_diagram import build_import_diagram_model
 from codimension_core.paths import resolve_project_path
@@ -197,6 +203,15 @@ def _require_project(state: WorkspaceState) -> Project:
 
 def format_tool_error(exc: Exception) -> str:
     """Convert core exceptions into MCP-friendly JSON errors."""
+    if isinstance(exc, MissingOptionalDependencyError):
+        return dumps_payload(
+            {
+                "status": "partial",
+                "missing": exc.missing,
+                "feature": exc.feature,
+                "error": str(exc),
+            }
+        )
     if isinstance(exc, NotImplementedYetError):
         return dumps_payload({"status": "not_implemented", "error": str(exc)})
     if isinstance(exc, AnalysisError):

@@ -18,6 +18,7 @@
 | **codimension_core.dependency_graph (import kind)** | test_codimension_core.py, test_codimension_core_dependency_import_kind.py |
 | **codimension_core.callgraph / impact / jedi_bridge** | test_codimension_core.py, test_codimension_core_impact.py, test_codimension_core_callgraph_semantic.py, test_codimension_core_jedi_callgraph.py, test_codimension_core_semantic_fixtures.py |
 | **codimension_core.cfg / flow_ast** | test_codimension_core_flow_ast.py |
+| **codimension_core.capabilities / optional deps** | test_codimension_core_capabilities.py |
 | **codimension_core.analyzer** | test_codimension_core_analyzer.py |
 | **codimension_core.encoding_utils** | test_codimension_core_encoding_utils.py |
 | **codimension_core.file_io** | test_codimension_core_file_io.py |
