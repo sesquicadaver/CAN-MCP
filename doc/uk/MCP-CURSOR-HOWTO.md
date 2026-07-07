@@ -1,12 +1,12 @@
-# Codimension MCP × Cursor — повний HOWTO
+# Codimension MCP × Cursor — повний посібник
 
 > **Languages:** [English](../en/MCP-CURSOR-HOWTO.md) · [Українська](../uk/MCP-CURSOR-HOWTO.md)
 
 Практичний посібник для підключення **codimension-mcp** до Cursor і роботи з 23 tools, 17 resources та 6 prompts.
 
-**Джерело правди:** `codimension_mcp/catalog.py`  
+**Еталон:** `codimension_mcp/catalog.py`  
 **Короткий catalog:** [codimension_mcp/README.md](../codimension_mcp/README.md)  
-**Локальний конфіг (не в git):** `.cursor/mcp.json` — згенеровано для цього checkout
+**Локальний конфіг (не в git):** `.cursor/mcp.json` — створює `install-cursor-mcp.sh`
 
 ---
 
@@ -16,15 +16,15 @@
 2. [Встановлення](#2-встановлення)
 3. [Підключення до Cursor](#3-підключення-до-cursor)
 4. [Перевірка підключення](#4-перевірка-підключення)
-5. [Базовий workflow](#5-базовий-workflow)
+5. [Базовий порядок роботи](#5-базовий-порядок-роботи)
 6. [Формати даних](#6-формати-даних)
 7. [Tools — довідник з прикладами](#7-tools--довідник-з-прикладами)
 8. [Resources — довідник з прикладами](#8-resources--довідник-з-прикладами)
 9. [Prompts — готові сценарії](#9-prompts--готові-сценарії)
 10. [Діаграми та WebView](#10-діаграми-та-webview)
-11. [End-to-end сценарії](#11-end-to-end-сценарії)
+11. [Повні сценарії](#11-пovні-сценарії)
 12. [Приклади промптів для Cursor Agent](#12-приклади-промптів-для-cursor-agent)
-13. [Troubleshooting](#13-troubleshooting)
+13. [Якщо не працює](#13-якщо-не-працює)
 14. [Чеклист](#14-чеклист)
 
 ---
@@ -38,7 +38,7 @@ Cursor Agent (MCP host)
 codimension-mcp          ← MCP server (codimension_mcp/)
         │
         ▼
-codimension_core         ← headless analysis (без PyQt)
+codimension_core         ← аналіз без PyQt IDE
         │
         ├─ symbols, imports, callgraph, cfg
         ├─ diagnostics (pyflakes/radon)
@@ -94,7 +94,7 @@ which codimension-mcp
 
 codimension-mcp --help
 
-# Повний merge gate (як CI):
+# Повний прогін `./scripts/test-analysis.sh` (як CI):
 ./scripts/test-analysis.sh
 ```
 
@@ -102,16 +102,23 @@ codimension-mcp --help
 
 ## 3. Підключення до Cursor
 
-### 3.1. Локальний конфіг цього checkout
+### 3.1. Конфіг у цьому репозиторії
 
-Файл **`.cursor/mcp.json`** (gitignored) уже згенеровано з абсолютними шляхами:
+Файл **`.cursor/mcp.json`** (не в git) генерує `./scripts/install-cursor-mcp.sh`.  
+`${workspaceFolder}` Cursor підставляє **лише** в project-level `.cursor/mcp.json`, не в глобальному `~/.cursor/mcp.json`.
+
+**Рекомендовано — env `CODIMENSION_WORKSPACE`:**
 
 ```json
 {
   "mcpServers": {
     "codimension": {
       "command": "/home/sesquicadaver/GITFOLDER/CAN-MCP/.venv/bin/codimension-mcp",
-      "args": ["--workspace", "${workspaceFolder}"]
+      "env": {
+        "CODIMENSION_WORKSPACE": "${workspaceFolder}",
+        "VIRTUAL_ENV": "/home/sesquicadaver/GITFOLDER/CAN-MCP/.venv",
+        "PATH": "/home/sesquicadaver/GITFOLDER/CAN-MCP/.venv/bin:/usr/local/bin:/usr/bin:/bin"
+      }
     }
   }
 }
@@ -120,31 +127,41 @@ codimension-mcp --help
 | Поле | Значення |
 |------|----------|
 | `command` | Повний шлях до `codimension-mcp` у venv CAN-MCP |
-| `args[1]` | `${workspaceFolder}` — корінь **відкритого в Cursor** Python-проєкту |
+| `env.CODIMENSION_WORKSPACE` | `${workspaceFolder}` — корінь **відкритого в Cursor** Python-проєкту |
 
-Шаблон без конкретних шляхів: [`.cursor/mcp.json.example`](../.cursor/mcp.json.example)
+Альтернатива (теж лише в project config):
+
+```json
+"args": ["--workspace", "${workspaceFolder}"]
+```
+
+Шаблон: [`.cursor/mcp.json.example`](../../.cursor/mcp.json.example)
+
+> Сервер **не** відкриває `$HOME`, cwd процесу чи інший шлях «сам». Workspace — лише через `CODIMENSION_WORKSPACE`, `--workspace` або tool `open_project`.
 
 ### 3.2. Глобальний конфіг
 
-Файл: `~/.cursor/mcp.json` — той самий JSON, MCP доступний у всіх workspace.
+Файл `~/.cursor/mcp.json` — той самий сервер `codimension` для всіх workspace.
 
-### 3.3. Два типові setup
+**Не** додавайте `"args": ["--workspace", "${workspaceFolder}"]` у глобальний config — Cursor не розгортає шаблон, буде `FileNotFoundError` (див. [§13](#13-якщо-не-працює)).
+
+### 3.3. Два типові варіанти
 
 **A. Аналізуєте CAN-MCP:**
 
 - Workspace у Cursor = `/home/sesquicadaver/GITFOLDER/CAN-MCP`
-- `--workspace ${workspaceFolder}` → аналізує сам репозиторій
+- auto-open через `CODIMENSION_WORKSPACE` або `open_project`
 
-**B. Аналізуєте інший проєкт:**
+**B. Аналізуєте інший Python-проєкт:**
 
-- Workspace у Cursor = ваш Python-проєкт
-- `command` → все одно вказує на venv CAN-MCP
-- `--workspace` → `${workspaceFolder}` = цільовий проєкт
+- Workspace у Cursor = ваш проєкт
+- `command` — все одно venv CAN-MCP
+- auto-open або `open_project` → цільовий каталог
 
 ### 3.4. Активація
 
 1. Зберегти `mcp.json`
-2. Cursor Settings → **MCP** → сервер `codimension` → увімкнути / Reload
+2. Cursor → Settings → **MCP** → **codimension** → Reload
 3. Або перезапустити Cursor
 
 ---
@@ -157,7 +174,7 @@ codimension-mcp --help
 Використай MCP codimension: виклич list_mcp_catalog і коротко підсумуй tools/resources/prompts.
 ```
 
-Очікувано: **22 tools**, **16 resources**, **6 prompts**.
+Очікувано: **23 tools**, **17 resources**, **6 prompts**.
 
 ```text
 Виклич get_project_tree через codimension MCP.
@@ -185,7 +202,7 @@ codimension-mcp --help
 
 ---
 
-## 5. Базовий workflow
+## 5. Базовий порядок роботи
 
 ```text
 ┌─────────────────────────────────────────────────────────┐
@@ -198,7 +215,7 @@ codimension-mcp --help
 
 Якщо в `mcp.json` є `"args": ["--workspace", "..."]`, крок 1 уже виконано при старті сервера.
 
-**Discovery (завжди першим для нового агента):**
+**Огляд MCP (завжди першим для нового агента):**
 
 - Tool: `list_mcp_catalog`
 - Resource: `codimension://catalog`
@@ -266,7 +283,7 @@ codimension://graph/control_flow/codimension_core__project.py__function__open
 
 ## 7. Tools — довідник з прикладами
 
-### Discovery
+### Огляд можливостей
 
 #### `list_mcp_catalog`
 
@@ -392,7 +409,7 @@ codimension://graph/control_flow/codimension_core__project.py__function__open
 
 ```text
 Використай MCP prompt refactor_symbol з symbol="pkg/api.py:function:fetch"
-і виконай описаний workflow.
+і виконай описаний сценарій.
 ```
 
 ---
@@ -409,7 +426,7 @@ codimension://graph/control_flow/codimension_core__project.py__function__open
 
 ---
 
-## 11. End-to-end сценарії
+## 11. Повні сценарії
 
 ### A. Огляд нового проєкту
 
@@ -464,20 +481,22 @@ impact_analysis target="codimension_core/project.py"
 ```text
 1. analyze_project
 2. get_call_graph
-3. Для top-3 функцій з найбільшою fan-in — find_callers
+3. Для трьох функцій з найбільшою кількістю вхідних викликів — find_callers
 4. Таблиця: function | callers count | files
 ```
 
 ---
 
-## 13. Troubleshooting
+## 13. Якщо не працює
 
 | Симптом | Рішення |
 |---------|---------|
 | `ImportError: codimension_core` / `build_call_graph` | `bash scripts/install-cursor-mcp.sh` або `pip install -e ./codimension_core -e ./codimension_mcp` |
 | `Unknown tool: open_project` | Оновити CAN-MCP (etapa 40+) |
 | Cursor не стартує MCP | Абсолютний шлях у `command` |
-| `Call open_project first` | `open_project` або `--workspace` в args |
+| `Call open_project first` | `open_project` або Reload **codimension** у MCP |
+| Жовтий статус MCP / довгий старт | Оновити CAN-MCP; не сканувати `$HOME`; `./scripts/install-cursor-mcp.sh` |
+| `FileNotFoundError: ...${workspaceFolder}` | Прибрати `args` з `~/.cursor/mcp.json`; використати `CODIMENSION_WORKSPACE` |
 | Diagnostics порожні | `pip install pyflakes radon` |
 | `find_usages` fail | `pip install jedi` |
 | `find_dead_code` fail / `No module named vulture` | `pip install vulture` у venv; переконайтесь, що `command` вказує на venv `codimension-mcp` (не system python через symlink — fixed у core 0.20.5+) |
@@ -497,8 +516,8 @@ impact_analysis target="codimension_core/project.py"
 - [ ] `pip install pyflakes radon jedi vulture`
 - [ ] `codimension-mcp --help` OK
 - [ ] `.cursor/mcp.json` з абсолютним `command`
-- [ ] Cursor MCP reloaded
-- [ ] `list_mcp_catalog` → 22 / 16 / 6
+- [ ] Cursor: Reload **codimension**
+- [ ] `list_mcp_catalog` → 23 / 17 / 6
 - [ ] `get_project_tree` → список файлів
 - [ ] `codimension://workspace/status` → `"status": "open"`
 

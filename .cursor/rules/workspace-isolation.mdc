@@ -9,7 +9,7 @@ alwaysApply: true
 
 ## English
 
-The open workspace is **only** the CAN-MCP repository root. It is the single source of truth for reads, edits, tests, and commits.
+The open workspace is **only** the CAN-MCP repository root — the single place for reads, edits, tests, and commits.
 
 **Do not** read, grep, edit, or commit files from other repositories (UNSOMNIA, sibling `GITFOLDER/*`, etc.) unless the user explicitly switches workspace.
 
@@ -17,7 +17,7 @@ The open workspace is **only** the CAN-MCP repository root. It is the single sou
 
 ## Українська
 
-Поточний workspace — **лише** корінь CAN-MCP. Це єдине джерело правди для читання, змін, тестів і commit.
+Поточний workspace — **лише** корінь CAN-MCP. Саме тут читаємо, змінюємо, тестуємо і комітимо.
 
 **Заборонено** читати, grep-ати, змінювати або commit-ити файли **інших репозиторіїв** без явного перемикання workspace.
 

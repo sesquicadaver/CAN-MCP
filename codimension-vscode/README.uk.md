@@ -2,7 +2,7 @@
 
 > **Мови:** [English](README.md) · [Українська](README.uk.md)
 
-Scaffold розширення VS Code / Cursor для [Codimension MCP](../codimension_mcp/README.uk.md).
+Базове розширення VS Code / Cursor для [Codimension MCP](../codimension_mcp/README.uk.md).
 
 ## Scope (0.4.0)
 

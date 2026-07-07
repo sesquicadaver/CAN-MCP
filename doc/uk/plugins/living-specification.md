@@ -1,11 +1,11 @@
-# Living Specification: CAN-MCP
+# Жива специфікація: CAN-MCP
 
 > **Languages:** [English](../en/plugins/living-specification.md) · [Українська](../uk/plugins/living-specification.md)
 
 **Версія:** 2.0  
 **Оновлено:** 2026-07
 
-Матриця «модуль → тести → CI». Оновлюється при extraction з [CODIMENSION-CORE-MAP.md](../CODIMENSION-CORE-MAP.md).
+Матриця «модуль → тести → CI». Оновлюється при винесенні модулів з [CODIMENSION-CORE-MAP.md](../CODIMENSION-CORE-MAP.md).
 
 ---
 
@@ -31,8 +31,8 @@
 | **codimension_mcp tools/resources** | test_codimension_mcp.py, test_codimension_mcp_workspace.py, test_codimension_mcp_path_security.py, test_codimension_mcp_symbol_resource.py, test_codimension_mcp_cfg_resources.py, test_codimension_mcp_impact_resources.py |
 | **codimension_mcp prompts** | test_codimension_mcp.py, test_codimension_mcp_prompts_v2.py |
 | **codimension_mcp catalog** | test_codimension_mcp_catalog.py + scripts/verify-mcp-catalog.sh |
-| **Bootstrap / CI scripts** | scripts/dev-setup.sh, scripts/test-analysis.sh, scripts/verify-mcp-catalog.sh, scripts/verify-vscode.sh, scripts/check-anti-stub.sh |
-| **Cursor MCP HOWTO** | doc/en/MCP-CURSOR-HOWTO.md, doc/uk/MCP-CURSOR-HOWTO.md |
+| **Скрипти CI та налаштування** | scripts/dev-setup.sh, scripts/test-analysis.sh, scripts/verify-mcp-catalog.sh, scripts/verify-vscode.sh, scripts/check-anti-stub.sh |
+| **Посібник Cursor MCP** | doc/en/MCP-CURSOR-HOWTO.md, doc/uk/MCP-CURSOR-HOWTO.md |
 | **VS Code extension** | codimension-vscode (npm run compile) |
 
 ---
@@ -46,15 +46,15 @@
 | Pytest | `pytest tests/` |
 | MCP catalog | `./scripts/verify-mcp-catalog.sh` |
 | VS Code compile | `./scripts/verify-vscode.sh` |
-| Anti-stub grep | `./scripts/check-anti-stub.sh` (`ENFORCE=1` in CI / local gate) |
+| Anti-stub grep | `./scripts/check-anti-stub.sh` (`ENFORCE=1` in CI / локальний прогін) |
 | pip-audit | `pip-audit -r requirements-dev.txt` |
-| Local gate | `./scripts/test-analysis.sh` |
+| Локальний прогін | `./scripts/test-analysis.sh` |
 
 ---
 
 ## 3. Оновлення
 
-При extraction або новому MCP tool:
+При винесенні модулів або новому MCP tool:
 
 1. Оновити [CODIMENSION-CORE-MAP.md](../CODIMENSION-CORE-MAP.md).
 2. Додати/оновити рядок у розд. 1.

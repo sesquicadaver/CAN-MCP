@@ -25,7 +25,7 @@ Architecture map: [doc/en/CODIMENSION-CORE-MAP.md](doc/en/CODIMENSION-CORE-MAP.m
 ```bash
 git clone https://github.com/sesquicadaver/CAN-MCP.git
 cd CAN-MCP
-./scripts/dev-setup.sh   # venv, editable install, Cursor MCP, merge gate
+./scripts/dev-setup.sh   # venv, editable install, Cursor MCP, tests
 ```
 
 Manual setup:
@@ -37,16 +37,16 @@ pip install --upgrade pip
 pip install -e "./codimension_core[analysis]" -e ./codimension_mcp
 pip install -r requirements-dev.txt
 ./scripts/install-cursor-mcp.sh   # writes .cursor/mcp.json
-./scripts/test-analysis.sh        # merge gate (ruff, mypy, pytest)
+./scripts/test-analysis.sh        # ruff, mypy, pytest
 ```
 
-Cursor: reload MCP server **codimension** after install.
+Cursor: after install, reload MCP server **codimension** (Settings → MCP → Reload).
 
-- **English HOWTO:** [doc/en/MCP-CURSOR-HOWTO.md](doc/en/MCP-CURSOR-HOWTO.md)
-- **Українська:** [doc/uk/MCP-CURSOR-HOWTO.md](doc/uk/MCP-CURSOR-HOWTO.md)
+- **Guide (EN):** [doc/en/MCP-CURSOR-HOWTO.md](doc/en/MCP-CURSOR-HOWTO.md)
+- **Посібник (UK):** [doc/uk/MCP-CURSOR-HOWTO.md](doc/uk/MCP-CURSOR-HOWTO.md)
 
 <!-- catalog:root-mcp -->
-**MCP discovery:** read `codimension://catalog` or call tool `list_mcp_catalog`.
+**MCP overview:** read `codimension://catalog` or call tool `list_mcp_catalog`.
 
 | Kind | Count |
 | ---- | ----- |
@@ -56,18 +56,18 @@ Cursor: reload MCP server **codimension** after install.
 
 Key resources: `codimension://graph/import`, `codimension://graph/call`, `codimension://graph/impact/{target_key}`, `codimension://cache/stats`.
 
-Full catalog: [codimension_mcp/README.md](codimension_mcp/README.md). **Cursor HOWTO:** [doc/en/MCP-CURSOR-HOWTO.md](doc/en/MCP-CURSOR-HOWTO.md) · [doc/uk/MCP-CURSOR-HOWTO.md](doc/uk/MCP-CURSOR-HOWTO.md). Cursor: `./scripts/install-cursor-mcp.sh` or project `.cursor/mcp.json`. VS Code extension: [codimension-vscode/](codimension-vscode/).
+Full catalog: [codimension_mcp/README.md](codimension_mcp/README.md). **Cursor guide:** [doc/en/MCP-CURSOR-HOWTO.md](doc/en/MCP-CURSOR-HOWTO.md) · [doc/uk/MCP-CURSOR-HOWTO.md](doc/uk/MCP-CURSOR-HOWTO.md). Setup: `./scripts/install-cursor-mcp.sh` or project `.cursor/mcp.json`. VS Code extension: [codimension-vscode/](codimension-vscode/).
 <!-- /catalog:root-mcp -->
 
 ## Development
 
 ```bash
-./scripts/dev-setup.sh          # fresh clone bootstrap
+./scripts/dev-setup.sh          # fresh clone setup
 ./scripts/test-analysis.sh
 ./scripts/verify-mcp-catalog.sh
 ```
 
-Living spec (TZ → module → tests):
+Living specification (module → tests):
 
 - [doc/en/plugins/living-specification.md](doc/en/plugins/living-specification.md)
 - [doc/uk/plugins/living-specification.md](doc/uk/plugins/living-specification.md)

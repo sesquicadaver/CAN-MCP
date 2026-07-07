@@ -1,4 +1,4 @@
-# Codimension MCP × Cursor — HOWTO
+# Codimension MCP × Cursor — посібник
 
 > **Languages:** [English](en/MCP-CURSOR-HOWTO.md) · [Українська](uk/MCP-CURSOR-HOWTO.md)
 

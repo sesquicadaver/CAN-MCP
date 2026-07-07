@@ -6,7 +6,7 @@
 **Дата:** 2026-07-05  
 **Джерело стратегії:** [README.md](../README.md) (CAN-MCP scope)
 
-Матриця відповідності «Codimension файл → codimension_core модуль → статус extraction».
+Матриця відповідності «Codimension файл → codimension_core модуль → статус винесення».
 
 ---
 
@@ -14,7 +14,7 @@
 
 ```text
 codimension_core/
-  project.py           — headless проєкт, scan, exclusions
+  project.py           — проєкт без IDE, scan, exclusions
   analyzer.py          — lint, complexity, dead code, disasm
   symbols.py           — brief parse, symbol index, jedi scope
   imports.py           — resolve imports, requirements
@@ -54,7 +54,7 @@ MCP resource: `codimension://symbol/{symbol_key}` — один symbol node Graph
 }
 ```
 
-Приклад v2 node (opt-in):
+Приклад v2 node (за env-прапорцем):
 
 ```json
 {
@@ -273,13 +273,13 @@ Install: `pip install -e "./codimension_core[analysis]"`. MCP depends on `codime
 | **codimension_core graph layout** | graph_layout.py | unit: tests/test_codimension_core_graph_layout.py |
 | **MCP get_import_diagram layout** | layout summary in tool payload | unit: tests/test_codimension_mcp.py |
 | **MCP lookup_symbol** | reverse index tool | unit: tests/test_codimension_mcp.py |
-| **codimension-vscode** | extension scaffold | Manual: npm run compile |
+| **codimension-vscode** | базове розширення | Manual: npm run compile |
 | **MCP render_diagram** | `.codimension/diagrams/*.html` WebView | ✅ 0.7.0 full import diagram model |
 | `render_diagram(kind, target?)` | `import_diagram` Graph IR + Graphviz DOT in payload | ✅ 0.7.0 |
 
 ---
 
-## 12. Порядок extraction (рекомендований)
+## 12. Порядок винесення (рекомендований)
 
 1. `parsers/` + `briefmodinfocache` → `symbols.py` + `cache.py`
 2. `flow_ast` + `cml` validation → `cfg.py`
@@ -308,7 +308,7 @@ Cursor / Claude / MCP host
 
 ## 14. Оновлення
 
-При extraction модуля:
+При винесенні модулів модуля:
 
 1. Оновити рядок у цій таблиці (статус → Done).
 2. Додати рядок у [living-specification.md](plugins/living-specification.md).

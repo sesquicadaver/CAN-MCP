@@ -2,12 +2,12 @@
 
 > **Languages:** [English](../en/LICENSE_COMPLIANCE.md) · [Українська](../uk/LICENSE_COMPLIANCE.md)
 
-CAN-MCP — модифікована headless-версія [Codimension](https://github.com/SergeySatskiy/codimension).
+CAN-MCP — модифікована версія без PyQt IDE [Codimension](https://github.com/SergeySatskiy/codimension).
 
 ## Attribution
 
 - **Original copyright:** Sergey Satskiy (2010–2019)
-- **CAN-MCP:** headless extraction (`codimension_core`, `codimension_mcp`, optional `codimension-vscode`)
+- **CAN-MCP:** винесення headless-частини (`codimension_core`, `codimension_mcp`, optional `codimension-vscode`)
 - **License:** GPL v3 — see [LICENSE](../LICENSE)
 - **Repository:** https://github.com/sesquicadaver/CAN-MCP
 

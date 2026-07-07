@@ -74,7 +74,7 @@ def _replace_marked_block(readme: str, marker: str, table: str) -> str:
 def render_root_mcp_summary() -> str:
     """Return compact MCP summary for repository root README."""
     lines = [
-        "**MCP discovery:** read `codimension://catalog` or call tool `list_mcp_catalog`.",
+        "**MCP overview:** read `codimension://catalog` or call tool `list_mcp_catalog`.",
         "",
         "| Kind | Count |",
         "| ---- | ----- |",
@@ -86,9 +86,9 @@ def render_root_mcp_summary() -> str:
         "`codimension://graph/impact/{target_key}`, `codimension://cache/stats`.",
         "",
         "Full catalog: [codimension_mcp/README.md](codimension_mcp/README.md). "
-        "**Cursor HOWTO:** [doc/en/MCP-CURSOR-HOWTO.md](doc/en/MCP-CURSOR-HOWTO.md) · "
+        "**Cursor guide:** [doc/en/MCP-CURSOR-HOWTO.md](doc/en/MCP-CURSOR-HOWTO.md) · "
         "[doc/uk/MCP-CURSOR-HOWTO.md](doc/uk/MCP-CURSOR-HOWTO.md). "
-        "Cursor: `./scripts/install-cursor-mcp.sh` or project `.cursor/mcp.json`. "
+        "Setup: `./scripts/install-cursor-mcp.sh` or project `.cursor/mcp.json`. "
         "VS Code extension: [codimension-vscode/](codimension-vscode/).",
     ]
     return "\n".join(lines)

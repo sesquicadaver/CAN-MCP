@@ -2,7 +2,7 @@
 
 > **Languages:** [English](../en/Analize-AI.md) · [Українська](../uk/Analize-AI.md)
 
-Оцінка CAN-MCP: **архітектура добра, реалізація активно наближається до production MVP**.
+Оцінка CAN-MCP: **архітектура добра, реалізація наближається до робочого MVP**.
 
 | Критерій                             | Оцінка |
 | ------------------------------------ | -----: |
@@ -14,23 +14,23 @@
 | Cache / incremental design           |   7/10 |
 | Production readiness                 |   7/10 |
 
-Джерело задач: [doc/uk/ROADMAP.md](ROADMAP.md). Living spec: [doc/uk/plugins/living-specification.md](plugins/living-specification.md).
+Джерело задач: [ROADMAP.md](ROADMAP.md). Жива специфікація: [plugins/living-specification.md](plugins/living-specification.md).
 
-## Status tracker (Analize-AI → ROAD)
+## Таблиця статусу (Analize-AI → ROAD)
 
 | Недолік | ROAD | Статус | Примітка |
 | ------- | ---- | ------ | -------- |
 | Graph IR примітивний | ROAD-2.1–2.6 | **done** | Graph IR v2 default; `CODIMENSION_GRAPH_IR=1` legacy opt-out |
 | Symbol IDs нестабільні | ROAD-1.1–1.3, 1.5–1.6 | **done** | Project-relative IDs + legacy aliases |
 | Call graph поверхневий | ROAD-3.1–3.7 | **done** | Instance/alias/nested attribute resolution + semantic fixtures |
-| Import `sys.path` мутація | ROAD-4.1–4.4 | **done** | `ImportResolver`, subprocess opt-in, concurrent tests |
+| Import `sys.path` мутація | ROAD-4.1–4.4 | **done** | `ImportResolver`, subprocess за env-прапорцем, concurrent tests |
 | Path security неповна | ROAD-1.4, 1.7 | **done** | `resolve_project_path` у всіх MCP tools |
 | Dev-зрілість / optional deps | ROAD-5.1–5.3, 5.6 | **done** | `[analysis]` extra, capabilities matrix, mypy strict + stubs |
 | MCP lifecycle / cache API | ROAD-5.4–5.5 | **done** | Workspace lock, `invalidate_file` tool |
-| Living spec drift | ROAD-1.8, 6.1 | **done** | Цей tracker + `living-specification.md` |
+| Застаріла специфікація | ROAD-1.8, 6.1 | **done** | Ця таблиця + `living-specification.md` |
 | Prompt canonical IDs | ROAD-6.2 | **done** | Prompts v2 (`pkg/mod.py:function:name`) |
-| Fresh-clone DX | ROAD-6.3 | **done** | `./scripts/dev-setup.sh` |
-| VS Code extension CI | ROAD-6.4 | **done** | CI job `vscode`: npm compile + catalog parity |
+| Налаштування після clone | ROAD-6.3 | **done** | `./scripts/dev-setup.sh` |
+| VS Code extension CI | ROAD-6.4 | **done** | CI job `vscode`: npm compile + узгодженість catalog |
 | Anti-stub grep | ROAD-6.5 | **done** | `scripts/check-anti-stub.sh` (`ENFORCE=1` у CI) |
 
 ## Сильні рішення
@@ -39,7 +39,7 @@
 
 2. **MCP-шар тонкий.** `server.py` реєструє tools через `FastMCP`, тримає `WorkspaceState` і делегує в `tools.py` / `codimension_core`.
 
-3. **Є машинний catalog.** `catalog.py` — source of truth для tools/resources/prompts; parity з VS Code URI list.
+3. **Є машинний catalog.** `catalog.py` — еталонний опис для tools/resources/prompts; узгодженість з VS Code URI list.
 
 4. **Graph IR версіонований.** `GraphIR` v2 default (`node.uri`, `edge.provenance`); legacy v1 через `CODIMENSION_GRAPH_IR=1`.
 
@@ -51,8 +51,8 @@
 
 ## Вердикт
 
-Проєкт **зрілий як agent-facing analysis MVP** на гілці `reserv-1`. Архітектурна рамка `core → MCP → clients` реалізована; Phase 0–5 roadmap переважно закрито.
+Проєкт **зрілий як MVP аналізу для AI-агентів** на гілці `reserv-1`. Архітектурна рамка `core → MCP → clients` реалізована; Phase 0–5 roadmap переважно закрито.
 
-Оновлена оцінка: **8/10 як архітектура, 7/10 як аналізатор, 7/10 як production tool**.
+Оновлена оцінка: **8/10 архітектура, 7/10 аналізатор, 7/10 як інструмент для продакшену**.
 
-**1.0.0 released** (2026-07-07): roadmap Phase 0–6 complete on `reserv-1`; merge gate 153 tests.
+**1.0.0** (2026-07-07): Phase 0–6 закрито; `./scripts/test-analysis.sh` — 153 тести.

@@ -8,7 +8,7 @@ Central index for project documentation. Canonical copies live under `doc/en/` a
 
 | Topic | English | Українська |
 | ----- | ------- | ---------- |
-| Cursor MCP setup | [MCP-CURSOR-HOWTO.md](en/MCP-CURSOR-HOWTO.md) | [MCP-CURSOR-HOWTO.md](uk/MCP-CURSOR-HOWTO.md) |
+| Cursor MCP setup | [MCP-CURSOR-HOWTO.md](en/MCP-CURSOR-HOWTO.md) (guide) | [MCP-CURSOR-HOWTO.md](uk/MCP-CURSOR-HOWTO.md) (посібник) |
 | Core architecture map | [CODIMENSION-CORE-MAP.md](en/CODIMENSION-CORE-MAP.md) | [CODIMENSION-CORE-MAP.md](uk/CODIMENSION-CORE-MAP.md) |
 | Roadmap | [ROADMAP.md](en/ROADMAP.md) | [ROADMAP.md](uk/ROADMAP.md) |
 | Living specification | [living-specification.md](en/plugins/living-specification.md) | [living-specification.md](uk/plugins/living-specification.md) |

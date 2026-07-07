@@ -5,7 +5,7 @@
 **Версія:** 1.0  
 **Дата:** 2026-07-06  
 **Базова оцінка:** [Analize-AI.md](Analize-AI.md)  
-**Living spec:** [plugins/living-specification.md](plugins/living-specification.md)  
+**Жива специфікація:** [plugins/living-specification.md](plugins/living-specification.md)  
 **Architecture map:** [CODIMENSION-CORE-MAP.md](CODIMENSION-CORE-MAP.md)
 
 ---
@@ -13,7 +13,7 @@
 ## Принципи (не ламати проєкт)
 
 1. **Test-first** — кожна задача починається з тесту (red → green), потім код.
-2. **Merge gate** — після кожної задачі: `./scripts/test-analysis.sh` (у venv).
+2. **Прогін `./scripts/test-analysis.sh`** — після кожної задачі: `./scripts/test-analysis.sh` (у venv).
 3. **Backward compatibility** — старі ID/URI працюють через alias layer мінімум один реліз.
 4. **Один PR = одна атомарна задача** — легкий revert.
 5. **Core vs MCP** — бізнес-логіка лише в `codimension_core`; MCP — транспорт і policy.
@@ -67,7 +67,7 @@
 | **Acceptance** | Green одразу. |
 | **Gate** | pytest |
 
-### ROAD-0.4 — Contract test MCP catalog parity
+### ROAD-0.4 — Contract test MCP узгодженість catalog
 
 | Поле | Значення |
 | ---- | -------- |
@@ -107,7 +107,7 @@
 | **Модулі** | `codimension_core/codimension_core/symbols.py` |
 | **Кроки** | 1. Додати `def symbol_id(project: Project, file_path: str, kind: str, name: str) -> str` → `{rel_path}:{kind}:{name}`. 2. `_symbol_id` залишити deprecated wrapper або видалити після міграції викликів. 3. У `_symbols_from_brief_info` передавати `project` для rel path через `project.to_relative_path(abs_path)`. |
 | **Залежності** | ROAD-0.1 |
-| **Acceptance** | ROAD-0.1 green; існуючі тести green. |
+| **Acceptance** | ROAD-0.1 — тести проходять; існуючі тести — тести проходять. |
 | **Non-breaking** | Node.id змінюється — див. ROAD-1.5. |
 
 ### ROAD-1.2 — Пропагувати новий ID у callgraph / reverse_index / usages
@@ -136,7 +136,7 @@
 | **Модулі** | новий `codimension_core/codimension_core/paths.py`; `codimension_mcp/tools.py`, `resources.py` |
 | **Кроки** | 1. `resolve_project_path(project, path: str) -> str`: realpath + `is_project_path` або `ValueError`. 2. Замінити `_resolve_path` / `_resolve_project_path` у MCP на core helper. |
 | **Залежності** | ROAD-0.2 |
-| **Acceptance** | ROAD-0.2 green; absolute path всередині project — OK. |
+| **Acceptance** | ROAD-0.2 — тести проходять; absolute path всередині project — OK. |
 | **Non-breaking** | Раніше «працювало» для paths поза project — тепер явна помилка (security fix). |
 
 ### ROAD-1.5 — Legacy symbol ID alias layer
@@ -146,7 +146,7 @@
 | **Модулі** | `codimension_core/codimension_core/symbol_registry.py` (новий) |
 | **Кроки** | 1. `build_alias_map(project) -> dict[legacy_id, canonical_id]`. 2. `lookup_symbol`, `impact_analysis`, `find_callers` приймають legacy або canonical (resolve через map). 3. `meta.legacy_id` у GraphNode.extra для debug. |
 | **Залежності** | ROAD-1.2 |
-| **Acceptance** | Tool `lookup_symbol("utils.py:function:foo")` знаходить символ у `pkg/a/utils.py` якщо unambiguous; ambiguous → structured error. |
+| **Acceptance** | Tool `lookup_symbol("utils.py:function:foo")` знаходить символ у `pkg/a/utils.py` якщо однозначно; ambiguous → структурована помилка. |
 | **Non-breaking** | Старі MCP URI з basename продовжують працювати один реліз. |
 
 ### ROAD-1.6 — Оновити `encode_function_key` / catalog encoding docs
@@ -156,7 +156,7 @@
 | **Модулі** | `codimension_mcp/resources.py`, `catalog.py`, `doc/MCP-CURSOR-HOWTO.md` |
 | **Кроки** | Документувати canonical format: `pkg/mod.py__function__name`. Додати приклади nested paths. |
 | **Залежності** | ROAD-1.1 |
-| **Acceptance** | ROAD-0.5 green; catalog encoding section оновлений; `verify-mcp-catalog.sh` OK. |
+| **Acceptance** | ROAD-0.5 — тести проходять; catalog encoding section оновлений; `verify-mcp-catalog.sh` OK. |
 
 ### ROAD-1.7 — Typed error для path policy
 
@@ -166,7 +166,7 @@
 | **Кроки** | `PathOutsideProjectError`; MCP `format_tool_error` повертає JSON з `error_code: "path_outside_project"`. |
 | **Acceptance** | MCP test assert error_code; не stack trace у stdout. |
 
-### ROAD-1.8 — Living spec + CORE-MAP sync (фаза 1)
+### ROAD-1.8 — Жива специфікація + CORE-MAP (фаза 1)
 
 | Поле | Значення |
 | ---- | -------- |
@@ -178,7 +178,7 @@
 
 ## Фаза 2 — Graph IR v2 (контракт без лому v1)
 
-> Мета: багатший контракт для LLM-клієнтів. v1 залишається readable; v2 — opt-in через version bump.
+> Мета: багатший контракт для LLM-клієнтів. v1 залишається читабельний; v2 — за env-прапорцем через version bump.
 
 ### ROAD-2.1 — Розширити `GraphIR.meta` (без зміни version)
 
@@ -202,7 +202,7 @@
 | ---- | -------- |
 | **Модулі** | `graph_ir.py`, `codimension_mcp/serializers.py` |
 | **Кроки** | v2 включає `edges[].provenance`, `nodes[].uri` (stable). Env `CODIMENSION_GRAPH_IR=2` або project setting. Default залишити v1. |
-| **Acceptance** | Default v1 green; v2 opt-in test green. |
+| **Acceptance** | Default v1 — тести проходять; v2 за env-прапорцем test — тести проходять. |
 
 ### ROAD-2.4 — Stable node URI (`codimension://symbol/{encoded_id}`)
 
@@ -289,7 +289,7 @@
 | ---- | -------- |
 | **Файли** | `tests/fixtures/semantic_project/` |
 | **Кроки** | 5–10 файлів: packages, re-exports, decorators, type aliases. Parametrized expected edges. |
-| **Acceptance** | ≥80% expected edges на фазу 3 (документувати known gaps). |
+| **Acceptance** | ≥80% expected edges на фазу 3 (документувати відомі прогалини). |
 
 ---
 
@@ -310,10 +310,10 @@
 | ---- | -------- |
 | **Модулі** | `imports.py` |
 | **Кроки** | Encapsulate save/restore sys.path, path_importer_cache, sys.modules diff. |
-| **Acceptance** | Існуючі `test_codimension_core_imports.py` green без змін expected. |
+| **Acceptance** | Існуючі `test_codimension_core_imports.py` — OK без змін expected. |
 | **Non-breaking** | Refactor only. |
 
-### ROAD-4.3 — Subprocess resolver (opt-in)
+### ROAD-4.3 — Subprocess resolver (за env-прапорцем)
 
 | Поле | Значення |
 | ---- | -------- |
@@ -355,7 +355,7 @@
 | Поле | Значення |
 | ---- | -------- |
 | **Кроки** | 1. `types-*` stubs для jedi, vulture. 2. `ignore_missing_imports = false` для нових модулів. 3. Per-module override для legacy. |
-| **Acceptance** | mypy green у CI. |
+| **Acceptance** | mypy — OK у CI. |
 
 ### ROAD-5.4 — MCP server lifecycle / workspace lock
 
@@ -378,7 +378,7 @@
 | ---- | -------- |
 | **Файли** | `.github/workflows/ci.yml` |
 | **Кроки** | Job `pip-audit -r requirements-dev.txt`; fail on critical. |
-| **Acceptance** | CI badge green. |
+| **Acceptance** | CI badge — тести проходять. |
 
 ---
 
@@ -404,14 +404,14 @@
 | Поле | Значення |
 | ---- | -------- |
 | **Кроки** | venv + editable install + optional analysis deps + install-cursor-mcp. |
-| **Acceptance** | Fresh clone → one script → test gate. |
+| **Acceptance** | Новий clone → one script → test gate. |
 
 ### ROAD-6.4 — VS Code extension sync check
 
 | Поле | Значення |
 | ---- | -------- |
 | **Кроки** | CI step `npm run compile` у `codimension-vscode/`; catalog URI parity smoke. |
-| **Acceptance** | CI job не блокує core, але signal on drift. |
+| **Acceptance** | CI job не блокує core, але попередження при розходженні. |
 
 ### ROAD-6.5 — Anti-stub CI grep (optional gate)
 
@@ -433,15 +433,15 @@
 | sys.path мутація | ROAD-4.1–4.4 |
 | Dev-зрілість / deps | ROAD-5.1–5.3, 5.6 |
 | Production readiness | ROAD-5.4–5.6, 6.3–6.4 |
-| Living spec drift | ROAD-1.8, 6.1 |
+| Застаріла специфікація | ROAD-1.8, 6.1 |
 
 ---
 
 ## Definition of Done (кожна задача)
 
 - [ ] Unit/integration test додано або оновлено  
-- [ ] `./scripts/test-analysis.sh` green у `.venv`  
-- [ ] `./scripts/verify-mcp-catalog.sh` green (якщо чіпали MCP)  
+- [ ] `./scripts/test-analysis.sh` — OK у `.venv`  
+- [ ] `./scripts/verify-mcp-catalog.sh` — OK (якщо чіпали MCP)  
 - [ ] `doc/plugins/living-specification.md` оновлено (якщо новий модуль/тест)  
 - [ ] Немає нових `# noqa` без обґрунтування  
 - [ ] CHANGELOG entry (коли накопичиться реліз)
@@ -454,7 +454,7 @@
 2. ROAD-1.3 → ROAD-1.1 → ROAD-1.2 → ROAD-1.4  
 3. ROAD-1.5 (alias) → ROAD-1.8  
 
-**Очікуваний результат:** стабільні IDs, path policy, backward-compatible MCP URI, zero regression у merge gate.
+**Очікуваний результат:** стабільні IDs, path policy, backward-compatible MCP URI, zero regression у прогін `./scripts/test-analysis.sh`.
 
 ---
 
@@ -463,7 +463,7 @@
 | Milestone | Версія core | Критерій |
 | --------- | ----------- | -------- |
 | Sprint 1 done | 0.21.0 | ROAD 1.x complete |
-| Graph IR v2 default | 0.22.0 | ROAD 2.x + opt-in period |
+| Graph IR v2 default | 0.22.0 | ROAD 2.x + за env-прапорцем period |
 | Semantic phase 1 | 0.23.0 | ROAD 3.1–3.3 |
 | Import isolation default | 0.24.0 | ROAD 4.x |
 | Production tag | 1.0.0 | ROAD 5.x + 6.x, Analize-AI ≥ 8/10 production |

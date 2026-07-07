@@ -2,7 +2,7 @@
 
 > **Мови:** [English](README.md) · [Українська](README.uk.md)
 
-MCP-сервер для headless аналізу Codimension (CAN-MCP).
+MCP-сервер для аналізу на базі Codimension (CAN-MCP).
 
 ## Встановлення
 
@@ -17,7 +17,7 @@ pip install -e ./codimension_mcp
 codimension-mcp --workspace /path/to/project
 ```
 
-## Discovery
+## Огляд можливостей
 
 Почніть із catalog:
 
@@ -46,4 +46,4 @@ codimension-mcp --workspace /path/to/project
 ```
 
 **Ключі URI:** `file.py:function:name` → `file.py__function__name`.  
-**Source of truth:** `codimension_mcp/catalog.py`.
+**Еталонний опис:** `codimension_mcp/catalog.py`.

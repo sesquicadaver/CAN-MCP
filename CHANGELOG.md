@@ -8,7 +8,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [1.0.0] - 2026-07-07
 
-Production release on branch `reserv-1`. ROADMAP Phase 0–6 complete; merge gate green (153 tests).
+Production release on branch `reserv-1`. ROADMAP Phase 0–6 complete; 153 tests pass.
 
 ### codimension-core 1.0.0
 

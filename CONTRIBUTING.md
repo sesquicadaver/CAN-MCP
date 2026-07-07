@@ -15,7 +15,7 @@ pip install -r requirements-dev.txt
 pip install -e ./codimension_core -e ./codimension_mcp
 ```
 
-3. Run merge gate: `./scripts/test-analysis.sh`
+3. Run tests: `./scripts/test-analysis.sh`
 4. Update [doc/en/plugins/living-specification.md](doc/en/plugins/living-specification.md) and [doc/uk/plugins/living-specification.md](doc/uk/plugins/living-specification.md) when adding extracted modules
 5. Keep documentation bilingual (EN + UK) under `doc/en/` and `doc/uk/`
 6. Open a Pull Request
