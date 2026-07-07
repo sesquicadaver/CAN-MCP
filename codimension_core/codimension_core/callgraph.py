@@ -26,7 +26,38 @@ class _CallGraphIndex:
     functions: dict[str, _FunctionSpan] = field(default_factory=dict)
     local_names: dict[str, dict[str, str]] = field(default_factory=dict)
     import_map: dict[str, dict[str, str]] = field(default_factory=dict)
-    edges: list[tuple[str, str, int, str]] = field(default_factory=list)
+    class_methods: dict[str, dict[str, str]] = field(default_factory=dict)
+    file_to_module: dict[str, str] = field(default_factory=dict)
+    module_to_file: dict[str, str] = field(default_factory=dict)
+    edges: list[tuple[str, str, int, str, float]] = field(default_factory=list)
+
+
+def _rel_file(project: Project, file_path: str) -> str:
+    return project.to_relative_path(file_path)
+
+
+def _file_to_module_name(rel_file: str) -> str:
+    path = rel_file.replace("\\", "/")
+    if path.endswith("/__init__.py"):
+        return path[: -len("/__init__.py")].replace("/", ".")
+    if path.endswith("__init__.py"):
+        return path[: -len("__init__.py")].rstrip("/.").replace("/", ".")
+    if path.endswith(".py"):
+        return path[:-3].replace("/", ".")
+    return path.replace("/", ".")
+
+
+
+def _build_module_maps(project: Project) -> tuple[dict[str, str], dict[str, str]]:
+    file_to_module: dict[str, str] = {}
+    module_to_file: dict[str, str] = {}
+    for abs_path in project.python_files:
+        rel = _rel_file(project, abs_path)
+        module = _file_to_module_name(rel)
+        file_to_module[rel] = module
+        if module not in module_to_file:
+            module_to_file[module] = abs_path
+    return file_to_module, module_to_file
 
 
 def _collect_function_spans(info: object, file_path: str, prefix: str = "") -> list[_FunctionSpan]:
@@ -64,18 +95,86 @@ def _collect_function_spans(info: object, file_path: str, prefix: str = "") -> l
     return spans
 
 
-def _build_import_map(info: object) -> dict[str, str]:
+def _build_class_methods(spans: list[_FunctionSpan]) -> dict[str, str]:
+    methods: dict[str, str] = {}
+    for span in spans:
+        if "." in span.qualname:
+            methods[span.qualname.split(".")[-1]] = span.qualname
+    return methods
+
+
+def _resolve_relative_module(current_module: str, module: str | None, level: int) -> str:
+    if level == 0:
+        return module or ""
+    parts = current_module.split(".") if current_module else []
+    if level > len(parts):
+        base_parts: list[str] = []
+    else:
+        base_parts = parts[:-level] if level else parts
+    if module:
+        return ".".join(base_parts + module.split("."))
+    return ".".join(base_parts)
+
+
+def _build_import_map_brief(info: object) -> dict[str, str]:
     mapping: dict[str, str] = {}
     for import_obj in getattr(info, "imports", []):
+        module = import_obj.name or ""
         if import_obj.what:
-            module = import_obj.name
             for what in import_obj.what:
                 alias = what.alias or what.name
-                mapping[alias] = f"{module}.{what.name}" if module else what.name
+                if module.startswith("."):
+                    mapping[alias] = f"{module.lstrip('.')}.{what.name}" if module != "." else what.name
+                else:
+                    mapping[alias] = f"{module}.{what.name}" if module else what.name
         else:
-            alias = import_obj.alias or import_obj.name.split(".")[0]
-            mapping[alias] = import_obj.name
+            alias = import_obj.alias or module.split(".")[0]
+            mapping[alias] = module
     return mapping
+
+
+def _build_import_map_ast(
+    project: Project,
+    rel_path: str,
+    tree: ast.AST,
+    file_to_module: dict[str, str],
+) -> dict[str, str]:
+    mapping: dict[str, str] = {}
+    current_module = file_to_module.get(rel_path, "")
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                name = alias.asname or alias.name.split(".")[0]
+                mapping[name] = alias.name
+        elif isinstance(node, ast.ImportFrom):
+            module_name = _resolve_relative_module(current_module, node.module, node.level)
+            for alias in node.names:
+                if alias.name == "*":
+                    continue
+                local = alias.asname or alias.name
+                mapping[local] = f"{module_name}.{alias.name}" if module_name else alias.name
+    return mapping
+
+
+def _merge_import_maps(*maps: dict[str, str]) -> dict[str, str]:
+    merged: dict[str, str] = {}
+    for item in maps:
+        merged.update(item)
+    return merged
+
+
+def _resolve_import_target(project: Project, index: _CallGraphIndex, qualified: str) -> str | None:
+    parts = qualified.split(".")
+    for split_at in range(len(parts), 0, -1):
+        module_name = ".".join(parts[:split_at])
+        remainder = ".".join(parts[split_at:])
+        abs_path = index.module_to_file.get(module_name)
+        if abs_path is None:
+            continue
+        if not remainder:
+            return symbol_id(project, abs_path, "module", module_name.split(".")[-1])
+        return symbol_id(project, abs_path, "function", remainder)
+    return None
 
 
 def _function_for_line(spans: list[_FunctionSpan], line: int) -> _FunctionSpan | None:
@@ -85,31 +184,65 @@ def _function_for_line(spans: list[_FunctionSpan], line: int) -> _FunctionSpan |
     return max(matches, key=lambda span: span.line_start)
 
 
-def _callee_symbol_id(project: Project, caller_file: str, callee_name: str, index: _CallGraphIndex) -> str | None:
-    local = index.local_names.get(caller_file, {})
-    if callee_name in local:
-        target = local[callee_name]
-        return symbol_id(project, caller_file, "function", target)
+def _resolve_method_callee(
+    span: _FunctionSpan,
+    attr_name: str,
+    index: _CallGraphIndex,
+) -> str | None:
+    if "." not in span.qualname:
+        return None
+    class_name = span.qualname.rsplit(".", 1)[0]
+    method_qual = f"{class_name}.{attr_name}"
+    for fn_id, fn_span in index.functions.items():
+        if fn_span.qualname == method_qual:
+            return fn_id
+    return None
 
-    import_map = index.import_map.get(caller_file, {})
+
+def _callee_symbol_id(
+    project: Project,
+    rel_path: str,
+    abs_path: str,
+    callee_name: str,
+    index: _CallGraphIndex,
+    *,
+    receiver: str | None = None,
+    span: _FunctionSpan | None = None,
+) -> tuple[str | None, float]:
+    if receiver == "self" and span is not None:
+        resolved = _resolve_method_callee(span, callee_name, index)
+        if resolved:
+            return resolved, 0.85
+
+    local = index.local_names.get(rel_path, {})
+    if callee_name in local:
+        return symbol_id(project, abs_path, "function", local[callee_name]), 0.9
+
+    import_map = index.import_map.get(rel_path, {})
     if callee_name in import_map:
         imported = import_map[callee_name]
-        top = imported.split(".")[0]
-        for path in project.python_files:
-            if basename(path) == f"{top}.py":
-                return symbol_id(project, path, "function", imported.split(".")[-1])
-        return f"external:function:{imported}"
+        if imported.startswith("."):
+            current_module = index.file_to_module.get(rel_path, "")
+            resolved_module = _resolve_relative_module(current_module, imported.lstrip("."), 1)
+            imported = f"{resolved_module}.{callee_name}" if resolved_module else callee_name
+        resolved = _resolve_import_target(project, index, imported)
+        if resolved:
+            return resolved, 0.8
+        return f"external:function:{imported}", 0.5
 
     for path in project.python_files:
-        if basename(path) == f"{callee_name}.py":
-            return symbol_id(project, path, "module", callee_name)
-    return f"external:function:{callee_name}"
+        rel = _rel_file(project, path)
+        module = index.file_to_module.get(rel, "")
+        if module.endswith(f".{callee_name}") or rel.endswith(f"/{callee_name}.py"):
+            return symbol_id(project, path, "module", callee_name), 0.6
+    return f"external:function:{callee_name}", 0.3
 
 
 def _extract_calls(
     tree: ast.AST,
     spans: list[_FunctionSpan],
-    caller_file: str,
+    rel_path: str,
+    abs_path: str,
     project: Project,
     index: _CallGraphIndex,
 ) -> None:
@@ -119,46 +252,65 @@ def _extract_calls(
         span = _function_for_line(spans, node.lineno)
         if span is None:
             continue
-        caller_id = symbol_id(project, caller_file, "function", span.qualname)
-        callee_name, label = _call_target_name(node)
+        caller_id = symbol_id(project, abs_path, "function", span.qualname)
+        callee_name, label, receiver = _call_target_name(node)
         if not callee_name:
             continue
-        callee_id = _callee_symbol_id(project, caller_file, callee_name, index)
+        callee_id, confidence = _callee_symbol_id(
+            project,
+            rel_path,
+            abs_path,
+            callee_name,
+            index,
+            receiver=receiver,
+            span=span,
+        )
         if callee_id is None:
             continue
-        index.edges.append((caller_id, callee_id, node.lineno, label))
+        index.edges.append((caller_id, callee_id, node.lineno, label, confidence))
 
 
-def _call_target_name(node: ast.Call) -> tuple[str | None, str]:
+def _call_target_name(node: ast.Call) -> tuple[str | None, str, str | None]:
     func = node.func
     if isinstance(func, ast.Name):
-        return func.id, func.id
+        return func.id, func.id, None
     if isinstance(func, ast.Attribute):
         value_name = ""
+        receiver: str | None = None
         if isinstance(func.value, ast.Name):
             value_name = func.value.id
+            receiver = value_name
         label = f"{value_name}.{func.attr}" if value_name else func.attr
-        return func.attr, label
-    return None, ""
+        return func.attr, label, receiver
+    return None, "", None
 
 
 def _build_index(project: Project) -> _CallGraphIndex:
     index = _CallGraphIndex()
+    file_to_module, module_to_file = _build_module_maps(project)
+    index.file_to_module = file_to_module
+    index.module_to_file = module_to_file
+
     for file_path in project.python_files:
+        rel_path = _rel_file(project, file_path)
         info = project.cache.get(file_path)
         spans = _collect_function_spans(info, file_path)
-        index.local_names[file_path] = {span.qualname.split(".")[-1]: span.qualname for span in spans}
-        index.import_map[file_path] = _build_import_map(info)
-        for span in spans:
-            symbol = symbol_id(project, file_path, "function", span.qualname)
-            index.functions[symbol] = span
+        index.local_names[rel_path] = {span.qualname.split(".")[-1]: span.qualname for span in spans}
+        index.class_methods[rel_path] = _build_class_methods(spans)
         with open(file_path, encoding="utf-8", errors="replace") as handle:
             source = handle.read()
         try:
             tree = ast.parse(source, filename=file_path)
         except SyntaxError:
-            continue
-        _extract_calls(tree, spans, file_path, project, index)
+            tree = None
+        brief_map = _build_import_map_brief(info)
+        ast_map = _build_import_map_ast(project, rel_path, tree, file_to_module) if tree is not None else {}
+        index.import_map[rel_path] = _merge_import_maps(brief_map, ast_map)
+        for span in spans:
+            symbol = symbol_id(project, file_path, "function", span.qualname)
+            index.functions[symbol] = span
+        if tree is not None:
+            _extract_calls(tree, spans, rel_path, file_path, project, index)
     return index
 
 
@@ -179,7 +331,7 @@ def _index_to_graph(index: _CallGraphIndex, symbol_filter: str | None = None) ->
             )
         )
 
-    for caller_id, callee_id, line_no, label in index.edges:
+    for caller_id, callee_id, line_no, label, confidence in index.edges:
         if symbol_filter and symbol_filter not in (caller_id, callee_id):
             if not (
                 caller_id.endswith(f":function:{symbol_filter}")
@@ -216,7 +368,7 @@ def _index_to_graph(index: _CallGraphIndex, symbol_filter: str | None = None) ->
                         to_id=callee_id,
                         type="calls",
                         label=f"{label}:{line_no}",
-                        extra={"provenance": "ast"},
+                        extra={"provenance": "ast", "confidence": confidence},
                     )
                 )
     return graph
@@ -244,8 +396,8 @@ def find_callers(project: Project, symbol: str) -> GraphIR:
     resolved = resolve_symbol_reference(project, symbol)
     index = _get_call_index(project)
     graph = GraphIR(meta={"kind": "callers", "symbol": symbol, "resolved_symbol": resolved})
-    for caller_id, callee_id, line_no, label in index.edges:
-        if resolved in callee_id or callee_id.endswith(f":function:{resolved}"):
+    for caller_id, callee_id, line_no, label, _confidence in index.edges:
+        if callee_id == resolved or resolved in callee_id:
             graph.add_edge(
                 GraphEdge(from_id=caller_id, to_id=callee_id, type="calls", label=f"{label}:{line_no}")
             )
@@ -271,8 +423,8 @@ def find_callees(project: Project, symbol: str) -> GraphIR:
     resolved = resolve_symbol_reference(project, symbol)
     index = _get_call_index(project)
     graph = GraphIR(meta={"kind": "callees", "symbol": symbol, "resolved_symbol": resolved})
-    for caller_id, callee_id, line_no, label in index.edges:
-        if resolved in caller_id or caller_id.endswith(f":function:{resolved}"):
+    for caller_id, callee_id, line_no, label, _confidence in index.edges:
+        if caller_id == resolved or resolved in caller_id:
             graph.add_edge(
                 GraphEdge(from_id=caller_id, to_id=callee_id, type="calls", label=f"{label}:{line_no}")
             )
@@ -292,7 +444,9 @@ def find_callees(project: Project, symbol: str) -> GraphIR:
     return enrich_graph_meta(graph, project_root=project.root)
 
 
-def _matches_callee(callee_id: str, target: str) -> bool:
+def _matches_callee(callee_id: str, target: str, resolved: str | None = None) -> bool:
+    if resolved and callee_id == resolved:
+        return True
     return target in callee_id or callee_id.endswith(f":function:{target}")
 
 
@@ -301,7 +455,8 @@ def _resolve_target_file(project: Project, target: str) -> str | None:
         resolved = realpath(target)
         return resolved if project.is_project_path(resolved) else None
     for path in project.python_files:
-        if basename(path) == target or path.endswith("/" + target) or path.endswith("\\" + target):
+        rel = project.to_relative_path(path)
+        if basename(path) == target or rel == target or rel.endswith("/" + target):
             return path
     return None
 
@@ -312,7 +467,7 @@ def _collect_transitive_callers(
 ) -> tuple[set[str], list[tuple[str, str, str]]]:
     """Walk reverse call edges from seed callees; return callers and impact edges."""
     reverse: dict[str, list[tuple[str, int, str]]] = {}
-    for caller_id, callee_id, line_no, label in index.edges:
+    for caller_id, callee_id, line_no, label, _confidence in index.edges:
         reverse.setdefault(callee_id, []).append((caller_id, line_no, label))
 
     impacted: set[str] = set()
@@ -387,7 +542,29 @@ def impact_analysis(project: Project, target: str) -> GraphIR:
     impacted: set[str] = set()
     fallback_file = target if target.endswith(".py") else ""
 
-    if target.endswith(".py") or "/" in target or "\\" in target:
+    resolved_symbol: str | None = None
+    is_symbol_target = ":function:" in target or ":class:" in target
+    if is_symbol_target:
+        try:
+            resolved_symbol = resolve_symbol_reference(project, target)
+        except Exception:
+            resolved_symbol = None
+
+    if is_symbol_target and resolved_symbol:
+        seed_ids = {resolved_symbol}
+        seed_ids |= {
+            callee_id
+            for _caller_id, callee_id, _line_no, _label, _confidence in call_index.edges
+            if callee_id == resolved_symbol
+        }
+        callers, call_edges = _collect_transitive_callers(call_index, seed_ids)
+        impacted |= callers
+        impacted |= seed_ids
+        for caller_id, callee_id, label in call_edges:
+            graph.add_edge(
+                GraphEdge(from_id=caller_id, to_id=callee_id, type="impacted_by_call", label=label)
+            )
+    elif target.endswith(".py") or ("/" in target and not is_symbol_target) or "\\" in target:
         target_file = _resolve_target_file(project, target)
         if target_file:
             fallback_file = target_file
@@ -405,8 +582,8 @@ def impact_analysis(project: Project, target: str) -> GraphIR:
                         )
                     )
             seed_ids = {
-                symbol_id
-                for symbol_id, span in call_index.functions.items()
+                symbol
+                for symbol, span in call_index.functions.items()
                 if span.file_path == target_file
             }
             callers, call_edges = _collect_transitive_callers(call_index, seed_ids)
@@ -415,16 +592,16 @@ def impact_analysis(project: Project, target: str) -> GraphIR:
                 graph.add_edge(
                     GraphEdge(from_id=caller_id, to_id=callee_id, type="impacted_by_call", label=label)
                 )
-    else:
+    elif not is_symbol_target:
         seed_ids = {
             callee_id
-            for _caller_id, callee_id, _line_no, _label in call_index.edges
-            if _matches_callee(callee_id, target)
+            for _caller_id, callee_id, _line_no, _label, _confidence in call_index.edges
+            if _matches_callee(callee_id, target, resolved_symbol)
         }
         seed_ids |= {
-            symbol_id
-            for symbol_id in call_index.functions
-            if _matches_callee(symbol_id, target)
+            symbol
+            for symbol in call_index.functions
+            if _matches_callee(symbol, target, resolved_symbol)
         }
         callers, call_edges = _collect_transitive_callers(call_index, seed_ids)
         impacted |= callers
@@ -435,6 +612,8 @@ def impact_analysis(project: Project, target: str) -> GraphIR:
             )
 
     graph.meta["impacted_count"] = len(impacted)
+    if resolved_symbol:
+        graph.meta["resolved_symbol"] = resolved_symbol
     for node_id in sorted(impacted):
         _add_impact_node(graph, node_id, call_index, fallback_file)
     return enrich_graph_meta(graph, project_root=project.root)

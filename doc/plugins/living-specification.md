@@ -15,7 +15,7 @@
 | **codimension_core.symbols / brief_ast** | test_codimension_core_brief_ast.py, test_codimension_core_symbol_ids.py |
 | **codimension_core.paths / symbol_registry** | test_codimension_core_paths.py, test_codimension_core_symbol_ids.py |
 | **codimension_core.imports / deps** | test_codimension_core_imports.py, test_codimension_core_deps.py |
-| **codimension_core.callgraph / impact** | test_codimension_core.py, test_codimension_core_impact.py |
+| **codimension_core.callgraph / impact** | test_codimension_core.py, test_codimension_core_impact.py, test_codimension_core_callgraph_semantic.py |
 | **codimension_core.cfg / flow_ast** | test_codimension_core_flow_ast.py |
 | **codimension_core.analyzer** | test_codimension_core_analyzer.py |
 | **codimension_core.encoding_utils** | test_codimension_core_encoding_utils.py |
