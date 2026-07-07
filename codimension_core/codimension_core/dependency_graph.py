@@ -17,7 +17,7 @@ from .imports import (
 )
 from .parser_types import BriefImport, BriefModuleInfo
 from .project import Project
-from .symbols import file_node_id
+from .symbols import build_module_to_file, file_node_id, resolve_module_to_file
 
 
 def _import_edge_kind(classification: str) -> str:
@@ -56,10 +56,8 @@ def build_import_graph(project: Project, *, resolved: bool = True) -> GraphIR:
 
 def _build_brief_import_graph(project: Project) -> GraphIR:
     graph = GraphIR(meta={"kind": "import_graph", "resolved": False})
-    file_by_stem: dict[str, str] = {}
+    module_to_file = build_module_to_file(project)
     for path in project.python_files:
-        stem = basename(path)[:-3]
-        file_by_stem[stem] = path
         _add_file_node(graph, project, path)
 
     for path in project.python_files:
@@ -69,15 +67,15 @@ def _build_brief_import_graph(project: Project) -> GraphIR:
             module_name = _import_module_name(import_obj)
             if not module_name:
                 continue
-            top_level = module_name.split(".")[0]
-            target_path = file_by_stem.get(top_level)
+            normalized = module_name.lstrip(".")
+            target_path = resolve_module_to_file(normalized, module_to_file)
             if target_path is None:
-                target_id = f"module:{module_name}"
+                target_id = f"module:{normalized}"
                 graph.add_node(
                     GraphNode(
                         id=target_id,
                         type="external_module",
-                        name=module_name,
+                        name=normalized,
                         file="",
                         line_start=0,
                         line_end=0,

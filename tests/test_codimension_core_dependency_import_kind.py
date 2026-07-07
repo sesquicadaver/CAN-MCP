@@ -49,6 +49,21 @@ def test_import_graph_file_nodes_use_project_relative_ids(tmp_path):
     assert "file:helper.py" not in node_ids
 
 
+def test_brief_import_graph_resolves_package_modules_without_stem_collision(tmp_path):
+    project_dir = tmp_path / "proj"
+    (project_dir / "pkg" / "a").mkdir(parents=True)
+    (project_dir / "pkg" / "b").mkdir(parents=True)
+    (project_dir / "pkg" / "a" / "helper.py").write_text("A = 1\n", encoding="utf-8")
+    (project_dir / "pkg" / "b" / "helper.py").write_text("B = 2\n", encoding="utf-8")
+    (project_dir / "main.py").write_text("import pkg.a.helper\n", encoding="utf-8")
+
+    project = Project.open(str(project_dir))
+    graph = build_import_graph(project, resolved=False)
+    edges = {(edge.from_id, edge.to_id) for edge in graph.edges if edge.type == "imports"}
+    assert ("file:main.py", "file:pkg/a/helper.py") in edges
+    assert ("file:main.py", "file:pkg/b/helper.py") not in edges
+
+
 def test_brief_import_graph_sets_edge_kind(tmp_path):
     project_dir = tmp_path / "proj"
     project_dir.mkdir()

@@ -30,6 +30,39 @@ def file_node_id(project: Project, file_path: str) -> str:
     return f"file:{rel_path}"
 
 
+def file_to_module_name(rel_file: str) -> str:
+    """Map a project-relative file path to a Python module name."""
+    path = rel_file.replace("\\", "/")
+    if path.endswith("/__init__.py"):
+        return path[: -len("/__init__.py")].replace("/", ".")
+    if path.endswith("__init__.py"):
+        return path[: -len("__init__.py")].rstrip("/.").replace("/", ".")
+    if path.endswith(".py"):
+        return path[:-3].replace("/", ".")
+    return path.replace("/", ".")
+
+
+def build_module_to_file(project: Project) -> dict[str, str]:
+    """Map fully-qualified module names to absolute file paths."""
+    module_to_file: dict[str, str] = {}
+    for abs_path in project.python_files:
+        rel = project.to_relative_path(abs_path)
+        module = file_to_module_name(rel)
+        module_to_file.setdefault(module, abs_path)
+    return module_to_file
+
+
+def resolve_module_to_file(module_name: str, module_to_file: dict[str, str]) -> str | None:
+    """Resolve an imported module name to a project file path."""
+    parts = module_name.split(".")
+    for split_at in range(len(parts), 0, -1):
+        candidate = ".".join(parts[:split_at])
+        abs_path = module_to_file.get(candidate)
+        if abs_path is not None:
+            return abs_path
+    return None
+
+
 def _symbol_id(file_path: str, kind: str, name: str) -> str:
     """Backward-compatible alias for legacy basename ids."""
     return legacy_symbol_id(file_path, kind, name)

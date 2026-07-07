@@ -201,14 +201,27 @@ def _resolve_method_callee(
     return None
 
 
-def _class_name_from_call(value: ast.expr) -> str | None:
+def _qualified_type_from_value(value: ast.expr, import_map: dict[str, str]) -> str | None:
     if isinstance(value, ast.Call):
-        if isinstance(value.func, ast.Name):
-            return value.func.id
-        if isinstance(value.func, ast.Attribute):
-            return value.func.attr
+        func = value.func
+        if isinstance(func, ast.Name):
+            local = func.id
+            return import_map.get(local, local)
+        if isinstance(func, ast.Attribute):
+            chain: list[str] = []
+            node: ast.expr = func
+            while isinstance(node, ast.Attribute):
+                chain.insert(0, node.attr)
+                node = node.value
+            if isinstance(node, ast.Name):
+                chain.insert(0, node.id)
+                root = chain[0]
+                tail = ".".join(chain[1:])
+                imported = import_map.get(root, root)
+                return f"{imported}.{tail}" if tail else imported
     if isinstance(value, ast.Name):
-        return value.id
+        local = value.id
+        return import_map.get(local, local)
     return None
 
 
@@ -221,18 +234,26 @@ def _collect_instance_types(
     result: dict[str, dict[str, str]] = {}
     for span in spans:
         types: dict[str, str] = {}
-        for node in ast.walk(tree):
-            if not isinstance(node, ast.Assign):
-                continue
-            if not (span.line_start <= node.lineno <= span.line_end):
-                continue
-            class_local = _class_name_from_call(node.value)
-            if not class_local:
-                continue
-            qualified = import_map.get(class_local, class_local)
-            for target in node.targets:
-                if isinstance(target, ast.Name):
-                    types[target.id] = qualified
+        for _pass in range(8):
+            changed = False
+            for node in ast.walk(tree):
+                if not isinstance(node, ast.Assign):
+                    continue
+                if not (span.line_start <= node.lineno <= span.line_end):
+                    continue
+                for target in node.targets:
+                    if not isinstance(target, ast.Name):
+                        continue
+                    qualified: str | None = None
+                    if isinstance(node.value, ast.Name) and node.value.id in types:
+                        qualified = types[node.value.id]
+                    else:
+                        qualified = _qualified_type_from_value(node.value, import_map)
+                    if qualified and types.get(target.id) != qualified:
+                        types[target.id] = qualified
+                        changed = True
+            if not changed:
+                break
         if types:
             result[span.qualname] = types
     return result

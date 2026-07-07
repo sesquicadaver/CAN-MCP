@@ -58,6 +58,25 @@ def test_callgraph_resolves_self_method_call(tmp_path):
     assert edge.extra.get("confidence", 0) >= 0.8
 
 
+def test_callgraph_propagates_instance_type_through_alias(tmp_path):
+    project_dir = tmp_path / "proj"
+    (project_dir / "pkg").mkdir(parents=True)
+    (project_dir / "pkg" / "worker.py").write_text(
+        "class Worker:\n    def run(self):\n        return self.process()\n\n    def process(self):\n        return 1\n",
+        encoding="utf-8",
+    )
+    (project_dir / "main.py").write_text(
+        "from pkg.worker import Worker\n\ndef main():\n    worker = Worker()\n    w = worker\n    w.run()\n",
+        encoding="utf-8",
+    )
+
+    project = Project.open(str(project_dir))
+    graph = build_call_graph(project)
+    edge = next(edge for edge in graph.edges if edge.type == "calls" and edge.label.startswith("w.run:"))
+    assert edge.to_id.endswith("pkg/worker.py:function:Worker.run")
+    assert edge.extra.get("confidence", 0) >= 0.8
+
+
 def test_callgraph_nested_import_attribute_has_dotted_label(tmp_path):
     project_dir = tmp_path / "proj"
     project_dir.mkdir()

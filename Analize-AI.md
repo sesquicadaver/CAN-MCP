@@ -18,7 +18,7 @@
 | ------- | ---- | ------ | -------- |
 | Graph IR примітивний | ROAD-2.1–2.6 | **done** | Graph IR v2 default; `CODIMENSION_GRAPH_IR=1` legacy opt-out |
 | Symbol IDs нестабільні | ROAD-1.1–1.3, 1.5–1.6 | **done** | Project-relative IDs + legacy aliases |
-| Call graph поверхневий | ROAD-3.1–3.7 | **partial** | Instance `obj.method()` via assignment types; attribute-call vs import collision fixed |
+| Call graph поверхневий | ROAD-3.1–3.7 | **done** | Instance/alias/nested attribute resolution + semantic fixtures |
 | Import `sys.path` мутація | ROAD-4.1–4.4 | **done** | `ImportResolver`, subprocess opt-in, concurrent tests |
 | Path security неповна | ROAD-1.4, 1.7 | **done** | `resolve_project_path` у всіх MCP tools |
 | Dev-зрілість / optional deps | ROAD-5.1–5.3, 5.6 | **done** | `[analysis]` extra, capabilities matrix, mypy strict + stubs |
@@ -41,16 +41,14 @@
 
 ## Залишкові недоліки
 
-1. **Call graph:** chained instance types from nested assignments — minor борг.
+1. **Call graph / import graph:** основні semantic шляхи закрито; подальше — jedi refinement edge cases.
 
-2. **Import graph brief mode:** stem collision для однакових basename у різних пакетах — окремий борг.
-
-4. **Graph IR v2** — default з `node.uri` і `edge.provenance`; legacy v1 через `CODIMENSION_GRAPH_IR=1`.
+2. _(resolved)_ brief import stem collision — module map у brief mode.
 
 ## Вердикт
 
 Проєкт **зрілий як agent-facing analysis MVP** на гілці `reserv-1`. Архітектурна рамка `core → MCP → clients` реалізована; Phase 0–5 roadmap переважно закрито.
 
-Оновлена оцінка: **8/10 як архітектура, 6/10 як аналізатор, 6/10 як production tool**.
+Оновлена оцінка: **8/10 як архітектура, 7/10 як аналізатор, 7/10 як production tool**.
 
-До **1.0.0** залишилось: import brief-mode stem collision, chained instance type inference.
+**1.0.0 candidate:** roadmap Phase 0–6 закрито на `reserv-1`; merge gate green.
