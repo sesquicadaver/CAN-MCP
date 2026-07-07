@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "codimension-core"
-version = "0.33.0"
+version = "1.0.0"
 description = "Headless Python code analysis core extracted from Codimension IDE"
 readme = "README.md"
 requires-python = ">=3.10"

@@ -6,6 +6,8 @@
 
 Headless Python code analysis exposed via **MCP** (Model Context Protocol) for Cursor and other AI clients.
 
+**Release:** `codimension-core` 1.0.0 · `codimension-mcp` 1.0.0 ([CHANGELOG](CHANGELOG.md))
+
 ## Packages
 
 | Package | Role |

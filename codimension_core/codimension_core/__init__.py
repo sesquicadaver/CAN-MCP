@@ -105,4 +105,4 @@ __all__ = [
     "symbol_id",
 ]
 
-__version__ = "0.33.0"
+__version__ = "1.0.0"

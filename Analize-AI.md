@@ -8,7 +8,7 @@
 | Project model / workspace handling   |   7/10 |
 | Static analysis depth                |   6/10 |
 | Cache / incremental design           |   7/10 |
-| Production readiness                 |   6/10 |
+| Production readiness                 |   7/10 |
 
 Джерело задач: [doc/ROADMAP.md](doc/ROADMAP.md). Living spec: [doc/plugins/living-specification.md](doc/plugins/living-specification.md).
 
@@ -51,4 +51,4 @@
 
 Оновлена оцінка: **8/10 як архітектура, 7/10 як аналізатор, 7/10 як production tool**.
 
-**1.0.0 candidate:** roadmap Phase 0–6 закрито на `reserv-1`; merge gate green.
+**1.0.0 released** (2026-07-07): roadmap Phase 0–6 complete on `reserv-1`; merge gate 153 tests.
