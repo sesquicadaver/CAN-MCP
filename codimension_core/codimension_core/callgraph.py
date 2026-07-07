@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from os.path import basename, realpath
 
 from .graph_ir import GraphEdge, GraphIR, GraphNode, enrich_graph_meta, standard_symbol_extra
+from .jedi_bridge import resolve_call_callee_jedi
 from .project import Project
 from .symbol_registry import resolve_symbol_reference
 from .symbols import symbol_id
@@ -29,7 +30,7 @@ class _CallGraphIndex:
     class_methods: dict[str, dict[str, str]] = field(default_factory=dict)
     file_to_module: dict[str, str] = field(default_factory=dict)
     module_to_file: dict[str, str] = field(default_factory=dict)
-    edges: list[tuple[str, str, int, str, float]] = field(default_factory=list)
+    edges: list[tuple[str, str, int, str, float, str]] = field(default_factory=list)
 
 
 def _rel_file(project: Project, file_path: str) -> str:
@@ -208,15 +209,15 @@ def _callee_symbol_id(
     *,
     receiver: str | None = None,
     span: _FunctionSpan | None = None,
-) -> tuple[str | None, float]:
+) -> tuple[str | None, float, str]:
     if receiver == "self" and span is not None:
         resolved = _resolve_method_callee(span, callee_name, index)
         if resolved:
-            return resolved, 0.85
+            return resolved, 0.85, "ast"
 
     local = index.local_names.get(rel_path, {})
     if callee_name in local:
-        return symbol_id(project, abs_path, "function", local[callee_name]), 0.9
+        return symbol_id(project, abs_path, "function", local[callee_name]), 0.9, "ast"
 
     import_map = index.import_map.get(rel_path, {})
     if callee_name in import_map:
@@ -227,15 +228,15 @@ def _callee_symbol_id(
             imported = f"{resolved_module}.{callee_name}" if resolved_module else callee_name
         resolved = _resolve_import_target(project, index, imported)
         if resolved:
-            return resolved, 0.8
-        return f"external:function:{imported}", 0.5
+            return resolved, 0.8, "ast"
+        return f"external:function:{imported}", 0.5, "ast"
 
     for path in project.python_files:
         rel = _rel_file(project, path)
         module = index.file_to_module.get(rel, "")
         if module.endswith(f".{callee_name}") or rel.endswith(f"/{callee_name}.py"):
-            return symbol_id(project, path, "module", callee_name), 0.6
-    return f"external:function:{callee_name}", 0.3
+            return symbol_id(project, path, "module", callee_name), 0.6, "ast"
+    return f"external:function:{callee_name}", 0.3, "ast"
 
 
 def _extract_calls(
@@ -243,6 +244,7 @@ def _extract_calls(
     spans: list[_FunctionSpan],
     rel_path: str,
     abs_path: str,
+    source: str,
     project: Project,
     index: _CallGraphIndex,
 ) -> None:
@@ -256,7 +258,7 @@ def _extract_calls(
         callee_name, label, receiver = _call_target_name(node)
         if not callee_name:
             continue
-        callee_id, confidence = _callee_symbol_id(
+        callee_id, confidence, provenance = _callee_symbol_id(
             project,
             rel_path,
             abs_path,
@@ -267,7 +269,17 @@ def _extract_calls(
         )
         if callee_id is None:
             continue
-        index.edges.append((caller_id, callee_id, node.lineno, label, confidence))
+        if confidence < 0.85:
+            jedi_id, jedi_conf = resolve_call_callee_jedi(
+                project,
+                abs_path,
+                source,
+                node.lineno,
+                node.col_offset,
+            )
+            if jedi_id and jedi_conf > confidence:
+                callee_id, confidence, provenance = jedi_id, jedi_conf, "jedi"
+        index.edges.append((caller_id, callee_id, node.lineno, label, confidence, provenance))
 
 
 def _call_target_name(node: ast.Call) -> tuple[str | None, str, str | None]:
@@ -310,7 +322,7 @@ def _build_index(project: Project) -> _CallGraphIndex:
             symbol = symbol_id(project, file_path, "function", span.qualname)
             index.functions[symbol] = span
         if tree is not None:
-            _extract_calls(tree, spans, rel_path, file_path, project, index)
+            _extract_calls(tree, spans, rel_path, file_path, source, project, index)
     return index
 
 
@@ -331,7 +343,7 @@ def _index_to_graph(index: _CallGraphIndex, symbol_filter: str | None = None) ->
             )
         )
 
-    for caller_id, callee_id, line_no, label, confidence in index.edges:
+    for caller_id, callee_id, line_no, label, confidence, provenance in index.edges:
         if symbol_filter and symbol_filter not in (caller_id, callee_id):
             if not (
                 caller_id.endswith(f":function:{symbol_filter}")
@@ -368,7 +380,7 @@ def _index_to_graph(index: _CallGraphIndex, symbol_filter: str | None = None) ->
                         to_id=callee_id,
                         type="calls",
                         label=f"{label}:{line_no}",
-                        extra={"provenance": "ast", "confidence": confidence},
+                        extra={"provenance": provenance, "confidence": confidence},
                     )
                 )
     return graph
@@ -396,7 +408,7 @@ def find_callers(project: Project, symbol: str) -> GraphIR:
     resolved = resolve_symbol_reference(project, symbol)
     index = _get_call_index(project)
     graph = GraphIR(meta={"kind": "callers", "symbol": symbol, "resolved_symbol": resolved})
-    for caller_id, callee_id, line_no, label, _confidence in index.edges:
+    for caller_id, callee_id, line_no, label, _confidence, _provenance in index.edges:
         if callee_id == resolved or resolved in callee_id:
             graph.add_edge(
                 GraphEdge(from_id=caller_id, to_id=callee_id, type="calls", label=f"{label}:{line_no}")
@@ -423,7 +435,7 @@ def find_callees(project: Project, symbol: str) -> GraphIR:
     resolved = resolve_symbol_reference(project, symbol)
     index = _get_call_index(project)
     graph = GraphIR(meta={"kind": "callees", "symbol": symbol, "resolved_symbol": resolved})
-    for caller_id, callee_id, line_no, label, _confidence in index.edges:
+    for caller_id, callee_id, line_no, label, _confidence, _provenance in index.edges:
         if caller_id == resolved or resolved in caller_id:
             graph.add_edge(
                 GraphEdge(from_id=caller_id, to_id=callee_id, type="calls", label=f"{label}:{line_no}")
@@ -467,7 +479,7 @@ def _collect_transitive_callers(
 ) -> tuple[set[str], list[tuple[str, str, str]]]:
     """Walk reverse call edges from seed callees; return callers and impact edges."""
     reverse: dict[str, list[tuple[str, int, str]]] = {}
-    for caller_id, callee_id, line_no, label, _confidence in index.edges:
+    for caller_id, callee_id, line_no, label, _confidence, _provenance in index.edges:
         reverse.setdefault(callee_id, []).append((caller_id, line_no, label))
 
     impacted: set[str] = set()
@@ -554,7 +566,7 @@ def impact_analysis(project: Project, target: str) -> GraphIR:
         seed_ids = {resolved_symbol}
         seed_ids |= {
             callee_id
-            for _caller_id, callee_id, _line_no, _label, _confidence in call_index.edges
+            for _caller_id, callee_id, _line_no, _label, _confidence, _provenance in call_index.edges
             if callee_id == resolved_symbol
         }
         callers, call_edges = _collect_transitive_callers(call_index, seed_ids)
@@ -595,7 +607,7 @@ def impact_analysis(project: Project, target: str) -> GraphIR:
     elif not is_symbol_target:
         seed_ids = {
             callee_id
-            for _caller_id, callee_id, _line_no, _label, _confidence in call_index.edges
+            for _caller_id, callee_id, _line_no, _label, _confidence, _provenance in call_index.edges
             if _matches_callee(callee_id, target, resolved_symbol)
         }
         seed_ids |= {

@@ -8,9 +8,33 @@ from os.path import basename, realpath
 from typing import cast
 
 from .graph_ir import GraphEdge, GraphIR, GraphNode, enrich_graph_meta
-from .imports import ImportResolution, build_import_context, classify_resolution, get_import_resolutions
+from .imports import (
+    ImportResolution,
+    _is_stdlib_module_name,
+    build_import_context,
+    classify_resolution,
+    get_import_resolutions,
+)
 from .parser_types import BriefImport, BriefModuleInfo
 from .project import Project
+
+
+def _import_edge_kind(classification: str) -> str:
+    return {
+        "system": "stdlib",
+        "project": "project",
+        "other": "third_party",
+        "unresolved": "unresolved",
+    }.get(classification, "unresolved")
+
+
+def _brief_import_kind(module_name: str, target_path: str | None) -> str:
+    if target_path:
+        return "project"
+    top_level = module_name.split(".")[0]
+    if top_level in sys.builtin_module_names or _is_stdlib_module_name(module_name):
+        return "stdlib"
+    return "third_party"
 
 
 def build_import_graph(project: Project, *, resolved: bool = True) -> GraphIR:
@@ -66,6 +90,7 @@ def _build_brief_import_graph(project: Project) -> GraphIR:
                     to_id=target_id,
                     type="imports",
                     label=_import_label(import_obj),
+                    extra={"kind": _brief_import_kind(module_name, target_path)},
                 )
             )
     return enrich_graph_meta(graph, project_root=project.root)
@@ -84,15 +109,15 @@ def _build_resolved_import_graph(project: Project) -> GraphIR:
         source_id = f"file:{basename(path)}"
         for resolution in get_import_resolutions(context, path, info.imports):
             bucket = classify_resolution(resolution, path, project, sys.path)
-            if bucket == "other":
-                bucket = "unresolved"
-            target_id = _resolution_target_id(resolution, project, path_by_base, graph, bucket)
+            target_bucket = "unresolved" if bucket == "other" else bucket
+            target_id = _resolution_target_id(resolution, project, path_by_base, graph, target_bucket)
             graph.add_edge(
                 GraphEdge(
                     from_id=source_id,
                     to_id=target_id,
                     type="imports",
                     label=resolution.getVisibleName(),
+                    extra={"kind": _import_edge_kind(bucket)},
                 )
             )
     return enrich_graph_meta(graph, project_root=project.root)
