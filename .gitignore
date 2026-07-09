@@ -62,17 +62,27 @@ target/
 
 # Test / tooling caches
 .pytest_cache/
-.omx/
 
-# MCP / IDE generated artifacts
+# MCP / IDE generated artifacts (codimension analysis cache)
 .codimension/
 
 # VS Code extension build outputs
 codimension-vscode/node_modules/
 codimension-vscode/out/
 
-# Local Cursor MCP config (use .cursor/mcp.json.example)
-.cursor/mcp.json
+# OMX (oh-my-codex) — session/state; never commit local agent work or env hints
+.omx/
+.omx-config.json
+.omx-config.local.json
+omx_wiki/
+.codex/
+AGENTS.md
+
+# Cursor — local/session artifacts (tracked: .cursor/mcp.json.example, .cursor/rules/**)
+.cursor/*
+!.cursor/mcp.json.example
+!.cursor/rules/
+!.cursor/rules/**
 
 # symbolic link
 src/thirdparty

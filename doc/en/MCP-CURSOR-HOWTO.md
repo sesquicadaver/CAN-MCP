@@ -107,17 +107,19 @@ codimension-mcp --help
 File **`.cursor/mcp.json`** (gitignored) is generated with absolute paths.  
 Cursor expands `${workspaceFolder}` **only in project-level** `.cursor/mcp.json`, not in the global config.
 
+Replace `/path/to/CAN-MCP` below with your local checkout directory (clone URL: [§2.1](#21-clone-and-venv)).
+
 **Recommended — use `CODIMENSION_WORKSPACE` env:**
 
 ```json
 {
   "mcpServers": {
     "codimension": {
-      "command": "/home/sesquicadaver/GITFOLDER/CAN-MCP/.venv/bin/codimension-mcp",
+      "command": "/path/to/CAN-MCP/.venv/bin/codimension-mcp",
       "env": {
         "CODIMENSION_WORKSPACE": "${workspaceFolder}",
-        "VIRTUAL_ENV": "/home/sesquicadaver/GITFOLDER/CAN-MCP/.venv",
-        "PATH": "/home/sesquicadaver/GITFOLDER/CAN-MCP/.venv/bin:/usr/local/bin:/usr/bin:/bin"
+        "VIRTUAL_ENV": "/path/to/CAN-MCP/.venv",
+        "PATH": "/path/to/CAN-MCP/.venv/bin:/usr/local/bin:/usr/bin:/bin"
       }
     }
   }
@@ -172,7 +174,7 @@ Then either:
 
 **A. Analyzing CAN-MCP:**
 
-- Cursor workspace = `/home/sesquicadaver/GITFOLDER/CAN-MCP`
+- Cursor workspace = `/path/to/CAN-MCP`
 - `CODIMENSION_WORKSPACE=${workspaceFolder}` → analyzes this repository
 
 **B. Analyzing another project:**

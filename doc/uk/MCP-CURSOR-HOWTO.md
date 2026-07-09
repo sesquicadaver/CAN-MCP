@@ -107,17 +107,19 @@ codimension-mcp --help
 Файл **`.cursor/mcp.json`** (не в git) генерує `./scripts/install-cursor-mcp.sh`.  
 `${workspaceFolder}` Cursor підставляє **лише** в project-level `.cursor/mcp.json`, не в глобальному `~/.cursor/mcp.json`.
 
+Замініть `/path/to/CAN-MCP` на каталог, куди ви клонували репозиторій (URL клонування: [§2.1](#21-клонування-та-venv)).
+
 **Рекомендовано — env `CODIMENSION_WORKSPACE`:**
 
 ```json
 {
   "mcpServers": {
     "codimension": {
-      "command": "/home/user/CAN-MCP/.venv/bin/codimension-mcp",
+      "command": "/path/to/CAN-MCP/.venv/bin/codimension-mcp",
       "env": {
         "CODIMENSION_WORKSPACE": "${workspaceFolder}",
-        "VIRTUAL_ENV": "/home/user/GITFOLDER/CAN-MCP/.venv",
-        "PATH": "/home/user/GITFOLDER/CAN-MCP/.venv/bin:/usr/local/bin:/usr/bin:/bin"
+        "VIRTUAL_ENV": "/path/to/CAN-MCP/.venv",
+        "PATH": "/path/to/CAN-MCP/.venv/bin:/usr/local/bin:/usr/bin:/bin"
       }
     }
   }
@@ -149,7 +151,7 @@ codimension-mcp --help
 
 **A. Аналізуєте CAN-MCP:**
 
-- Workspace у Cursor = `/home/user/CAN-MCP`
+- Workspace у Cursor = `/path/to/CAN-MCP`
 - auto-open через `CODIMENSION_WORKSPACE` або `open_project`
 
 **B. Аналізуєте інший Python-проєкт:**

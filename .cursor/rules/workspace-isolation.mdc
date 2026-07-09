@@ -11,7 +11,7 @@ alwaysApply: true
 
 The open workspace is **only** the CAN-MCP repository root — the single place for reads, edits, tests, and commits.
 
-**Do not** read, grep, edit, or commit files from other repositories (UNSOMNIA, sibling `GITFOLDER/*`, etc.) unless the user explicitly switches workspace.
+**Do not** read, grep, edit, or commit files from other repositories (e.g. `other-project`, sibling `~/projects/*`) unless the user explicitly switches workspace.
 
 **MCP codimension:** `command` in `.cursor/mcp.json` points to the CAN-MCP venv. Workspace auto-open uses `CODIMENSION_WORKSPACE` / env — it does not override agent isolation rules.
 
@@ -19,6 +19,6 @@ The open workspace is **only** the CAN-MCP repository root — the single place 
 
 Поточний workspace — **лише** корінь CAN-MCP. Саме тут читаємо, змінюємо, тестуємо і комітимо.
 
-**Заборонено** читати, grep-ати, змінювати або commit-ити файли **інших репозиторіїв** без явного перемикання workspace.
+**Заборонено** читати, grep-ати, змінювати або commit-ити файли **інших репозиторіїв** (наприклад `other-project`, сусідні `~/projects/*`) без явного перемикання workspace.
 
 **MCP codimension:** `command` у `.cursor/mcp.json` — venv CAN-MCP. Auto-open workspace через env; не підміняє правило ізоляції агента.
