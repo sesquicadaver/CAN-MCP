@@ -113,11 +113,11 @@ codimension-mcp --help
 {
   "mcpServers": {
     "codimension": {
-      "command": "/home/sesquicadaver/GITFOLDER/CAN-MCP/.venv/bin/codimension-mcp",
+      "command": "/home/user/CAN-MCP/.venv/bin/codimension-mcp",
       "env": {
         "CODIMENSION_WORKSPACE": "${workspaceFolder}",
-        "VIRTUAL_ENV": "/home/sesquicadaver/GITFOLDER/CAN-MCP/.venv",
-        "PATH": "/home/sesquicadaver/GITFOLDER/CAN-MCP/.venv/bin:/usr/local/bin:/usr/bin:/bin"
+        "VIRTUAL_ENV": "/home/user/GITFOLDER/CAN-MCP/.venv",
+        "PATH": "/home/user/GITFOLDER/CAN-MCP/.venv/bin:/usr/local/bin:/usr/bin:/bin"
       }
     }
   }
@@ -149,7 +149,7 @@ codimension-mcp --help
 
 **A. Аналізуєте CAN-MCP:**
 
-- Workspace у Cursor = `/home/sesquicadaver/GITFOLDER/CAN-MCP`
+- Workspace у Cursor = `/home/user/CAN-MCP`
 - auto-open через `CODIMENSION_WORKSPACE` або `open_project`
 
 **B. Аналізуєте інший Python-проєкт:**
